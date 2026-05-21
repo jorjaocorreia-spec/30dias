@@ -383,7 +383,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   syncFixedExpenses: () => {
     const { fixedExpenses, fixedExpenseMonths, expenses, user } = get()
-    const today = new Date()
     const newEntries: Expense[] = []
 
     for (const fem of fixedExpenseMonths) {
@@ -393,8 +392,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       const [year, month] = fem.month.split('-').map(Number)
       const monthStart = new Date(year, month - 1, 1)
       const monthEnd = new Date(year, month, 0)
-      const to = monthEnd < today ? monthEnd : today
-      const mondays = getMondaysBetween(monthStart, to)
+      const mondays = getMondaysBetween(monthStart, monthEnd)
       const weeklyAmount = Math.round((fem.amount / 4) * 100) / 100
 
       for (const monday of mondays) {
