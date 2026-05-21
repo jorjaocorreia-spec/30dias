@@ -6,7 +6,8 @@ import { Navbar } from '@/components/layout/Navbar'
 import { useAppStore } from '@/store/useAppStore'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAppStore(s => ({ isAuthenticated: s.isAuthenticated, isLoading: s.isLoading }))
+  const isAuthenticated = useAppStore(s => s.isAuthenticated)
+  const isLoading = useAppStore(s => s.isLoading)
   const router = useRouter()
 
   useEffect(() => {
