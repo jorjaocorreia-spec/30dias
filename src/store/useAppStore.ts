@@ -188,7 +188,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   logout: async () => {
-    await supabase.auth.signOut()
+    await supabase.auth.signOut({ scope: 'global' })
   },
 
   loadUserData: async () => {
