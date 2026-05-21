@@ -42,6 +42,49 @@ test.describe('Segurança — XSS em formulários', () => {
   })
 })
 
+test.describe('Segurança — IDOR: isolamento de dados entre usuários', () => {
+  test('IDOR1 — /expenses/[id-inexistente] exibe tela de não encontrado sem crashar', async ({ page }) => {
+    await goto(page, '/expenses/00000000-0000-0000-0000-000000000000')
+
+    // Frontend deve exibir mensagem amigável
+    await expect(page.getByText(/Despesa não encontrada/i)).toBeVisible({ timeout: 6_000 })
+
+    // Não deve renderizar nenhum valor monetário (dado vazio = isolado)
+    const moneyVisible = await page.getByText(/R\$\s*[\d.,]+/).first().isVisible().catch(() => false)
+    expect(moneyVisible).toBe(false)
+  })
+
+  test('IDOR2 — RLS ignora filtro user_id forjado na query autenticada', async ({ page }) => {
+    // Navega para o app primeiro (localStorage só está disponível com origem correta)
+    await goto(page, '/dashboard')
+
+    // Recupera JWT do usuário autenticado via localStorage
+    const jwt = await page.evaluate(() => {
+      const keys = Object.keys(localStorage).filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+      if (!keys.length) return null
+      try { return JSON.parse(localStorage.getItem(keys[0]) ?? '').access_token } catch { return null }
+    })
+
+    if (!jwt) { test.skip(); return }
+
+    const fakeUserId = '00000000-0000-0000-0000-000000000000'
+
+    // Tenta forçar user_id de outro usuário — RLS deve ignorar o filtro e retornar [] ou dados só do próprio usuário
+    const result = await page.evaluate(async ({ url, key, token, fakeId }: { url: string; key: string; token: string; fakeId: string }) => {
+      const res = await fetch(`${url}/rest/v1/expenses?select=id,user_id&user_id=eq.${fakeId}&limit=10`, {
+        headers: { 'apikey': key, 'Authorization': `Bearer ${token}` },
+      })
+      return await res.json()
+    }, { url: SUPABASE_URL, key: SUPABASE_ANON_KEY, token: jwt, fakeId: fakeUserId })
+
+    // Resultado não deve conter nenhuma linha com o user_id forjado
+    if (Array.isArray(result)) {
+      const leaked = result.filter((r: any) => r.user_id === fakeUserId)
+      expect(leaked.length).toBe(0)
+    }
+  })
+})
+
 test.describe('Segurança — RLS: acesso sem autenticação retorna zero registros', () => {
   test('Tabela expenses não retorna dados com role anon', async ({ page }) => {
     // Chama a API do Supabase diretamente com apenas o anon key (sem JWT de usuário)
