@@ -1,26 +1,57 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { TrendingUp, Shield, Zap, ArrowRight } from 'lucide-react'
+import { TrendingUp, Shield, Zap, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const features = [
   { icon: Zap, title: 'Ciclos semanais', desc: 'Controle em 7 dias para decisões mais rápidas e eficazes.' },
   { icon: TrendingUp, title: 'Visão clara', desc: 'Gráficos e resumos elegantes do seu padrão de gastos.' },
-  { icon: Shield, title: 'Privacidade total', desc: 'Seus dados ficam só no seu dispositivo, sem servidores.' },
+  { icon: Shield, title: 'Seus dados', desc: 'Dados sincronizados com segurança na nuvem, acessíveis em qualquer dispositivo.' },
 ]
 
 export default function LandingPage() {
-  const { isAuthenticated, login } = useAppStore()
+  const { isAuthenticated, login, signup, loginWithGoogle } = useAppStore()
   const router = useRouter()
+
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) router.replace('/dashboard')
   }, [isAuthenticated, router])
 
-  const handleLogin = () => { login(); router.push('/dashboard') }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || !password) return
+    setLoading(true)
+    setError('')
+
+    const fn = mode === 'login' ? login : signup
+    const { error: err } = await fn(email, password)
+
+    if (err) {
+      setError(translateError(err))
+      setLoading(false)
+    } else if (mode === 'signup') {
+      setError('')
+      setLoading(false)
+      setMode('login')
+      setPassword('')
+      // Show confirmation hint (Supabase may require email confirmation)
+    }
+  }
+
+  const handleGoogle = async () => {
+    setLoading(true)
+    await loginWithGoogle()
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
@@ -43,12 +74,11 @@ export default function LandingPage() {
           </div>
           <span className="gradient-text" style={{ fontWeight: 700, fontSize: 18 }}>7Dias</span>
         </div>
-        <button onClick={handleLogin} style={{
-          color: 'var(--accent)', fontWeight: 500, fontSize: 14,
-          background: 'none', border: 'none', cursor: 'pointer', padding: '8px 16px',
-          borderRadius: 10,
-        }}>
-          Entrar
+        <button
+          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
+          style={{ color: 'var(--accent)', fontWeight: 500, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', padding: '8px 16px', borderRadius: 10 }}
+        >
+          {mode === 'login' ? 'Criar conta' : 'Entrar'}
         </button>
       </header>
 
@@ -58,7 +88,6 @@ export default function LandingPage() {
           style={{ width: '100%', maxWidth: 600, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
         >
-          {/* Badge */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '6px 14px', borderRadius: 100, marginBottom: 32,
@@ -69,7 +98,6 @@ export default function LandingPage() {
             Controle financeiro semanal
           </div>
 
-          {/* Headline */}
           <h1 style={{ fontSize: 'clamp(40px, 8vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: 24 }}>
             Seu dinheiro.<br />
             <span className="gradient-text">A cada 7 dias.</span>
@@ -80,29 +108,29 @@ export default function LandingPage() {
             você toma decisões mais rápidas e eficazes sobre seus gastos.
           </p>
 
-          <button onClick={handleLogin} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '14px 32px', borderRadius: 16,
-            background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-            color: '#fff', fontWeight: 600, fontSize: 16, border: 'none',
-            cursor: 'pointer', boxShadow: '0 0 30px rgba(16,185,129,0.35)',
-            transition: 'transform 0.15s, box-shadow 0.15s',
-          }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.04)' }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+          <button
+            onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '14px 32px', borderRadius: 16,
+              background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+              color: '#fff', fontWeight: 600, fontSize: 16, border: 'none',
+              cursor: 'pointer', boxShadow: '0 0 30px rgba(16,185,129,0.35)',
+              transition: 'transform 0.15s',
+            }}
+            onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.04)' }}
+            onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)' }}
           >
             Começar agora <ArrowRight size={18} />
           </button>
         </motion.div>
 
-        {/* Preview card */}
         <motion.div
           initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.7 }}
           style={{
             marginTop: 56, width: '100%', maxWidth: 320, textAlign: 'left',
             background: 'var(--bg-card)', border: '1px solid var(--border)',
-            borderRadius: 24, padding: 24,
-            boxShadow: '0 8px 48px rgba(0,0,0,0.2)',
+            borderRadius: 24, padding: 24, boxShadow: '0 8px 48px rgba(0,0,0,0.2)',
           }}
         >
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Esta semana</p>
@@ -116,26 +144,14 @@ export default function LandingPage() {
 
       {/* ── Features ── */}
       <section style={{ padding: '56px 24px', borderTop: '1px solid var(--border)' }}>
-        <div style={{
-          maxWidth: 800, margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16,
-        }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           {features.map(({ icon: Icon, title, desc }, i) => (
             <motion.div
               key={title}
               initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
-              style={{
-                padding: 20, borderRadius: 20,
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-              }}
+              style={{ padding: 20, borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
-              <div style={{
-                width: 40, height: 40, borderRadius: 12, marginBottom: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'var(--accent-light)',
-              }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--accent-light)' }}>
                 <Icon size={18} style={{ color: 'var(--accent)' }} />
               </div>
               <p style={{ fontWeight: 600, marginBottom: 6, fontSize: 14 }}>{title}</p>
@@ -146,19 +162,23 @@ export default function LandingPage() {
       </section>
 
       {/* ── Auth ── */}
-      <section style={{ padding: '56px 24px', borderTop: '1px solid var(--border)' }}>
+      <section id="auth-section" style={{ padding: '56px 24px', borderTop: '1px solid var(--border)' }}>
         <div style={{ maxWidth: 360, margin: '0 auto' }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, textAlign: 'center', marginBottom: 28 }}>
-            Entrar na plataforma
+            {mode === 'login' ? 'Entrar na plataforma' : 'Criar conta'}
           </h2>
 
           {/* Google */}
-          <button onClick={handleLogin} style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '13px 16px', borderRadius: 16, marginBottom: 10,
-            background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text)',
-            fontSize: 14, fontWeight: 500, cursor: 'pointer',
-          }}>
+          <button
+            onClick={handleGoogle}
+            disabled={loading}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              padding: '13px 16px', borderRadius: 16, marginBottom: 16,
+              background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text)',
+              fontSize: 14, fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -168,19 +188,6 @@ export default function LandingPage() {
             Continuar com Google
           </button>
 
-          {/* Apple */}
-          <button onClick={handleLogin} style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '13px 16px', borderRadius: 16, marginBottom: 16,
-            background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text)',
-            fontSize: 14, fontWeight: 500, cursor: 'pointer',
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-            </svg>
-            Continuar com Apple
-          </button>
-
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -188,30 +195,89 @@ export default function LandingPage() {
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
-          {/* Email */}
-          <input
-            type="email"
-            placeholder="seu@email.com"
-            style={{
-              width: '100%', padding: '13px 16px', borderRadius: 16, marginBottom: 10,
-              background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)',
-              fontSize: 14, outline: 'none', boxSizing: 'border-box',
-            }}
-          />
-          <button onClick={handleLogin} style={{
-            width: '100%', padding: '13px 16px', borderRadius: 16,
-            background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-            color: '#fff', fontWeight: 600, fontSize: 14, border: 'none', cursor: 'pointer',
-          }}>
-            Entrar com email
-          </button>
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <input
+              type="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              style={{
+                width: '100%', padding: '13px 16px', borderRadius: 16,
+                background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)',
+                fontSize: 14, outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Senha"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                style={{
+                  width: '100%', padding: '13px 44px 13px 16px', borderRadius: 16,
+                  background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)',
+                  fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+
+            {error && (
+              <p style={{ fontSize: 13, color: '#ef4444', textAlign: 'center', padding: '8px 12px', borderRadius: 10, background: 'rgba(239,68,68,0.1)' }}>
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%', padding: '13px 16px', borderRadius: 16, marginTop: 4,
+                background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                color: '#fff', fontWeight: 600, fontSize: 14, border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+            </button>
+          </form>
 
           <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginTop: 20 }}>
-            Versão MVP — dados salvos localmente no seu dispositivo
+            {mode === 'login' ? (
+              <>Não tem conta?{' '}
+                <button onClick={() => { setMode('signup'); setError('') }} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+                  Criar agora
+                </button>
+              </>
+            ) : (
+              <>Já tem conta?{' '}
+                <button onClick={() => { setMode('login'); setError('') }} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+                  Entrar
+                </button>
+              </>
+            )}
           </p>
         </div>
       </section>
 
     </div>
   )
+}
+
+function translateError(msg: string): string {
+  if (msg.includes('Invalid login credentials')) return 'Email ou senha incorretos.'
+  if (msg.includes('Email not confirmed')) return 'Confirme seu email antes de entrar.'
+  if (msg.includes('User already registered')) return 'Este email já está cadastrado.'
+  if (msg.includes('Password should be')) return 'A senha deve ter no mínimo 6 caracteres.'
+  return msg
 }

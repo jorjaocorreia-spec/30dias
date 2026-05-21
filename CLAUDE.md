@@ -305,7 +305,7 @@ Mock: `useAppStore.isAuthenticated`. O guard em `(app)/layout.tsx` redireciona p
 - [ ] Exportar dados como CSV
 - [ ] Histórico de semanas anteriores (lista paginada)
 - [ ] Notificações quando orçamento passa de 80%
-- [ ] Deploy Hostinger (`npm run build` + Node.js server)
+- [ ] Integração WhatsApp + IA (Evolution API já na VPS, implementar webhook + parsing + `/integrations` page)
 - [ ] Backend + sync em nuvem (Supabase — arquitetura já preparada com IDs nanoid)
 
 **Itens concluídos e removidos do backlog:**
@@ -315,6 +315,7 @@ Mock: `useAppStore.isAuthenticated`. O guard em `(app)/layout.tsx` redireciona p
 - [x] Estabelecimentos com auto-preenchimento de categoria → `/establishments`
 - [x] Ícones de categoria expandidos (30 ícones — adicionados TrendingUp, Laptop)
 - [x] Módulo de receitas → `/income` com fontes recorrentes + entradas avulsas + saldo mensal no Dashboard
+- [x] Deploy VPS Hostinger → Easypanel + Nixpacks + GitHub (Node 20, projeto `jorge/7dias`)
 
 ---
 
@@ -334,12 +335,15 @@ Todo o produto deve reforçar a lógica de que a **semana** é a unidade central
 
 Usuários que precisam de disciplina financeira em ciclos curtos, gosto por experiência minimalista e necessidade de uma visão clara e rápida do próprio gasto semanal. O produto deve ser percebido como calmo, confiável e premium.
 
-## Compatibilidade Hostinger
+## Deploy (VPS Hostinger + Easypanel)
 
-O projeto será construído como um app Next.js compatível com deploy em Hostinger:
-- suporte a Node.js/Next.js
-- uso de dependências compatíveis com ambiente compartilhado
-- dados MVP em localStorage, arquitetura preparada para backend futuro
+- **Painel:** Easypanel em `http://31.97.248.13:3000/` — projeto `jorge`, serviço `7dias`
+- **Build:** Nixpacks (auto-detecta Next.js) — **Node.js 20** obrigatório (`NIXPACKS_NODE_VERSION=20` como variável de ambiente no serviço)
+- **Repositório:** `https://github.com/jorjaocorreia-spec/7dias.git` (privado, branch `main`)
+- **Auth GitHub:** token embutido na Git URL do Easypanel (`https://TOKEN@github.com/...`)
+- **Porta:** 3000 | **Build:** `npm run build` | **Start:** `npm start`
+- **Restrição crítica:** apenas o projeto `jorge` pode ser alterado — nenhum outro projeto da VPS deve ser tocado
+- Evolution API já rodando na VPS (projeto `n8n`) — será usada para integração WhatsApp
 
 ---
 
