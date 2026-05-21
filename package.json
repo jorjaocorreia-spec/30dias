@@ -11,6 +11,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.98.0",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/supabase-js": "^2.106.1",
     "framer-motion": "^12.39.0",

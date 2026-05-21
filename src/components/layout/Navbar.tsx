@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Sun, Moon, LogOut } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Sun, Moon, LogOut, Plug } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/categories', icon: Tag, label: 'Categorias' },
   { href: '/establishments', icon: Store, label: 'Locais' },
   { href: '/summary', icon: BarChart2, label: 'Resumo' },
+  { href: '/integrations', icon: Plug, label: 'Integrações' },
 ]
 
 function isActive(pathname: string, href: string) {

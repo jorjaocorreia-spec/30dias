@@ -93,4 +93,5 @@ export interface UserPreferences {
   budgetMode: 'fixed' | 'per_category'
   categoryBudgets: Record<string, number>
   currency: string
+  whatsappNumber?: string  // número pessoal do usuário para integração WhatsApp
 }

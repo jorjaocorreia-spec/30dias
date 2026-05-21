@@ -119,6 +119,7 @@ interface AppState {
   setWeeklyBudget: (budget: number) => void
   setBudgetMode: (mode: UserPreferences['budgetMode']) => void
   setCategoryBudget: (categoryId: string, amount: number) => void
+  setWhatsappNumber: (number: string) => Promise<void>
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -531,6 +532,15 @@ export const useAppStore = create<AppState>()((set, get) => ({
     }))
     const { user, preferences } = get()
     if (user) supabase.from('user_preferences').update({ category_budgets: preferences.categoryBudgets }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  setWhatsappNumber: async (number) => {
+    set(state => ({ preferences: { ...state.preferences, whatsappNumber: number } }))
+    const { user } = get()
+    if (user) {
+      const { error } = await supabase.from('user_preferences').update({ whatsapp_number: number }).eq('user_id', user.id)
+      if (error) console.error(error)
+    }
   },
 }))
 

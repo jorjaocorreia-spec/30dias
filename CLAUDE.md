@@ -315,12 +315,11 @@ Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage co
 - [ ] Exportar dados como CSV
 - [ ] Gráfico de evolução mensal (receitas vs despesas ao longo dos meses)
 
-### Integração WhatsApp + IA (fase futura)
-- [ ] Webhook Evolution API → Next.js Route Handler → parsing com Claude API
-- [ ] Extração de entidade: valor, categoria, estabelecimento via LLM
-- [ ] Confirmação via WhatsApp antes de salvar no Supabase
-- [ ] Página `/integrations` com status e configuração
-- [ ] Evolution API já rodando na VPS (projeto `n8n`) — pronta para integrar
+### Integração WhatsApp + IA
+- [ ] Criar instância na Evolution API (aguardando chip do bot)
+- [ ] Conectar número do bot via QR Code (aguardando chip)
+- [ ] Configurar webhook na instância apontando para `/api/webhook/whatsapp`
+- [ ] Testar fluxo end-to-end com chip real
 
 **Itens concluídos:**
 - [x] Filtro de despesas por categoria → `/expenses`
@@ -336,6 +335,7 @@ Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage co
 - [x] Página de orçamento → `/budget` com modo valor fixo + por categoria
 - [x] Alerta visual no dashboard → banner âmbar a 80%, vermelho a 100% (modo fixo + por categoria)
 - [x] Histórico de semanas anteriores → seção em `/summary` com lista paginada (6/página), barra de uso e clique para navegar
+- [x] Integração WhatsApp (backend completo) → webhook `/api/webhook/whatsapp`, extração Claude Haiku, Evolution API helper, página `/integrations`, coluna `whatsapp_number` em `user_preferences`
 
 ---
 
