@@ -15,6 +15,7 @@
 /playwright-report/
 /test-results/
 tests/e2e/.auth/user.json
+tests/k6/.jwt
 
 # next.js
 /.next/
