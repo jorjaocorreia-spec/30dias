@@ -92,7 +92,7 @@ interface AppState {
 
   // Fixed Expense Months
   addFixedExpenseMonth: (data: Omit<FixedExpenseMonth, 'id'>) => void
-  updateFixedExpenseMonth: (id: string, amount: number) => void
+  updateFixedExpenseMonth: (id: string, amount: number) => Promise<void>
   deleteFixedExpenseMonth: (id: string) => void
   syncFixedExpenses: () => void
 
@@ -352,17 +352,18 @@ export const useAppStore = create<AppState>()((set, get) => ({
     get().syncFixedExpenses()
   },
 
-  updateFixedExpenseMonth: (id, amount) => {
+  updateFixedExpenseMonth: async (id, amount) => {
     set(state => ({
       fixedExpenseMonths: state.fixedExpenseMonths.map(fem => fem.id === id ? { ...fem, amount } : fem),
       expenses: state.expenses.filter(e => e.fixedExpenseMonthId !== id),
     }))
     const { user } = get()
     if (user) {
-      Promise.all([
+      const results = await Promise.all([
         supabase.from('fixed_expense_months').update({ amount }).eq('id', id),
         supabase.from('expenses').delete().eq('fixed_expense_month_id', id),
-      ]).then(results => results.forEach(({ error }) => { if (error) console.error(error) }))
+      ])
+      results.forEach(({ error }) => { if (error) console.error(error) })
     }
     get().syncFixedExpenses()
   },

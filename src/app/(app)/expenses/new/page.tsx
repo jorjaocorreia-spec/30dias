@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ExpenseForm } from '@/components/ui/ExpenseForm'
@@ -9,6 +9,13 @@ export default function NewExpensePage() {
   const router = useRouter()
   const [successMsg, setSuccessMsg] = useState('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const topRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (successMsg) {
+      topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [successMsg])
 
   const handleSuccess = (description: string) => {
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -17,7 +24,7 @@ export default function NewExpensePage() {
   }
 
   return (
-    <div className="px-4 py-5 lg:px-8 lg:py-8 max-w-lg mx-auto">
+    <div ref={topRef} className="px-4 py-5 lg:px-8 lg:py-8 max-w-lg mx-auto">
       <button
         onClick={() => router.back()}
         className="text-sm mb-5 flex items-center gap-1 transition-opacity hover:opacity-70"
