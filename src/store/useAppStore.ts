@@ -148,8 +148,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
+        const alreadyLoaded = get().isAuthenticated
         set({ user: session.user, isAuthenticated: true })
-        await get().loadUserData()
+        if (!alreadyLoaded) await get().loadUserData()
       } else if (event === 'SIGNED_OUT') {
         set({
           user: null,

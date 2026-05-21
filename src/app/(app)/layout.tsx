@@ -14,21 +14,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!isLoading && !isAuthenticated) router.replace('/')
   }, [isAuthenticated, isLoading, router])
 
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-          }}>
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>7</span>
+  if (!isAuthenticated) {
+    if (isLoading) {
+      return (
+        <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+            }}>
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>7</span>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Carregando...</p>
           </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Carregando...</p>
         </div>
-      </div>
-    )
+      )
+    }
+    return null
   }
 
   return (
