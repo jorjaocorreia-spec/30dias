@@ -75,7 +75,11 @@ export default function LandingPage() {
           <span className="gradient-text" style={{ fontWeight: 700, fontSize: 18 }}>7Dias</span>
         </div>
         <button
-          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}
+          onClick={() => {
+            setMode(mode === 'login' ? 'signup' : 'login')
+            setError('')
+            document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })
+          }}
           style={{ color: 'var(--accent)', fontWeight: 500, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', padding: '8px 16px', borderRadius: 10 }}
         >
           {mode === 'login' ? 'Criar conta' : 'Entrar'}
