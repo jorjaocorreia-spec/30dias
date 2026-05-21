@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+/* ── Tema: variáveis CSS ── */
+:root {
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-input: #f1f5f9;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --accent: #10b981;
+  --accent-light: #d1fae5;
+  --sidebar-w: 224px;
+  --topbar-h: 56px;
+  --bottomnav-h: 64px;
+}
+
+.dark {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-input: #1c2333;
+  --border: #30363d;
+  --text: #f0f6fc;
+  --text-muted: #8b949e;
+  --accent: #10b981;
+  --accent-light: #064e3b;
+}
+
+/* ── Base ── */
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── Utilitários globais ── */
+.gradient-text {
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Layout do app autenticado (media query direta, sem depender de Tailwind responsivo) ── */
+.app-sidebar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-w);
+  height: 100%;
+  z-index: 40;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background-color: var(--bg-card);
+}
+
+.app-topbar {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--topbar-h);
+  z-index: 40;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-card);
+}
+
+.app-bottomnav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-card);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.app-main {
+  min-height: 100vh;
+  padding-top: var(--topbar-h);
+  padding-bottom: var(--bottomnav-h);
+}
+
+@media (min-width: 1024px) {
+  .app-sidebar {
+    display: flex;
+  }
+  .app-topbar {
+    display: none;
+  }
+  .app-bottomnav {
+    display: none;
+  }
+  .app-main {
+    margin-left: var(--sidebar-w);
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
