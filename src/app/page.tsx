@@ -40,11 +40,14 @@ export default function LandingPage() {
       setError(translateError(err))
       setLoading(false)
     } else if (mode === 'signup') {
-      setError('')
+      setError('Conta criada! Verifique seu email para confirmar antes de entrar.')
       setLoading(false)
       setMode('login')
       setPassword('')
-      // Show confirmation hint (Supabase may require email confirmation)
+    } else {
+      // login ok — redirect happens via useEffect when isAuthenticated becomes true
+      // fallback: stop loading after 5s if redirect doesn't fire
+      setTimeout(() => setLoading(false), 5000)
     }
   }
 
