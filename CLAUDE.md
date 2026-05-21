@@ -8,9 +8,10 @@
 
 ---
 
-## Status atual: MVP+ com Receitas ✓
+## Status atual: MVP+ Seguro em Produção ✓
 
 Build passa sem erros (`npm run build`). Dev server: `npm run dev` → `http://localhost:3000`.
+App em produção: `https://jorge-7dias.27pl2o.easypanel.host`
 
 **Decisão de plataforma:** o app é **responsivo com igual peso** entre mobile e desktop. Não é mobile-first puro nem desktop-first.
 
@@ -232,7 +233,16 @@ interface IncomeEntry {
 
 ## Autenticação
 
-Mock: `useAppStore.isAuthenticated`. O guard em `(app)/layout.tsx` redireciona para `/` se não autenticado. `login()` e `logout()` no store.
+Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage com chave `sb-[ref]-auth-token`. Guard em `(app)/layout.tsx` redireciona para `/` se não autenticado. `login()`, `loginWithGoogle()`, `logout({ scope: 'global' })` e `loadUserData()` no store.
+
+## Segurança (implementado)
+
+- **RLS**: todas as 9 tabelas protegidas por `auth.uid() = user_id` — auditado e testado
+- **Security headers**: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy em `next.config.ts`
+- **Logout global**: `signOut({ scope: 'global' })` invalida refresh token no servidor
+- **Rate limits Supabase**: token refresh 10/5min, sign-ins 5/5min
+- **CORS**: Redirect URLs restritas ao domínio de produção + localhost
+- **Testes E2E de segurança**: XSS, RLS anon, IDOR1/2, proteção de rotas (39 testes Playwright + 18 testes RLS audit + k6)
 
 ---
 
@@ -301,21 +311,31 @@ Mock: `useAppStore.isAuthenticated`. O guard em `(app)/layout.tsx` redireciona p
 
 ## Próximas melhorias (backlog)
 
-- [ ] Modal/drawer de configuração de orçamento semanal
+### Prioridade média — produto
 - [ ] Exportar dados como CSV
-- [ ] Histórico de semanas anteriores (lista paginada)
-- [ ] Notificações quando orçamento passa de 80%
-- [ ] Integração WhatsApp + IA (Evolution API já na VPS, implementar webhook + parsing + `/integrations` page)
-- [ ] Backend + sync em nuvem (Supabase — arquitetura já preparada com IDs nanoid)
+- [ ] Gráfico de evolução mensal (receitas vs despesas ao longo dos meses)
 
-**Itens concluídos e removidos do backlog:**
-- [x] Filtro de despesas por categoria → implementado em `/expenses`
+### Integração WhatsApp + IA (fase futura)
+- [ ] Webhook Evolution API → Next.js Route Handler → parsing com Claude API
+- [ ] Extração de entidade: valor, categoria, estabelecimento via LLM
+- [ ] Confirmação via WhatsApp antes de salvar no Supabase
+- [ ] Página `/integrations` com status e configuração
+- [ ] Evolution API já rodando na VPS (projeto `n8n`) — pronta para integrar
+
+**Itens concluídos:**
+- [x] Filtro de despesas por categoria → `/expenses`
 - [x] Lista completa de despesas com editar/excluir → `/expenses`
 - [x] Despesas fixas mensais com valor variável → Template + FixedExpenseMonth
 - [x] Estabelecimentos com auto-preenchimento de categoria → `/establishments`
-- [x] Ícones de categoria expandidos (30 ícones — adicionados TrendingUp, Laptop)
+- [x] Ícones de categoria expandidos (30 ícones)
 - [x] Módulo de receitas → `/income` com fontes recorrentes + entradas avulsas + saldo mensal no Dashboard
-- [x] Deploy VPS Hostinger → Easypanel + Nixpacks + GitHub (Node 20, projeto `jorge/7dias`)
+- [x] Backend + sync em nuvem → Supabase (9 tabelas, RLS, Auth)
+- [x] Deploy VPS Hostinger → Easypanel + Nixpacks + GitHub (Node 20)
+- [x] Segurança completa → RLS auditado, headers, rate limits, IDOR, logout global
+- [x] Suite de testes E2E → 57 testes Playwright + k6 load test (50 VUs, p95 72ms)
+- [x] Página de orçamento → `/budget` com modo valor fixo + por categoria
+- [x] Alerta visual no dashboard → banner âmbar a 80%, vermelho a 100% (modo fixo + por categoria)
+- [x] Histórico de semanas anteriores → seção em `/summary` com lista paginada (6/página), barra de uso e clique para navegar
 
 ---
 

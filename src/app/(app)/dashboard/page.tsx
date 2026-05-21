@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown } from 'lucide-react'
+import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle } from 'lucide-react'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, Tooltip, ResponsiveContainer,
@@ -204,6 +204,39 @@ export default function DashboardPage() {
             }}
           />
         </div>
+
+        {/* Alert banner — 80–99% (amber) or 100%+ (red) */}
+        {budgetPercent >= 80 && isCurrentWeek && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
+            style={{
+              background: budgetPercent >= 100 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
+              border: `1px solid ${budgetPercent >= 100 ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
+            }}
+          >
+            {budgetPercent >= 100
+              ? <XCircle size={15} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
+              : <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+            }
+            <div>
+              <p className="text-xs font-semibold" style={{ color: budgetPercent >= 100 ? '#ef4444' : '#f59e0b' }}>
+                {budgetPercent >= 100
+                  ? `Orçamento ultrapassado em ${formatCurrency(summary.totalAmount - summary.budget)}`
+                  : `${budgetPercent.toFixed(0)}% do orçamento utilizado`
+                }
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {budgetPercent >= 100
+                  ? 'Você já passou do limite semanal.'
+                  : `Faltam ${formatCurrency(remaining)} para o limite de ${formatCurrency(summary.budget)}.`
+                }
+              </p>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Monthly balance */}
@@ -418,6 +451,20 @@ export default function DashboardPage() {
                         }}
                       />
                     </div>
+                    {pct >= 80 && isCurrentWeek && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {pct >= 100
+                          ? <XCircle size={11} style={{ color: '#ef4444', flexShrink: 0 }} />
+                          : <AlertTriangle size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                        }
+                        <p className="text-xs" style={{ color: pct >= 100 ? '#ef4444' : '#f59e0b' }}>
+                          {pct >= 100
+                            ? `Limite ultrapassado`
+                            : `${pct.toFixed(0)}% utilizado`
+                          }
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )
               })}

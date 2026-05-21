@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useMemo, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, History } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts'
@@ -14,10 +14,13 @@ import {
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 
 const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+const HISTORY_PAGE = 6
 
 export default function SummaryPage() {
   const { expenses, categories, preferences } = useAppStore()
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
+  const [historyExpanded, setHistoryExpanded] = useState(false)
+  const topRef = useRef<HTMLDivElement>(null)
   const isCurrentWeek = weekKey === getCurrentWeekKey()
 
   const summary = useMemo(
@@ -55,8 +58,33 @@ export default function SummaryPage() {
     ? ((summary.totalAmount - prevSummary.totalAmount) / prevSummary.totalAmount) * 100
     : 0
 
+  // All past weeks with data, sorted most-recent-first, excluding current view
+  const pastWeeks = useMemo(() => {
+    const keys = [...new Set(expenses.map((e) => e.weekKey))]
+      .filter((k) => k < getCurrentWeekKey())
+      .sort((a, b) => b.localeCompare(a))
+    return keys.map((k) => {
+      const s = buildWeekSummary(k, expenses, preferences.weeklyBudget)
+      return {
+        weekKey: k,
+        label: formatWeekLabel(k),
+        total: s.totalAmount,
+        budget: s.budget,
+        count: s.expenses.length,
+        pct: s.budget > 0 ? Math.min((s.totalAmount / s.budget) * 100, 100) : 0,
+      }
+    })
+  }, [expenses, preferences.weeklyBudget])
+
+  const visibleHistory = historyExpanded ? pastWeeks : pastWeeks.slice(0, HISTORY_PAGE)
+
+  function goToWeek(key: string) {
+    setWeekKey(key)
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
-    <div className="px-4 py-5 lg:px-8 lg:py-8 max-w-3xl mx-auto">
+    <div ref={topRef} className="px-4 py-5 lg:px-8 lg:py-8 max-w-3xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -250,6 +278,94 @@ export default function SummaryPage() {
           </div>
         )}
       </div>
+
+      {/* History */}
+      {pastWeeks.length > 0 && (
+        <div className="mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <History size={14} style={{ color: 'var(--text-muted)' }} />
+            <p className="text-sm font-semibold">Histórico</p>
+            <span className="text-xs px-1.5 py-0.5 rounded-lg" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+              {pastWeeks.length} semanas
+            </span>
+          </div>
+
+          <div
+            className="rounded-2xl border overflow-hidden"
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+          >
+            <AnimatePresence initial={false}>
+              {visibleHistory.map((w, i) => {
+                const isSelected = w.weekKey === weekKey
+                const barColor = w.pct >= 100
+                  ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                  : w.pct >= 80
+                  ? '#f59e0b'
+                  : 'linear-gradient(90deg, #10b981, #06b6d4)'
+                return (
+                  <motion.button
+                    key={w.weekKey}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    onClick={() => goToWeek(w.weekKey)}
+                    className="w-full text-left px-4 py-3 flex items-center gap-3"
+                    style={{
+                      borderBottom: i < visibleHistory.length - 1 ? '1px solid var(--border)' : 'none',
+                      background: isSelected ? 'var(--accent-light)' : 'transparent',
+                      cursor: 'pointer',
+                      border: 'none',
+                      borderBottomWidth: i < visibleHistory.length - 1 ? 1 : 0,
+                      borderBottomStyle: 'solid',
+                      borderBottomColor: 'var(--border)',
+                    }}
+                  >
+                    {/* Week label + bar */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-medium truncate" style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}>
+                          {w.label}
+                        </p>
+                        <p className="text-xs font-bold flex-shrink-0 ml-2" style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}>
+                          {formatCurrency(w.total)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--bg-input)' }}>
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${w.pct}%`, background: barColor, transition: 'width 0.4s ease' }}
+                          />
+                        </div>
+                        <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)', minWidth: 28 }}>
+                          {w.pct.toFixed(0)}%
+                        </span>
+                        <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                          {w.count} {w.count === 1 ? 'despesa' : 'despesas'}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  </motion.button>
+                )
+              })}
+            </AnimatePresence>
+          </div>
+
+          {pastWeeks.length > HISTORY_PAGE && (
+            <button
+              onClick={() => setHistoryExpanded((v) => !v)}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium"
+              style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              {historyExpanded
+                ? <><ChevronUp size={13} /> Mostrar menos</>
+                : <><ChevronDown size={13} /> Ver mais {pastWeeks.length - HISTORY_PAGE} semanas</>
+              }
+            </button>
+          )}
+        </div>
+      )}
 
     </div>
   )
