@@ -316,10 +316,12 @@ Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage co
 - [ ] Gráfico de evolução mensal (receitas vs despesas ao longo dos meses)
 
 ### Integração WhatsApp + IA
-- [ ] Criar instância na Evolution API (aguardando chip do bot)
-- [ ] Conectar número do bot via QR Code (aguardando chip)
-- [ ] Configurar webhook na instância apontando para `/api/webhook/whatsapp`
-- [ ] Testar fluxo end-to-end com chip real
+- [x] SQL migration rodada: `ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS whatsapp_number text;`
+- [x] Env vars adicionadas no Easypanel (7dias): `ANTHROPIC_API_KEY`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`
+- [ ] Criar instância na Evolution API (aguardando chip do bot dedicado — NÃO usar número pessoal)
+- [ ] Conectar número do bot via QR Code
+- [ ] Cadastrar número pessoal na página `/integrations`
+- [ ] Testar fluxo end-to-end
 
 **Itens concluídos:**
 - [x] Filtro de despesas por categoria → `/expenses`
