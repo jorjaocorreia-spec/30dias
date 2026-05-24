@@ -169,10 +169,10 @@ export default function IntegrationsPage() {
           {[
             { step: 1, done: true, label: 'Evolution API instalada na VPS' },
             { step: 2, done: true, label: 'API Key da Evolution configurada' },
-            { step: 3, done: false, label: 'Criar instância na Evolution API', detail: 'POST /instance/create com o nome "7dias"' },
-            { step: 4, done: false, label: 'Conectar número do bot via QR Code', detail: 'Disponível quando você tiver o chip' },
+            { step: 3, done: true, label: 'Criar instância na Evolution API' },
+            { step: 4, done: true, label: 'Conectar número do bot via QR Code' },
             { step: 5, done: !!preferences.whatsappNumber, label: 'Cadastrar seu número pessoal acima' },
-            { step: 6, done: false, label: 'Configurar webhook na instância', detail: 'Use a URL acima no campo Webhook da Evolution API' },
+            { step: 6, done: true, label: 'Configurar webhook na instância' },
           ].map(({ step, done, label, detail }) => (
             <div key={step} className="flex items-start gap-3">
               <div

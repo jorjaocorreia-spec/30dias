@@ -10,11 +10,18 @@ function extractTextMessage(body: any): { phone: string; text: string } | null {
   // Ignora mensagens enviadas pelo próprio bot (fromMe: true)
   if (body?.data?.key?.fromMe) return null
 
-  const remoteJid: string = body?.data?.key?.remoteJid ?? ''
-  if (!remoteJid) return null
+  // Quando addressingMode === 'lid', remoteJid é um ID interno do WhatsApp.
+  // O número real fica em remoteJidAlt ("5511999@s.whatsapp.net").
+  const addressingMode: string = body?.data?.key?.addressingMode ?? ''
+  const rawJid: string =
+    addressingMode === 'lid'
+      ? (body?.data?.key?.remoteJidAlt ?? body?.data?.key?.remoteJid ?? '')
+      : (body?.data?.key?.remoteJid ?? '')
+
+  if (!rawJid) return null
 
   // Normaliza número: "5511999999999@s.whatsapp.net" → "5511999999999"
-  const phone = remoteJid.replace(/@.*$/, '').replace(/[^0-9]/g, '')
+  const phone = rawJid.replace(/@.*$/, '').replace(/[^0-9]/g, '')
   if (!phone) return null
 
   // Suporta mensagens de texto simples e mensagens estendidas
@@ -53,12 +60,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { phone, text } = msg
 
-  // Busca o usuário pelo número de WhatsApp cadastrado
-  const { data: prefs, error: prefsError } = await supabaseAdmin
+  // Busca o usuário pelo número de WhatsApp cadastrado.
+  // Tenta formato completo (ex: "554598584418") e sem código do país BR (ex: "45998584418")
+  // para tolerar divergência entre o que o usuário digita e o que a Evolution API envia.
+  const phoneAlt = phone.startsWith('55') && phone.length >= 12 ? phone.slice(2) : null
+  const orFilter = phoneAlt
+    ? `whatsapp_number.eq.${phone},whatsapp_number.eq.${phoneAlt}`
+    : `whatsapp_number.eq.${phone}`
+
+  const { data: prefsRows, error: prefsError } = await supabaseAdmin
     .from('user_preferences')
     .select('user_id')
-    .eq('whatsapp_number', phone)
-    .single()
+    .or(orFilter)
+    .limit(1)
+
+  const prefs = prefsRows?.[0] ?? null
 
   if (prefsError || !prefs?.user_id) {
     // Número não autorizado — não responde para não revelar a existência do sistema
