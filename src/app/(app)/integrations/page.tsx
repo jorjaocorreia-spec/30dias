@@ -173,7 +173,7 @@ export default function IntegrationsPage() {
             { step: 4, done: true, label: 'Conectar número do bot via QR Code' },
             { step: 5, done: !!preferences.whatsappNumber, label: 'Cadastrar seu número pessoal acima' },
             { step: 6, done: true, label: 'Configurar webhook na instância' },
-          ].map(({ step, done, label, detail }) => (
+          ].map(({ step, done, label }) => (
             <div key={step} className="flex items-start gap-3">
               <div
                 className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5"
@@ -188,9 +188,6 @@ export default function IntegrationsPage() {
                 <p className="text-sm" style={{ color: done ? 'var(--text-muted)' : 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>
                   {label}
                 </p>
-                {detail && !done && (
-                  <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--text-muted)' }}>{detail}</p>
-                )}
               </div>
             </div>
           ))}
