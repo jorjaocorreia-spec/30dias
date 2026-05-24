@@ -73,8 +73,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const instance: string = body?.instance ?? ''
   console.log('[WA] event:', event, '| instance:', instance)
 
-  if (event !== 'messages.upsert') {
-    console.log('[WA] skip: event is not messages.upsert')
+  // Evolution API v2 uses 'MESSAGES_UPSERT'; v1 uses 'messages.upsert'
+  if (event !== 'messages.upsert' && event !== 'MESSAGES_UPSERT') {
+    console.log('[WA] skip: unhandled event:', event)
     return NextResponse.json({ ok: true, skipped: true, event })
   }
 
