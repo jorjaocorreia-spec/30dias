@@ -2,11 +2,15 @@
 
 import { useState, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Check } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { formatCurrency } from '@/lib/weekHelpers'
 import { FixedExpense, PaymentMethod } from '@/types'
+
+// ── constants ─────────────────────────────────────────────────────────────────
+
+const QUICK_COLORS = ['#10b981', '#06b6d4', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#f97316', '#64748b']
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +79,7 @@ export default function FixedExpensesPage() {
     fixedExpenses, fixedExpenseMonths, categories, establishments,
     addFixedExpense, updateFixedExpense, deleteFixedExpense,
     addFixedExpenseMonth, updateFixedExpenseMonth, deleteFixedExpenseMonth,
+    addCategory, addEstablishment,
   } = useAppStore()
 
   // template form state
@@ -93,6 +98,16 @@ export default function FixedExpensesPage() {
 
   // delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  // quick-add category
+  const [showQuickCat, setShowQuickCat] = useState(false)
+  const [quickCatName, setQuickCatName] = useState('')
+  const [quickCatColor, setQuickCatColor] = useState(QUICK_COLORS[0])
+
+  // quick-add establishment
+  const [showQuickEst, setShowQuickEst] = useState(false)
+  const [quickEstName, setQuickEstName] = useState('')
+  const [quickEstCategoryId, setQuickEstCategoryId] = useState('')
 
   const formRef = useRef<HTMLDivElement>(null)
   const descInputRef = useRef<HTMLInputElement>(null)
@@ -198,6 +213,26 @@ export default function FixedExpensesPage() {
       })
     }
     setRegisterTarget(null)
+  }
+
+  // ── quick-add handlers ──────────────────────────────────────────────────────
+
+  const handleQuickAddCat = () => {
+    if (!quickCatName.trim()) return
+    addCategory({ name: quickCatName.trim(), icon: 'MoreHorizontal', color: quickCatColor })
+    const newCat = useAppStore.getState().categories.find((c) => c.name === quickCatName.trim())
+    if (newCat) setTemplateForm((f) => ({ ...f, categoryId: newCat.id }))
+    setQuickCatName('')
+    setShowQuickCat(false)
+  }
+
+  const handleQuickAddEst = () => {
+    if (!quickEstName.trim() || !quickEstCategoryId) return
+    addEstablishment({ name: quickEstName.trim(), categoryId: quickEstCategoryId })
+    const newEst = useAppStore.getState().establishments.find((e) => e.name === quickEstName.trim())
+    if (newEst) setTemplateForm((f) => ({ ...f, establishmentId: newEst.id }))
+    setQuickEstName('')
+    setShowQuickEst(false)
   }
 
   // ── render helpers ──────────────────────────────────────────────────────────
@@ -614,9 +649,14 @@ export default function FixedExpensesPage() {
 
               {/* Category */}
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Categoria
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Categoria</label>
+                  <button type="button"
+                    onClick={() => { setShowQuickCat((v) => !v); setQuickCatName(''); setQuickCatColor(QUICK_COLORS[0]) }}
+                    style={{ color: 'var(--accent)', background: 'var(--accent-light)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Plus size={10} /> Nova categoria
+                  </button>
+                </div>
                 <select
                   value={templateForm.categoryId}
                   onChange={(e) => setTemplateForm({ ...templateForm, categoryId: e.target.value })}
@@ -626,25 +666,99 @@ export default function FixedExpensesPage() {
                   <option value="">Selecione uma categoria</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
+                <AnimatePresence>
+                  {showQuickCat && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} style={{ overflow: 'hidden' }}>
+                      <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 16, padding: 12, marginTop: 8 }} className="space-y-2">
+                        <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Nova categoria</p>
+                        <input
+                          type="text" value={quickCatName}
+                          onChange={(e) => setQuickCatName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddCat() } }}
+                          placeholder="Nome da categoria" autoFocus
+                          className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
+                          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                        />
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1.5 flex-1 flex-wrap">
+                            {QUICK_COLORS.map((color) => (
+                              <button key={color} type="button" onClick={() => setQuickCatColor(color)}
+                                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                                style={{ background: color, border: quickCatColor === color ? '2px solid var(--text)' : '2px solid transparent' }}>
+                                {quickCatColor === color && <Check size={11} color="#fff" strokeWidth={3} />}
+                              </button>
+                            ))}
+                          </div>
+                          <button type="button" onClick={handleQuickAddCat} disabled={!quickCatName.trim()}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-white flex-shrink-0"
+                            style={{ background: quickCatName.trim() ? 'var(--accent)' : 'var(--border)', cursor: quickCatName.trim() ? 'pointer' : 'default' }}>
+                            <Check size={12} /> Criar
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Establishment */}
-              {establishments.length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Estabelecimento (opcional)
-                  </label>
-                  <select
-                    value={templateForm.establishmentId}
-                    onChange={(e) => setTemplateForm({ ...templateForm, establishmentId: e.target.value })}
-                    className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
-                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                  >
-                    <option value="">Nenhum</option>
-                    {establishments.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                  </select>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Estabelecimento (opcional)</label>
+                  <button type="button"
+                    onClick={() => { setShowQuickEst((v) => !v); setQuickEstName(''); setQuickEstCategoryId(categories[0]?.id ?? '') }}
+                    style={{ color: 'var(--accent)', background: 'var(--accent-light)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Plus size={10} /> Novo local
+                  </button>
                 </div>
-              )}
+                <select
+                  value={templateForm.establishmentId}
+                  onChange={(e) => setTemplateForm({ ...templateForm, establishmentId: e.target.value })}
+                  className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
+                  style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                >
+                  <option value="">Nenhum</option>
+                  {establishments.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+                <AnimatePresence>
+                  {showQuickEst && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} style={{ overflow: 'hidden' }}>
+                      <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 16, padding: 12, marginTop: 8 }} className="space-y-2">
+                        <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Novo estabelecimento</p>
+                        <input
+                          type="text" value={quickEstName}
+                          onChange={(e) => setQuickEstName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddEst() } }}
+                          placeholder="Nome do local" autoFocus
+                          className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
+                          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                        />
+                        <select
+                          value={quickEstCategoryId}
+                          onChange={(e) => setQuickEstCategoryId(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
+                          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                        >
+                          <option value="">Categoria padrão</option>
+                          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                        <div className="flex justify-end gap-2">
+                          <button type="button" onClick={() => setShowQuickEst(false)}
+                            className="px-3 py-1.5 rounded-xl text-xs font-medium"
+                            style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)', cursor: 'pointer' }}>
+                            Cancelar
+                          </button>
+                          <button type="button" onClick={handleQuickAddEst} disabled={!quickEstName.trim() || !quickEstCategoryId}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-white"
+                            style={{ background: quickEstName.trim() && quickEstCategoryId ? 'var(--accent)' : 'var(--border)', cursor: quickEstName.trim() && quickEstCategoryId ? 'pointer' : 'default' }}>
+                            <Check size={11} /> Criar
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Payment method */}
               <div>
