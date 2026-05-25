@@ -126,8 +126,11 @@ interface FixedExpenseMonth {
 
 interface UserPreferences {
   theme: 'light' | 'dark' | 'system'
-  weeklyBudget: number
-  currency: string     // padrão 'BRL'
+  weeklyBudget: number         // orçamento discricionário (manual)
+  budgetMode: 'fixed' | 'per_category'
+  categoryBudgets: Record<string, number>  // categoryId → valor discricionário manual
+  currency: string             // padrão 'BRL'
+  whatsappNumber?: string
 }
 
 interface IncomeCategory {
@@ -180,6 +183,16 @@ interface IncomeEntry {
 - `syncFixedExpenses()` é chamado após qualquer mutação em `fixedExpenseMonths` e ao hidratar o store (`onRehydrateStorage`).
 - Ao deletar um template: remove também todos os `fixedExpenseMonths` e `expenses` vinculados.
 - Ao deletar/atualizar um `FixedExpenseMonth`: remove os `expenses` com `fixedExpenseMonthId` correspondente e regenera via `syncFixedExpenses`.
+
+### Budget automático de fixas
+
+- **`getFixedWeeklyContribution(month?)` → `number`**: soma o valor semanal (÷4) de todas as fixas ativas confirmadas para o mês (default: mês atual). Computed value — não persiste no DB.
+- **`getFixedCategoryContribution(month?)` → `Record<string, number>`**: mesmo cálculo agrupado por `categoryId`.
+- **Dashboard**: `effectiveBudget = preferences.weeklyBudget + fixedWeekly` (modo fixo) ou `sum(categoryBudgets) + sum(fixedByCategory)` (modo por categoria). As fixas entram automaticamente ao serem confirmadas, sem interação manual em `/budget`.
+- **Página `/budget`**:
+  - Modo fixo: exibe breakdown "Discricionário / Fixas (automático 🔒) / Total efetivo" quando há fixas no mês.
+  - Modo por categoria: coluna "🔒 Fixas" readonly por categoria + coluna "Total efetivo" verde. Rodapé mostra total efetivo com decomposição.
+  - Quando não há fixas registradas no mês, a UI é idêntica à anterior (sem colunas extras).
 
 ---
 
@@ -255,7 +268,7 @@ Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage co
 | `/expenses` | Lista completa de despesas com filtro por categoria e período, editar/excluir inline |
 | `/expenses/new` | `ExpenseForm` sem initialData |
 | `/expenses/[id]` | `ExpenseForm` com initialData + botão excluir |
-| `/categories` | Lista, form deslizante (mobile: bottom sheet, lg: inline) com picker de ícone (28 opções, grid 7 cols) e cor; clicar no lápis foca o form automaticamente |
+| `/categories` | Lista, form deslizante (mobile: bottom sheet, lg: inline) com picker de ícone (28 opções, grid 7 cols) e cor; clicar no lápis foca o form automaticamente. Categorias padrão podem ser excluídas via modal de confirmação (despesas existentes não são afetadas) |
 | `/establishments` | CRUD de estabelecimentos — nome + categoria padrão. Selecionar no `ExpenseForm` preenche categoria automaticamente |
 | `/fixed-expenses` | Templates de despesas fixas + confirmação mensal. Seção "Pendentes" (amber) + histórico por template + modal de registro mensal |
 | `/income` | Receitas mensais. Seletor de mês, fontes recorrentes com seção "Pendentes" (amber), lista de entradas do mês, modal para receita avulsa ou vinculada a fonte, histórico por fonte |
@@ -339,6 +352,8 @@ Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage co
 - [x] Alerta visual no dashboard → banner âmbar a 80%, vermelho a 100% (modo fixo + por categoria)
 - [x] Histórico de semanas anteriores → seção em `/summary` com lista paginada (6/página), barra de uso e clique para navegar
 - [x] Integração WhatsApp end-to-end → Evolution API v2.3.7, webhook `/api/webhook/whatsapp`, Claude Haiku extrai despesas em linguagem natural, confirma por WhatsApp e salva no Supabase
+- [x] Exclusão de categorias padrão → modal de confirmação antes de excluir (`isDefault` não bloqueia mais o botão de lixeira)
+- [x] Budget automático de fixas → `getFixedWeeklyContribution` + `getFixedCategoryContribution` no store; dashboard e `/budget` mostram orçamento efetivo = discricionário + fixas automáticas
 
 ## Integração WhatsApp — detalhes técnicos
 
