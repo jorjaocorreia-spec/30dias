@@ -1,5 +1,10 @@
 import { Expense, WeekSummary } from '@/types'
 
+export function getEffectiveAmount(expense: Expense): number {
+  if (!expense.sharedWith?.length) return expense.amount
+  return expense.amount - expense.sharedWith.reduce((sum, p) => sum + p.amount, 0)
+}
+
 // Returns ISO week number for a given date
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -62,15 +67,15 @@ export function buildWeekSummary(
   budget: number
 ): WeekSummary {
   const weekExpenses = expenses.filter((e) => e.weekKey === weekKey)
-  const totalAmount = weekExpenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalAmount = weekExpenses.reduce((sum, e) => sum + getEffectiveAmount(e), 0)
 
   const byCategory = weekExpenses.reduce<Record<string, number>>((acc, e) => {
-    acc[e.categoryId] = (acc[e.categoryId] || 0) + e.amount
+    acc[e.categoryId] = (acc[e.categoryId] || 0) + getEffectiveAmount(e)
     return acc
   }, {})
 
   const byDay = weekExpenses.reduce<Record<string, number>>((acc, e) => {
-    acc[e.date] = (acc[e.date] || 0) + e.amount
+    acc[e.date] = (acc[e.date] || 0) + getEffectiveAmount(e)
     return acc
   }, {})
 

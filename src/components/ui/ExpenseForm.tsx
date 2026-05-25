@@ -5,12 +5,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Plus, Check } from 'lucide-react'
+import { X, Plus, Check, Users, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
-import { Expense, PaymentMethod } from '@/types'
-import { formatCurrency } from '@/lib/weekHelpers'
+import { Expense, ExpenseParticipant, PaymentMethod } from '@/types'
+import { formatCurrency, getTodayKey } from '@/lib/weekHelpers'
 import { CategoryIcon } from './CategoryIcon'
-import { getTodayKey } from '@/lib/weekHelpers'
+import { nanoid } from 'nanoid'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
   { value: 'credit_card', label: 'Cartão de Crédito', icon: '💳' },
@@ -62,6 +62,44 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
   // Fixed expense toggle (only for new expenses)
   const [isFixed, setIsFixed] = useState(false)
   const weeklyAmount = isFixed && watchedAmount > 0 ? Math.round((watchedAmount / 4) * 100) / 100 : 0
+
+  // Shared expense (split) state
+  const [isShared, setIsShared] = useState(() =>
+    !!(initialData?.sharedWith && initialData.sharedWith.length > 0)
+  )
+  const [participants, setParticipants] = useState<ExpenseParticipant[]>(
+    () => initialData?.sharedWith ?? []
+  )
+  const [newParticipantName, setNewParticipantName] = useState('')
+  const [newParticipantAmount, setNewParticipantAmount] = useState('')
+
+  const totalShared = participants.reduce((s, p) => s + p.amount, 0)
+  const myShare = isShared && watchedAmount > 0 ? Math.max(0, watchedAmount - totalShared) : watchedAmount
+
+  const handleEqualSplit = () => {
+    if (!watchedAmount || participants.length === 0) return
+    const count = participants.length + 1 // +1 for the user themselves
+    const share = Math.round((watchedAmount / count) * 100) / 100
+    setParticipants(prev => prev.map(p => ({ ...p, amount: share })))
+  }
+
+  const addParticipant = () => {
+    const name = newParticipantName.trim()
+    const amount = parseFloat(newParticipantAmount) || 0
+    if (!name) return
+    setParticipants(prev => [...prev, { id: nanoid(), name, amount, paid: false }])
+    setNewParticipantName('')
+    setNewParticipantAmount('')
+  }
+
+  const removeParticipant = (id: string) => {
+    setParticipants(prev => prev.filter(p => p.id !== id))
+  }
+
+  const updateParticipantAmount = (id: string, value: string) => {
+    const amount = parseFloat(value) || 0
+    setParticipants(prev => prev.map(p => p.id === id ? { ...p, amount } : p))
+  }
 
   // ── Establishment autocomplete ──
   const initialEstName = initialData?.establishmentId
@@ -130,8 +168,9 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
   }
 
   const onSubmit = (data: FormData) => {
+    const sharedWith = isShared && participants.length > 0 ? participants : undefined
     if (isEdit && initialData) {
-      updateExpense(initialData.id, data)
+      updateExpense(initialData.id, { ...data, sharedWith })
       onSuccess(data.description)
     } else if (isFixed) {
       addFixedExpense({
@@ -148,9 +187,11 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       setIsFixed(false)
       onSuccess(data.description)
     } else {
-      addExpense(data)
+      addExpense({ ...data, sharedWith })
       reset(newExpenseDefaults)
       setEstSearch(''); setEstSelected(false)
+      setParticipants([])
+      setIsShared(false)
       onSuccess(data.description)
     }
   }
@@ -218,6 +259,165 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
             }} />
           </div>
         </button>
+      )}
+
+      {/* Shared expense toggle — only for non-fixed expenses */}
+      {!isFixed && (
+        <div>
+          <button
+            type="button"
+            onClick={() => { setIsShared((v) => !v); if (isShared) setParticipants([]) }}
+            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all"
+            style={{
+              background: isShared ? '#06b6d420' : 'var(--bg-input)',
+              borderColor: isShared ? '#06b6d4' : 'var(--border)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <Users size={16} style={{ color: isShared ? '#06b6d4' : 'var(--text-muted)' }} />
+              <div style={{ textAlign: 'left' }}>
+                <p className="text-sm font-medium" style={{ color: isShared ? '#06b6d4' : 'var(--text)' }}>
+                  Dividir com outras pessoas
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {isShared ? 'Apenas sua parte contará no orçamento' : 'Rachar a despesa e controlar quem pagou'}
+                </p>
+              </div>
+            </div>
+            <div style={{
+              width: 44, height: 24, borderRadius: 12, flexShrink: 0,
+              background: isShared ? '#06b6d4' : 'var(--border)',
+              position: 'relative', transition: 'background 0.2s',
+            }}>
+              <div style={{
+                width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 3, left: isShared ? 23 : 3,
+                transition: 'left 0.2s',
+              }} />
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {isShared && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div
+                  className="mt-2 p-4 rounded-2xl border space-y-3"
+                  style={{ background: 'var(--bg-input)', borderColor: '#06b6d440' }}
+                >
+                  {/* Summary row */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                      Total: {watchedAmount > 0 ? formatCurrency(watchedAmount) : '—'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleEqualSplit}
+                      disabled={participants.length === 0 || !watchedAmount}
+                      className="text-xs px-2.5 py-1 rounded-lg font-medium"
+                      style={{
+                        background: '#06b6d420', color: '#06b6d4',
+                        border: '1px solid #06b6d440',
+                        cursor: participants.length > 0 && watchedAmount ? 'pointer' : 'default',
+                        opacity: participants.length > 0 && watchedAmount ? 1 : 0.4,
+                      }}
+                    >
+                      Dividir igual
+                    </button>
+                  </div>
+
+                  {/* Participant list */}
+                  {participants.map((p) => (
+                    <div key={p.id} className="flex items-center gap-2">
+                      <div
+                        className="flex-1 px-3 py-2 rounded-xl text-sm"
+                        style={{ background: 'var(--bg-card)', color: 'var(--text)' }}
+                      >
+                        {p.name}
+                      </div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={p.amount || ''}
+                        onChange={(e) => updateParticipantAmount(p.id, e.target.value)}
+                        placeholder="0,00"
+                        className="w-24 px-3 py-2 rounded-xl border text-sm text-right outline-none"
+                        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeParticipant(p.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0"
+                        style={{ background: '#ef444420', color: '#ef4444' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add participant */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newParticipantName}
+                      onChange={(e) => setNewParticipantName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addParticipant() } }}
+                      placeholder="Nome da pessoa"
+                      className="flex-1 px-3 py-2 rounded-xl border text-sm outline-none"
+                      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newParticipantAmount}
+                      onChange={(e) => setNewParticipantAmount(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addParticipant() } }}
+                      placeholder="0,00"
+                      className="w-24 px-3 py-2 rounded-xl border text-sm text-right outline-none"
+                      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={addParticipant}
+                      disabled={!newParticipantName.trim()}
+                      className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0"
+                      style={{
+                        background: newParticipantName.trim() ? 'var(--accent)' : 'var(--border)',
+                        color: '#fff',
+                      }}
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+
+                  {/* My share */}
+                  {participants.length > 0 && (
+                    <div
+                      className="flex items-center justify-between px-3 py-2 rounded-xl"
+                      style={{ background: '#06b6d415', borderLeft: '3px solid #06b6d4' }}
+                    >
+                      <p className="text-xs font-medium" style={{ color: '#06b6d4' }}>Sua parte</p>
+                      <p className="text-sm font-bold" style={{ color: '#06b6d4' }}>
+                        {formatCurrency(myShare)}
+                      </p>
+                    </div>
+                  )}
+
+                  {totalShared > (watchedAmount || 0) && (
+                    <p className="text-xs" style={{ color: '#ef4444' }}>
+                      A soma das partes supera o valor total.
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
 
       {/* Establishment */}

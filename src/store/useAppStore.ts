@@ -3,10 +3,10 @@
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { Category, Establishment, Expense, FixedExpense, FixedExpenseMonth, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry } from '@/types'
+import { Category, Establishment, Expense, ExpenseParticipant, FixedExpense, FixedExpenseMonth, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/categories'
 import { DEFAULT_INCOME_CATEGORIES } from '@/data/incomeCategories'
-import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey } from '@/lib/weekHelpers'
+import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey, getEffectiveAmount } from '@/lib/weekHelpers'
 import { nanoid } from 'nanoid'
 
 // ── DB ↔ TypeScript mapping helpers ──────────────────────────────────────────
@@ -115,6 +115,8 @@ interface AppState {
   getMonthlyBalance: (month: string) => { income: number; expenses: number; balance: number }
   getFixedWeeklyContribution: (month?: string) => number
   getFixedCategoryContribution: (month?: string) => Record<string, number>
+  markParticipantAsPaid: (expenseId: string, participantId: string, paid: boolean) => void
+  getSharedPendingTotal: (month?: string) => number
 
   // Preferences
   setTheme: (theme: UserPreferences['theme']) => void
@@ -502,7 +504,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   getMonthlyBalance: (month) => {
     const { incomeEntries, expenses } = get()
     const income = incomeEntries.filter(e => e.month === month).reduce((sum, e) => sum + e.amount, 0)
-    const monthExpenses = expenses.filter(e => e.date.startsWith(month)).reduce((sum, e) => sum + e.amount, 0)
+    const monthExpenses = expenses.filter(e => e.date.startsWith(month)).reduce((sum, e) => sum + getEffectiveAmount(e), 0)
     return { income, expenses: monthExpenses, balance: income - monthExpenses }
   },
 
@@ -531,6 +533,27 @@ export const useAppStore = create<AppState>()((set, get) => ({
         result[fe.categoryId] = (result[fe.categoryId] ?? 0) + weekly
       })
     return result
+  },
+
+  markParticipantAsPaid: (expenseId, participantId, paid) => {
+    const expense = get().expenses.find(e => e.id === expenseId)
+    if (!expense?.sharedWith) return
+    const paidAt = paid ? getTodayKey() : undefined
+    const updated: ExpenseParticipant[] = expense.sharedWith.map(p =>
+      p.id === participantId ? { ...p, paid, paidAt } : p
+    )
+    get().updateExpense(expenseId, { sharedWith: updated })
+  },
+
+  getSharedPendingTotal: (month) => {
+    const { expenses } = get()
+    const m = month ?? new Date().toISOString().slice(0, 7)
+    return expenses
+      .filter(e => e.date.startsWith(m) && e.sharedWith?.length)
+      .reduce((total, e) => {
+        const pending = (e.sharedWith ?? []).filter(p => !p.paid).reduce((s, p) => s + p.amount, 0)
+        return total + pending
+      }, 0)
   },
 
   // ── Preferences ─────────────────────────────────────────────────────────────

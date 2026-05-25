@@ -8,6 +8,14 @@ export interface Category {
 
 export type PaymentMethod = 'credit_card' | 'pix' | 'ted' | 'cash'
 
+export interface ExpenseParticipant {
+  id: string
+  name: string
+  amount: number
+  paid: boolean
+  paidAt?: string  // YYYY-MM-DD
+}
+
 export interface Establishment {
   id: string
   name: string
@@ -26,6 +34,7 @@ export interface Expense {
   establishmentId?: string
   fixedExpenseId?: string       // links to FixedExpense template
   fixedExpenseMonthId?: string  // links to the specific FixedExpenseMonth that generated this entry
+  sharedWith?: ExpenseParticipant[]  // defined when expense is split among multiple people
 }
 
 export interface FixedExpense {

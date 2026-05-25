@@ -3,10 +3,10 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Trash2, Filter, X } from 'lucide-react'
+import { Pencil, Trash2, Filter, X, Users, Check } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
-import { formatCurrency, formatDate } from '@/lib/weekHelpers'
+import { formatCurrency, formatDate, getEffectiveAmount } from '@/lib/weekHelpers'
 
 const PAYMENT_LABELS: Record<string, string> = {
   credit_card: 'Cartão',
@@ -16,14 +16,23 @@ const PAYMENT_LABELS: Record<string, string> = {
 }
 
 export default function ExpensesListPage() {
-  const { expenses, categories, fixedExpenses, deleteExpense } = useAppStore()
+  const { expenses, categories, fixedExpenses, deleteExpense, markParticipantAsPaid } = useAppStore()
 
   const [filterCategory, setFilterCategory] = useState('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'variable' | 'fixed'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'variable' | 'fixed' | 'shared'>('all')
   const [showFilters, setShowFilters] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [sharedOpen, setSharedOpen] = useState<Set<string>>(new Set())
+
+  const toggleSharedOpen = (id: string) => {
+    setSharedOpen(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const filtered = useMemo(() => {
     return expenses
@@ -33,6 +42,7 @@ export default function ExpensesListPage() {
         if (filterTo && e.date > filterTo) return false
         if (filterType === 'fixed' && !e.fixedExpenseId) return false
         if (filterType === 'variable' && e.fixedExpenseId) return false
+        if (filterType === 'shared' && !e.sharedWith?.length) return false
         return true
       })
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -115,6 +125,7 @@ export default function ExpensesListPage() {
                     { value: 'all', label: 'Todas' },
                     { value: 'variable', label: 'Variáveis' },
                     { value: 'fixed', label: '🔁 Fixas' },
+                    { value: 'shared', label: '👥 Divididas' },
                   ] as const).map(({ value, label }) => (
                     <button
                       key={value}
@@ -229,12 +240,16 @@ export default function ExpensesListPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-medium text-sm truncate">{expense.description}</p>
-                      <p
-                        className="font-semibold text-sm flex-shrink-0"
-                        style={{ color: 'var(--accent)' }}
-                      >
-                        {formatCurrency(expense.amount)}
-                      </p>
+                      <div className="flex-shrink-0 text-right">
+                        <p className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
+                          {formatCurrency(getEffectiveAmount(expense))}
+                        </p>
+                        {expense.sharedWith?.length ? (
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            total {formatCurrency(expense.amount)}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -262,9 +277,95 @@ export default function ExpensesListPage() {
                           🔁 Fixa
                         </span>
                       )}
+                      {expense.sharedWith?.length ? (() => {
+                        const total = expense.sharedWith.length
+                        const paid = expense.sharedWith.filter(p => p.paid).length
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => toggleSharedOpen(expense.id)}
+                            className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg font-medium"
+                            style={{ background: '#06b6d420', color: '#06b6d4' }}
+                          >
+                            <Users size={10} />
+                            {paid}/{total} pagaram
+                          </button>
+                        )
+                      })() : null}
                     </div>
                   </div>
                 </div>
+
+                {/* Shared participants panel */}
+                <AnimatePresence>
+                  {expense.sharedWith?.length && sharedOpen.has(expense.id) ? (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div
+                        className="mt-3 pt-3 space-y-2"
+                        style={{ borderTop: '1px solid var(--border)' }}
+                      >
+                        <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                          Participantes
+                        </p>
+                        {expense.sharedWith.map((p) => (
+                          <div key={p.id} className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{p.name}</p>
+                              {p.paidAt && (
+                                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                  pago em {new Date(p.paidAt + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                </p>
+                              )}
+                            </div>
+                            <p
+                              className="text-sm font-semibold flex-shrink-0"
+                              style={{ color: p.paid ? '#10b981' : 'var(--text-muted)' }}
+                            >
+                              {formatCurrency(p.amount)}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => markParticipantAsPaid(expense.id, p.id, !p.paid)}
+                              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl font-medium flex-shrink-0"
+                              style={{
+                                background: p.paid ? '#10b98120' : 'var(--bg-input)',
+                                color: p.paid ? '#10b981' : 'var(--text-muted)',
+                                border: `1px solid ${p.paid ? '#10b98140' : 'var(--border)'}`,
+                              }}
+                            >
+                              {p.paid ? <><Check size={11} /> Pago</> : 'Pendente'}
+                            </button>
+                          </div>
+                        ))}
+                        {(() => {
+                          const pending = expense.sharedWith.filter(p => !p.paid).reduce((s, p) => s + p.amount, 0)
+                          return pending > 0 ? (
+                            <div
+                              className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium"
+                              style={{ background: '#f59e0b15', color: '#f59e0b' }}
+                            >
+                              <span>A receber</span>
+                              <span>{formatCurrency(pending)}</span>
+                            </div>
+                          ) : (
+                            <div
+                              className="px-3 py-2 rounded-xl text-xs font-medium text-center"
+                              style={{ background: '#10b98115', color: '#10b981' }}
+                            >
+                              Todos pagaram!
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
 
                 {/* Actions */}
                 {isDeleting ? (

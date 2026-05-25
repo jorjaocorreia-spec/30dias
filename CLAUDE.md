@@ -43,6 +43,9 @@ src/
 ```ts
 type PaymentMethod = 'credit_card' | 'pix' | 'ted' | 'cash'
 
+interface ExpenseParticipant {
+  id: string; name: string; amount: number; paid: boolean; paidAt?: string  // YYYY-MM-DD
+}
 interface Expense {
   id: string; amount: number; categoryId: string; description: string
   date: string            // YYYY-MM-DD
@@ -50,6 +53,7 @@ interface Expense {
   paymentMethod: PaymentMethod
   notes?: string; establishmentId?: string
   fixedExpenseId?: string; fixedExpenseMonthId?: string
+  sharedWith?: ExpenseParticipant[]   // definido quando a despesa é dividida
 }
 interface Category { id: string; name: string; icon: string; color: string; isDefault?: boolean }
 // IncomeCategory tem a mesma forma que Category
@@ -88,6 +92,14 @@ interface IncomeEntry {
 - Chamar após qualquer mutação em `fixedExpenseMonths` e em `onRehydrateStorage`
 - Deletar template → remove `fixedExpenseMonths` + `expenses` vinculados
 
+### Despesas divididas (split)
+- `amount` = valor total pago; `sharedWith` = partes de cada participante
+- `getEffectiveAmount(expense)` em `weekHelpers.ts` → `amount - soma(sharedWith)` = parte do usuário
+- **Todos os cálculos de orçamento e saldo usam `getEffectiveAmount`** (buildWeekSummary, getMonthlyBalance)
+- `markParticipantAsPaid(expenseId, participantId, paid)` — registra pagamento com data
+- `getSharedPendingTotal(month?)` — total a receber no mês (usado no card do dashboard)
+- Coluna `shared_with JSONB` na tabela `expenses` do Supabase (já migrada)
+
 ### Budget automático de fixas
 - `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas
 - `getFixedCategoryContribution(month?)` → mesmo agrupado por `categoryId`
@@ -101,7 +113,7 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 
 ## weekHelpers.ts
 
-- `weekKey` = `YYYY-WNN` (ISO). Helpers: `getCurrentWeekKey`, `getWeekKey(date)`, `getWeekStart`, `getWeekDays`, `buildWeekSummary`, `getPreviousWeekKey/getNextWeekKey`
+- `weekKey` = `YYYY-WNN` (ISO). Helpers: `getCurrentWeekKey`, `getWeekKey(date)`, `getWeekStart`, `getWeekDays`, `buildWeekSummary`, `getPreviousWeekKey/getNextWeekKey`, `getEffectiveAmount`
 - `formatCurrency` (pt-BR BRL), `formatDate` (pt-BR + dia da semana)
 - **`toLocalDateKey(d)`** — YYYY-MM-DD em hora local. **NUNCA** `.toISOString().split('T')[0]` (retorna UTC → bug de dia no Brasil)
 - `getTodayKey()` = `toLocalDateKey(new Date())`
@@ -124,7 +136,7 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 |------|-----------|
 | `/` | Landing + auth (Google SVG inline, Apple, email) |
 | `/dashboard` | KPIs, progresso orçamento, BarChart diário (clique = filtro dia), PieChart categoria, FAB |
-| `/expenses` | Lista com filtro categoria/período, editar/excluir inline |
+| `/expenses` | Lista com filtro categoria/período/tipo/divididas, editar/excluir inline, painel de participantes inline |
 | `/expenses/new` e `/expenses/[id]` | `ExpenseForm` sem/com `initialData` |
 | `/categories` | CRUD, bottom sheet (mobile)/inline (lg), picker ícone+cor, exclusão com modal |
 | `/establishments` | CRUD; selecionar preenche categoria no `ExpenseForm` |
@@ -132,6 +144,8 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 | `/income` | Fontes recorrentes + entradas mensais, seção Pendentes (amber), saldo mensal |
 | `/budget` | Modo fixo: discricionário + fixas (🔒 auto) + total. Modo categoria: coluna fixas readonly |
 | `/summary` | Total, AreaChart, donut, barras animadas por categoria, histórico semanal paginado |
+
+**Dashboard — card "A Receber":** aparece automaticamente quando `getSharedPendingTotal()` > 0 no mês corrente. KPI grid passa de 3 para 4 colunas nesse caso (mobile: 2×2).
 
 **Dashboard — filtro dia:** `selectedDay` inicia `getTodayKey()`, reseta ao mudar semana. Barras: selecionado=`#10b981`, hoje=`rgba(16,185,129,0.25)`, outros=`var(--bg-input)`. `dailyData` usa `toLocalDateKey`.
 

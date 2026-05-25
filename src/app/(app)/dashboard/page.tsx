@@ -18,7 +18,7 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon'
 const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 export default function DashboardPage() {
-  const { expenses, categories, preferences, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution } = useAppStore()
+  const { expenses, categories, preferences, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution, getSharedPendingTotal } = useAppStore()
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
   const today = toLocalDateKey(new Date())
   const [selectedDay, setSelectedDay] = useState(today)
@@ -67,6 +67,7 @@ export default function DashboardPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })()
   const monthBalance = getMonthlyBalance(currentMonthKey)
+  const sharedPending = getSharedPendingTotal(currentMonthKey)
 
   const selectedDayExpenses = summary.expenses
     .filter((e) => e.date === selectedDay)
@@ -138,8 +139,16 @@ export default function DashboardPage() {
             value: String(summary.expenses.length),
             sub: 'esta semana',
             color: '#8b5cf6',
-            colSpanMobile: true,
+            colSpanMobile: sharedPending === 0,
           },
+          ...(sharedPending > 0 ? [{
+            icon: ArrowUpDown,
+            label: 'A receber',
+            value: formatCurrency(sharedPending),
+            sub: 'de despesas divididas',
+            color: '#f59e0b',
+            colSpanMobile: false,
+          }] : []),
         ].map(({ icon: Icon, label, value, sub, color, colSpanMobile }, i) => (
           <motion.div
             key={label}
