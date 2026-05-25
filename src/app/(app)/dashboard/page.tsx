@@ -18,14 +18,18 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon'
 const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 export default function DashboardPage() {
-  const { expenses, categories, preferences, getMonthlyBalance } = useAppStore()
+  const { expenses, categories, preferences, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution } = useAppStore()
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
   const today = toLocalDateKey(new Date())
   const [selectedDay, setSelectedDay] = useState(today)
 
+  const fixedWeekly = getFixedWeeklyContribution()
+  const fixedByCategory = getFixedCategoryContribution()
+
   const effectiveBudget = preferences.budgetMode === 'per_category'
     ? Object.values(preferences.categoryBudgets ?? {}).reduce((a, b) => a + b, 0)
-    : preferences.weeklyBudget
+      + Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
+    : preferences.weeklyBudget + fixedWeekly
 
   const summary = useMemo(
     () => buildWeekSummary(weekKey, expenses, effectiveBudget),

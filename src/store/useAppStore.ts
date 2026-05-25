@@ -113,6 +113,8 @@ interface AppState {
 
   // Helpers
   getMonthlyBalance: (month: string) => { income: number; expenses: number; balance: number }
+  getFixedWeeklyContribution: (month?: string) => number
+  getFixedCategoryContribution: (month?: string) => Record<string, number>
 
   // Preferences
   setTheme: (theme: UserPreferences['theme']) => void
@@ -502,6 +504,33 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const income = incomeEntries.filter(e => e.month === month).reduce((sum, e) => sum + e.amount, 0)
     const monthExpenses = expenses.filter(e => e.date.startsWith(month)).reduce((sum, e) => sum + e.amount, 0)
     return { income, expenses: monthExpenses, balance: income - monthExpenses }
+  },
+
+  getFixedWeeklyContribution: (month) => {
+    const m = month ?? new Date().toISOString().slice(0, 7)
+    const { fixedExpenseMonths, fixedExpenses } = get()
+    return fixedExpenseMonths
+      .filter(fem => fem.month === m)
+      .reduce((sum, fem) => {
+        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
+        if (!fe?.isActive) return sum
+        return sum + Math.round((fem.amount / 4) * 100) / 100
+      }, 0)
+  },
+
+  getFixedCategoryContribution: (month) => {
+    const m = month ?? new Date().toISOString().slice(0, 7)
+    const { fixedExpenseMonths, fixedExpenses } = get()
+    const result: Record<string, number> = {}
+    fixedExpenseMonths
+      .filter(fem => fem.month === m)
+      .forEach(fem => {
+        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
+        if (!fe?.isActive) return
+        const weekly = Math.round((fem.amount / 4) * 100) / 100
+        result[fe.categoryId] = (result[fe.categoryId] ?? 0) + weekly
+      })
+    return result
   },
 
   // ── Preferences ─────────────────────────────────────────────────────────────

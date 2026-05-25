@@ -2,14 +2,17 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, Target, Check } from 'lucide-react'
+import { Wallet, Target, Check, Lock } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { formatCurrency } from '@/lib/weekHelpers'
 
 export default function BudgetPage() {
-  const { preferences, categories, setWeeklyBudget, setBudgetMode, setCategoryBudget } = useAppStore()
+  const { preferences, categories, setWeeklyBudget, setBudgetMode, setCategoryBudget, getFixedWeeklyContribution, getFixedCategoryContribution } = useAppStore()
   const { budgetMode, weeklyBudget, categoryBudgets = {} } = preferences
+  const fixedWeekly = getFixedWeeklyContribution()
+  const fixedByCategory = getFixedCategoryContribution()
+  const hasFixedContribution = fixedWeekly > 0
 
   const [fixedValue, setFixedValue] = useState(String(weeklyBudget))
   const [catValues, setCatValues] = useState<Record<string, string>>(() =>
@@ -24,6 +27,8 @@ export default function BudgetPage() {
     const v = parseFloat(catValues[c.id] ?? '')
     return sum + (isNaN(v) || v < 0 ? 0 : v)
   }, 0)
+  const totalCatFixed = Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
+  const hasAnyCatFixed = Object.values(fixedByCategory).some(v => v > 0)
 
   const handleSaveFixed = () => {
     const v = parseFloat(fixedValue)
@@ -137,15 +142,38 @@ export default function BudgetPage() {
           </div>
 
           {/* Preview */}
-          <div
-            className="mt-4 p-3 rounded-xl flex items-center justify-between"
-            style={{ background: 'var(--bg-input)' }}
-          >
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Orçamento atual</span>
-            <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
-              {formatCurrency(weeklyBudget)}
-            </span>
-          </div>
+          {hasFixedContribution ? (
+            <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)' }}>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Discricionário</span>
+                <span className="text-sm font-medium">{formatCurrency(weeklyBudget)}</span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)', borderTop: '1px solid var(--border)' }}>
+                <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <Lock size={11} /> Fixas (automático)
+                </span>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                  {formatCurrency(fixedWeekly)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
+                <span className="text-xs font-semibold">Total efetivo</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
+                  {formatCurrency(weeklyBudget + fixedWeekly)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="mt-4 p-3 rounded-xl flex items-center justify-between"
+              style={{ background: 'var(--bg-input)' }}
+            >
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Orçamento atual</span>
+              <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
+                {formatCurrency(weeklyBudget)}
+              </span>
+            </div>
+          )}
         </motion.div>
       )}
 
@@ -166,52 +194,78 @@ export default function BudgetPage() {
               </p>
             </div>
 
-            {categories.map((cat, i) => (
-              <motion.div
-                key={cat.id}
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-3 px-5 py-3"
-                style={{
-                  borderBottom: i < categories.length - 1 ? '1px solid var(--border)' : 'none',
-                }}
-              >
-                <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: cat.color + '20' }}
+            {hasAnyCatFixed && (
+              <div className="flex items-center gap-3 px-5 py-2" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-input)' }}>
+                <div className="w-8 flex-shrink-0" />
+                <span className="flex-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Categoria</span>
+                <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)', width: 90, justifyContent: 'flex-end' }}>
+                  <Lock size={10} /> Fixas
+                </span>
+                <span className="text-xs text-right" style={{ color: 'var(--text-muted)', width: 120 }}>Discricionário</span>
+              </div>
+            )}
+            {categories.map((cat, i) => {
+              const catFixed = fixedByCategory[cat.id] ?? 0
+              const manualVal = parseFloat(catValues[cat.id] ?? '')
+              const manualNum = isNaN(manualVal) || manualVal < 0 ? 0 : manualVal
+              const effective = manualNum + catFixed
+              return (
+                <motion.div
+                  key={cat.id}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="flex items-center gap-3 px-5 py-3"
+                  style={{
+                    borderBottom: i < categories.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}
                 >
-                  <CategoryIcon name={cat.icon} size={15} style={{ color: cat.color }} />
-                </div>
-                <span className="flex-1 text-sm font-medium truncate">{cat.name}</span>
-                <div className="relative" style={{ width: 120 }}>
-                  <span
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"
-                    style={{ color: 'var(--text-muted)', pointerEvents: 'none' }}
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: cat.color + '20' }}
                   >
-                    R$
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="10"
-                    placeholder="—"
-                    value={catValues[cat.id] ?? ''}
-                    onChange={(e) =>
-                      setCatValues((prev) => ({ ...prev, [cat.id]: e.target.value }))
-                    }
-                    className="w-full rounded-xl text-sm text-right"
-                    style={{
-                      padding: '8px 10px 8px 28px',
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text)',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-              </motion.div>
-            ))}
+                    <CategoryIcon name={cat.icon} size={15} style={{ color: cat.color }} />
+                  </div>
+                  <span className="flex-1 text-sm font-medium truncate">{cat.name}</span>
+                  {hasAnyCatFixed && (
+                    <span className="text-xs text-right" style={{ color: catFixed > 0 ? 'var(--text-muted)' : 'transparent', width: 90 }}>
+                      {catFixed > 0 ? formatCurrency(catFixed) : '—'}
+                    </span>
+                  )}
+                  <div className="relative" style={{ width: 120 }}>
+                    <span
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"
+                      style={{ color: 'var(--text-muted)', pointerEvents: 'none' }}
+                    >
+                      R$
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="10"
+                      placeholder="—"
+                      value={catValues[cat.id] ?? ''}
+                      onChange={(e) =>
+                        setCatValues((prev) => ({ ...prev, [cat.id]: e.target.value }))
+                      }
+                      className="w-full rounded-xl text-sm text-right"
+                      style={{
+                        padding: '8px 10px 8px 28px',
+                        background: 'var(--bg-input)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                  {hasAnyCatFixed && effective > 0 && (
+                    <span className="text-xs font-semibold text-right" style={{ color: 'var(--accent)', width: 72, flexShrink: 0 }}>
+                      {formatCurrency(effective)}
+                    </span>
+                  )}
+                </motion.div>
+              )
+            })}
           </div>
 
           {/* Footer: total + save */}
@@ -220,10 +274,17 @@ export default function BudgetPage() {
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
           >
             <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total semanal</p>
-              <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                {formatCurrency(totalCat)}
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {hasAnyCatFixed ? 'Total efetivo (discricionário + fixas)' : 'Total semanal'}
               </p>
+              <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
+                {formatCurrency(totalCat + totalCatFixed)}
+              </p>
+              {hasAnyCatFixed && (
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {formatCurrency(totalCat)} disc. + {formatCurrency(totalCatFixed)} fixas
+                </p>
+              )}
             </div>
             <button
               onClick={handleSaveCat}
