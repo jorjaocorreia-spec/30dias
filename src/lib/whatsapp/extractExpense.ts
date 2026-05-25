@@ -61,7 +61,11 @@ Regras:
     messages: [{ role: 'user', content: message }],
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+  console.log('[WA] claude raw:', raw)
+
+  // Strip markdown code fences if present
+  const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
 
   try {
     const parsed = JSON.parse(text)
