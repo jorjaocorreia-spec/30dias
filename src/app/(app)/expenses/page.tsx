@@ -21,6 +21,7 @@ export default function ExpensesListPage() {
   const [filterCategory, setFilterCategory] = useState('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
+  const [filterType, setFilterType] = useState<'all' | 'variable' | 'fixed'>('all')
   const [showFilters, setShowFilters] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
@@ -30,17 +31,20 @@ export default function ExpensesListPage() {
         if (filterCategory && e.categoryId !== filterCategory) return false
         if (filterFrom && e.date < filterFrom) return false
         if (filterTo && e.date > filterTo) return false
+        if (filterType === 'fixed' && !e.fixedExpenseId) return false
+        if (filterType === 'variable' && e.fixedExpenseId) return false
         return true
       })
       .sort((a, b) => b.date.localeCompare(a.date))
-  }, [expenses, filterCategory, filterFrom, filterTo])
+  }, [expenses, filterCategory, filterFrom, filterTo, filterType])
 
-  const hasFilters = !!(filterCategory || filterFrom || filterTo)
+  const hasFilters = !!(filterCategory || filterFrom || filterTo || filterType !== 'all')
 
   const clearFilters = () => {
     setFilterCategory('')
     setFilterFrom('')
     setFilterTo('')
+    setFilterType('all')
   }
 
   const handleDelete = (id: string) => {
@@ -100,6 +104,34 @@ export default function ExpensesListPage() {
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
             >
               <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Filtros</p>
+
+              {/* Type filter */}
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Tipo
+                </label>
+                <div className="flex gap-1.5">
+                  {([
+                    { value: 'all', label: 'Todas' },
+                    { value: 'variable', label: 'Variáveis' },
+                    { value: 'fixed', label: '🔁 Fixas' },
+                  ] as const).map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => setFilterType(value)}
+                      className="flex-1 py-2 rounded-xl text-xs font-medium transition-all"
+                      style={{
+                        background: filterType === value ? 'var(--accent-light)' : 'var(--bg-input)',
+                        color: filterType === value ? 'var(--accent)' : 'var(--text-muted)',
+                        border: `1px solid ${filterType === value ? 'var(--accent)' : 'transparent'}`,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
