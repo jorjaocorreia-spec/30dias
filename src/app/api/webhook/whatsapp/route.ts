@@ -84,12 +84,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { phone, text } = msg
 
+  // Remove country code 55 to get local number
   const phoneAlt = phone.startsWith('55') && phone.length >= 12 ? phone.slice(2) : null
-  const orFilter = phoneAlt
-    ? `whatsapp_number.eq.${phone},whatsapp_number.eq.${phoneAlt}`
-    : `whatsapp_number.eq.${phone}`
+  // Brazilian mobiles: Evolution may omit the 9th digit (e.g. 4598584418 → 45998584418)
+  const phoneAlt9 = phoneAlt && phoneAlt.length === 10 ? phoneAlt.slice(0, 2) + '9' + phoneAlt.slice(2) : null
 
-  console.log('[WA] looking up phone:', phone, '| alt:', phoneAlt, '| filter:', orFilter)
+  const variants = [phone, phoneAlt, phoneAlt9].filter(Boolean) as string[]
+  const orFilter = variants.map(v => `whatsapp_number.eq.${v}`).join(',')
+
+  console.log('[WA] looking up phone:', phone, '| alt:', phoneAlt, '| alt9:', phoneAlt9, '| filter:', orFilter)
 
   const { data: prefsRows, error: prefsError } = await supabaseAdmin
     .from('user_preferences')
