@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { MessageCircle, Check, Info, Smartphone, Webhook } from 'lucide-react'
+import { MessageCircle, Check, Info, Smartphone } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 export default function IntegrationsPage() {
@@ -10,10 +10,6 @@ export default function IntegrationsPage() {
   const [phone, setPhone] = useState(preferences.whatsappNumber ?? '')
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-
-  const webhookUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/api/webhook/whatsapp?secret=${process.env.NEXT_PUBLIC_WEBHOOK_SECRET ?? '****'}`
-    : '/api/webhook/whatsapp?secret=...'
 
   const handleSave = async () => {
     const cleaned = phone.replace(/\D/g, '')
@@ -53,7 +49,7 @@ export default function IntegrationsPage() {
           </div>
           <div>
             <p className="text-sm font-semibold">WhatsApp</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>via Evolution API</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Registre despesas por mensagem</p>
           </div>
           <div className="ml-auto">
             {preferences.whatsappNumber ? (
@@ -114,23 +110,6 @@ export default function IntegrationsPage() {
           {error && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{error}</p>}
         </div>
 
-        {/* Webhook URL */}
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <Webhook size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-sm font-medium">URL do Webhook</p>
-          </div>
-          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-            Configure esta URL na Evolution API para que as mensagens cheguem ao app.
-          </p>
-          <div
-            className="p-3 rounded-xl text-xs font-mono break-all select-all"
-            style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', userSelect: 'all' }}
-          >
-            {`https://jorge-7dias.27pl2o.easypanel.host/api/webhook/whatsapp?secret=7dias-webhook-secret-2025`}
-          </div>
-        </div>
-
         {/* Como usar */}
         <div className="px-5 py-4">
           <div className="flex items-center gap-2 mb-3">
@@ -153,44 +132,6 @@ export default function IntegrationsPage() {
               </div>
             ))}
           </div>
-        </div>
-      </motion.div>
-
-      {/* Setup steps */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="p-4 rounded-2xl border"
-        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-      >
-        <p className="text-sm font-semibold mb-4">Passos para ativar</p>
-        <div className="space-y-3">
-          {[
-            { step: 1, done: true, label: 'Evolution API instalada na VPS' },
-            { step: 2, done: true, label: 'API Key da Evolution configurada' },
-            { step: 3, done: true, label: 'Criar instância na Evolution API' },
-            { step: 4, done: true, label: 'Conectar número do bot via QR Code' },
-            { step: 5, done: !!preferences.whatsappNumber, label: 'Cadastrar seu número pessoal acima' },
-            { step: 6, done: true, label: 'Configurar webhook na instância' },
-          ].map(({ step, done, label }) => (
-            <div key={step} className="flex items-start gap-3">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5"
-                style={{
-                  background: done ? 'rgba(16,185,129,0.15)' : 'var(--bg-input)',
-                  color: done ? '#10b981' : 'var(--text-muted)',
-                }}
-              >
-                {done ? <Check size={12} /> : step}
-              </div>
-              <div>
-                <p className="text-sm" style={{ color: done ? 'var(--text-muted)' : 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>
-                  {label}
-                </p>
-              </div>
-            </div>
-          ))}
         </div>
       </motion.div>
 

@@ -8,7 +8,7 @@
 
 ---
 
-## Status atual: MVP+ Seguro em Produção ✓
+## Status atual: MVP+ Completo com WhatsApp em Produção ✓
 
 Build passa sem erros (`npm run build`). Dev server: `npm run dev` → `http://localhost:3000`.
 App em produção: `https://jorge-7dias.27pl2o.easypanel.host`
@@ -315,13 +315,14 @@ Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage co
 - [ ] Exportar dados como CSV
 - [ ] Gráfico de evolução mensal (receitas vs despesas ao longo dos meses)
 
-### Integração WhatsApp + IA
+### Integração WhatsApp + IA ✓ CONCLUÍDA
 - [x] SQL migration rodada: `ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS whatsapp_number text;`
-- [x] Env vars adicionadas no Easypanel (7dias): `ANTHROPIC_API_KEY`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] Criar instância na Evolution API (aguardando chip do bot dedicado — NÃO usar número pessoal)
-- [ ] Conectar número do bot via QR Code
-- [ ] Cadastrar número pessoal na página `/integrations`
-- [ ] Testar fluxo end-to-end
+- [x] Env vars no Easypanel (7dias): `ANTHROPIC_API_KEY`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`
+- [x] Instância `7dias` criada na Evolution API
+- [x] Número do bot conectado via QR Code
+- [x] Webhook configurado na Evolution API → `POST /webhook/set/7dias` com evento `MESSAGES_UPSERT`
+- [x] Número pessoal cadastrado em `/integrations`
+- [x] Fluxo end-to-end testado e funcionando em produção
 
 **Itens concluídos:**
 - [x] Filtro de despesas por categoria → `/expenses`
@@ -337,7 +338,54 @@ Supabase Auth (email/password + Google OAuth). JWT armazenado no localStorage co
 - [x] Página de orçamento → `/budget` com modo valor fixo + por categoria
 - [x] Alerta visual no dashboard → banner âmbar a 80%, vermelho a 100% (modo fixo + por categoria)
 - [x] Histórico de semanas anteriores → seção em `/summary` com lista paginada (6/página), barra de uso e clique para navegar
-- [x] Integração WhatsApp (backend completo) → webhook `/api/webhook/whatsapp`, extração Claude Haiku, Evolution API helper, página `/integrations`, coluna `whatsapp_number` em `user_preferences`
+- [x] Integração WhatsApp end-to-end → Evolution API v2.3.7, webhook `/api/webhook/whatsapp`, Claude Haiku extrai despesas em linguagem natural, confirma por WhatsApp e salva no Supabase
+
+## Integração WhatsApp — detalhes técnicos
+
+### Arquitetura
+- **Evolution API v2.3.7** rodando em `https://jorge-evolution-api.27pl2o.easypanel.host`, instância `7dias`
+- **Webhook** configurado via `POST /webhook/set/7dias` com evento `MESSAGES_UPSERT` (maiúsculo — v2 usa enum diferente de v1)
+- A Evolution API adiciona automaticamente o header `x-webhook-secret` com o valor configurado
+- **Route handler**: `src/app/api/webhook/whatsapp/route.ts`
+- **Extração**: `src/lib/whatsapp/extractExpense.ts` — Claude Haiku, retorna JSON puro (sem markdown)
+- **Envio**: `src/lib/whatsapp/sendMessage.ts` — `POST /message/sendText/{instance}`
+
+### Quirks conhecidos do Evolution API v2
+- **lid addressing mode**: `remoteJid` pode ser `229347126431976@lid` (ID interno). O número real fica em `remoteJidAlt` (`554598584418@s.whatsapp.net`). Checar `addressingMode === 'lid'` e usar `remoteJidAlt`.
+- **9° dígito brasileiro**: Evolution envia `554598584418` (sem o 9° dígito do celular). Se o usuário salvou `45998584418` (com o 9°), o OR query precisa de três variantes: número completo, sem `55`, e sem `55` + com `9` inserido após o DDD.
+- **Evento no payload**: apesar do enum ser `MESSAGES_UPSERT`, o campo `event` no payload chega como `messages.upsert` (minúsculo com ponto). O route aceita ambos.
+- **Claude Haiku** às vezes retorna JSON com markdown fences (` ```json ``` `). Fazer strip antes do `JSON.parse`.
+
+### Configurar webhook (se precisar reconfigurar)
+```bash
+curl -X POST https://jorge-evolution-api.27pl2o.easypanel.host/webhook/set/7dias \
+  -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "webhook": {
+      "enabled": true,
+      "url": "https://jorge-7dias.27pl2o.easypanel.host/api/webhook/whatsapp?secret=7dias-webhook-secret-2025",
+      "webhook_by_events": false,
+      "webhook_base64": false,
+      "events": ["MESSAGES_UPSERT"]
+    }
+  }'
+```
+
+### Variáveis de ambiente (Easypanel — serviço 7dias)
+Manter exatamente estas, sem comentários, sem duplicatas:
+```
+NIXPACKS_NODE_VERSION=20
+NEXT_PUBLIC_SUPABASE_URL=https://eivxsjloiducsorjhgqr.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ANTHROPIC_API_KEY=sk-ant-api03-...
+EVOLUTION_API_URL=https://jorge-evolution-api.27pl2o.easypanel.host
+EVOLUTION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
+EVOLUTION_INSTANCE=7dias
+WEBHOOK_SECRET=7dias-webhook-secret-2025
+```
+⚠️ Não misturar bloco raw com variáveis individuais — causa duplicatas e sobrescrita silenciosa.
 
 ---
 
