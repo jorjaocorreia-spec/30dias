@@ -36,6 +36,7 @@ export default function CategoriesPage() {
   const [editing, setEditing] = useState<Category | null>(null)
   const [form, setForm] = useState<FormState>(defaultForm)
   const [success, setSuccess] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   const formRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -113,19 +114,62 @@ export default function CategoriesPage() {
               >
                 <Pencil size={13} />
               </button>
-              {!cat.isDefault && (
-                <button
-                  onClick={() => deleteCategory(cat.id)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ background: '#ef444420', color: '#ef4444' }}
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
+              <button
+                onClick={() => cat.isDefault ? setConfirmDelete(cat.id) : deleteCategory(cat.id)}
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: '#ef444420', color: '#ef4444' }}
+              >
+                <Trash2 size={13} />
+              </button>
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* Confirm delete default category */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmDelete(null)} />
+            <motion.div
+              className="relative z-10 p-5 rounded-2xl border max-w-sm w-full space-y-4"
+              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#ef444420' }}>
+                  <Trash2 size={16} style={{ color: '#ef4444' }} />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Excluir categoria padrão?</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                    Despesas que usam esta categoria não serão afetadas, mas a categoria não poderá ser recuperada.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="flex-1 py-2 rounded-xl text-sm font-medium"
+                  style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => { deleteCategory(confirmDelete); setConfirmDelete(null) }}
+                  className="flex-1 py-2 rounded-xl text-sm font-medium text-white"
+                  style={{ background: '#ef4444' }}
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Form — bottom sheet on mobile, inline on desktop */}
       <AnimatePresence>
