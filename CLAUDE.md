@@ -45,6 +45,7 @@ type PaymentMethod = 'credit_card' | 'pix' | 'ted' | 'cash'
 
 interface ExpenseParticipant {
   id: string; name: string; amount: number; paid: boolean; paidAt?: string  // YYYY-MM-DD
+  shares?: number   // partes que essa pessoa representa (ex: casal = 2); padrão 1
 }
 interface Expense {
   id: string; amount: number; categoryId: string; description: string
@@ -54,6 +55,7 @@ interface Expense {
   notes?: string; establishmentId?: string
   fixedExpenseId?: string; fixedExpenseMonthId?: string
   sharedWith?: ExpenseParticipant[]   // definido quando a despesa é dividida
+  userShares?: number                 // partes do próprio usuário no split (ex: casal = 2); padrão 1
 }
 interface Category { id: string; name: string; icon: string; color: string; isDefault?: boolean }
 // IncomeCategory tem a mesma forma que Category
@@ -99,6 +101,8 @@ interface IncomeEntry {
 - `markParticipantAsPaid(expenseId, participantId, paid)` — registra pagamento com data
 - `getSharedPendingTotal(month?)` — total a receber no mês (usado no card do dashboard)
 - Coluna `shared_with JSONB` na tabela `expenses` do Supabase (já migrada)
+- **`shares`** em `ExpenseParticipant`: quantas partes essa pessoa representa (casal = 2). "Dividir igual" distribui proporcionalmente; arredondamento ocorre após multiplicar (nunca antes)
+- **`userShares`** em `Expense`: partes do próprio usuário no split. Contador `+`/`−` na linha "Sua parte" do form. `getEffectiveAmount` continua correto pois retorna o resto após subtrair os participantes
 
 ### Budget automático de fixas
 - `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas

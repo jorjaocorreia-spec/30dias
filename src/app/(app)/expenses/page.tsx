@@ -239,14 +239,29 @@ export default function ExpensesListPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium text-sm truncate">{expense.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{expense.description}</p>
+                        {expense.sharedWith?.length ? (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Users size={10} style={{ color: '#06b6d4' }} />
+                            <span className="text-xs font-medium" style={{ color: '#06b6d4' }}>
+                              Dividida
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
                       <div className="flex-shrink-0 text-right">
+                        {expense.sharedWith?.length ? (
+                          <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>
+                            minha parte
+                          </p>
+                        ) : null}
                         <p className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
                           {formatCurrency(getEffectiveAmount(expense))}
                         </p>
-                        {expense.sharedWith?.length ? (
+                        {expense.sharedWith?.length && getEffectiveAmount(expense) !== expense.amount ? (
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            total {formatCurrency(expense.amount)}
+                            de {formatCurrency(expense.amount)} total
                           </p>
                         ) : null}
                       </div>
