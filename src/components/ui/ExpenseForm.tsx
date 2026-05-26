@@ -70,6 +70,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
   const [participants, setParticipants] = useState<ExpenseParticipant[]>(
     () => initialData?.sharedWith ?? []
   )
+  const [userShares, setUserShares] = useState(() => initialData?.userShares ?? 1)
   const [newParticipantName, setNewParticipantName] = useState('')
   const [newParticipantAmount, setNewParticipantAmount] = useState('')
 
@@ -78,10 +79,11 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
 
   const handleEqualSplit = () => {
     if (!watchedAmount || participants.length === 0) return
-    // totalShares = soma das partes de cada participante + 1 (o próprio usuário)
-    const totalShares = participants.reduce((s, p) => s + (p.shares ?? 1), 0) + 1
-    const unitShare = Math.round((watchedAmount / totalShares) * 100) / 100
-    setParticipants(prev => prev.map(p => ({ ...p, amount: Math.round(unitShare * (p.shares ?? 1) * 100) / 100 })))
+    // totalShares = soma das partes dos participantes + partes do próprio usuário
+    const totalShares = participants.reduce((s, p) => s + (p.shares ?? 1), 0) + userShares
+    // usar valor exato (sem arredondar antes) para evitar erro de centavo ao multiplicar por shares
+    const exactUnit = watchedAmount / totalShares
+    setParticipants(prev => prev.map(p => ({ ...p, amount: Math.round(exactUnit * (p.shares ?? 1) * 100) / 100 })))
   }
 
   const addParticipant = () => {
@@ -178,8 +180,9 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
 
   const onSubmit = (data: FormData) => {
     const sharedWith = isShared && participants.length > 0 ? participants : undefined
+    const savedUserShares = isShared && userShares > 1 ? userShares : undefined
     if (isEdit && initialData) {
-      updateExpense(initialData.id, { ...data, sharedWith })
+      updateExpense(initialData.id, { ...data, sharedWith, userShares: savedUserShares })
       onSuccess(data.description)
     } else if (isFixed) {
       addFixedExpense({
@@ -196,10 +199,11 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       setIsFixed(false)
       onSuccess(data.description)
     } else {
-      addExpense({ ...data, sharedWith })
+      addExpense({ ...data, sharedWith, userShares: savedUserShares })
       reset(newExpenseDefaults)
       setEstSearch(''); setEstSelected(false)
       setParticipants([])
+      setUserShares(1)
       setIsShared(false)
       onSuccess(data.description)
     }
@@ -275,7 +279,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
         <div>
           <button
             type="button"
-            onClick={() => { setIsShared((v) => !v); if (isShared) setParticipants([]) }}
+            onClick={() => { setIsShared((v) => !v); if (isShared) { setParticipants([]); setUserShares(1) } }}
             className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all"
             style={{
               background: isShared ? '#06b6d420' : 'var(--bg-input)',
@@ -429,7 +433,28 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                       className="flex items-center justify-between px-3 py-2 rounded-xl"
                       style={{ background: '#06b6d415', borderLeft: '3px solid #06b6d4' }}
                     >
-                      <p className="text-xs font-medium" style={{ color: '#06b6d4' }}>Sua parte</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-medium" style={{ color: '#06b6d4' }}>Sua parte</p>
+                        <div className="flex items-center gap-1">
+                          {userShares > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setUserShares(s => Math.max(1, s - 1))}
+                              className="w-5 h-5 flex items-center justify-center rounded-md text-xs font-bold"
+                              style={{ background: '#06b6d430', color: '#06b6d4' }}
+                            >−</button>
+                          )}
+                          {userShares > 1 && (
+                            <span className="text-xs font-semibold px-1" style={{ color: '#06b6d4' }}>×{userShares}</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setUserShares(s => s + 1)}
+                            className="w-5 h-5 flex items-center justify-center rounded-md text-xs font-bold"
+                            style={{ background: '#06b6d430', color: '#06b6d4' }}
+                          >+</button>
+                        </div>
+                      </div>
                       <p className="text-sm font-bold" style={{ color: '#06b6d4' }}>
                         {formatCurrency(myShare)}
                       </p>

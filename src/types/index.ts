@@ -36,6 +36,7 @@ export interface Expense {
   fixedExpenseId?: string       // links to FixedExpense template
   fixedExpenseMonthId?: string  // links to the specific FixedExpenseMonth that generated this entry
   sharedWith?: ExpenseParticipant[]  // defined when expense is split among multiple people
+  userShares?: number                // partes do próprio usuário (ex: casal = 2); padrão 1
 }
 
 export interface FixedExpense {
