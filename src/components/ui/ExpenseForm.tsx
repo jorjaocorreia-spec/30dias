@@ -78,16 +78,17 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
 
   const handleEqualSplit = () => {
     if (!watchedAmount || participants.length === 0) return
-    const count = participants.length + 1 // +1 for the user themselves
-    const share = Math.round((watchedAmount / count) * 100) / 100
-    setParticipants(prev => prev.map(p => ({ ...p, amount: share })))
+    // totalShares = soma das partes de cada participante + 1 (o próprio usuário)
+    const totalShares = participants.reduce((s, p) => s + (p.shares ?? 1), 0) + 1
+    const unitShare = Math.round((watchedAmount / totalShares) * 100) / 100
+    setParticipants(prev => prev.map(p => ({ ...p, amount: Math.round(unitShare * (p.shares ?? 1) * 100) / 100 })))
   }
 
   const addParticipant = () => {
     const name = newParticipantName.trim()
     const amount = parseFloat(newParticipantAmount) || 0
     if (!name) return
-    setParticipants(prev => [...prev, { id: nanoid(), name, amount, paid: false }])
+    setParticipants(prev => [...prev, { id: nanoid(), name, amount, paid: false, shares: 1 }])
     setNewParticipantName('')
     setNewParticipantAmount('')
   }
@@ -99,6 +100,14 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
   const updateParticipantAmount = (id: string, value: string) => {
     const amount = parseFloat(value) || 0
     setParticipants(prev => prev.map(p => p.id === id ? { ...p, amount } : p))
+  }
+
+  const updateParticipantShares = (id: string, delta: number) => {
+    setParticipants(prev => prev.map(p => {
+      if (p.id !== id) return p
+      const next = Math.max(1, (p.shares ?? 1) + delta)
+      return { ...p, shares: next }
+    }))
   }
 
   // ── Establishment autocomplete ──
@@ -335,10 +344,29 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                   {participants.map((p) => (
                     <div key={p.id} className="flex items-center gap-2">
                       <div
-                        className="flex-1 px-3 py-2 rounded-xl text-sm"
-                        style={{ background: 'var(--bg-card)', color: 'var(--text)' }}
+                        className="flex-1 flex items-center justify-between px-3 py-2 rounded-xl"
+                        style={{ background: 'var(--bg-card)' }}
                       >
-                        {p.name}
+                        <span className="text-sm truncate" style={{ color: 'var(--text)' }}>{p.name}</span>
+                        <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                          {(p.shares ?? 1) > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => updateParticipantShares(p.id, -1)}
+                              className="w-5 h-5 flex items-center justify-center rounded-md text-xs font-bold"
+                              style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
+                            >−</button>
+                          )}
+                          {(p.shares ?? 1) > 1 && (
+                            <span className="text-xs font-semibold px-1" style={{ color: '#06b6d4' }}>×{p.shares}</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => updateParticipantShares(p.id, 1)}
+                            className="w-5 h-5 flex items-center justify-center rounded-md text-xs font-bold"
+                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
+                          >+</button>
+                        </div>
                       </div>
                       <input
                         type="number"

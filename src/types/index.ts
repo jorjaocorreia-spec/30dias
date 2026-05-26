@@ -14,6 +14,7 @@ export interface ExpenseParticipant {
   amount: number
   paid: boolean
   paidAt?: string  // YYYY-MM-DD
+  shares?: number  // partes que essa pessoa representa (ex: casal = 2); padrão 1
 }
 
 export interface Establishment {
