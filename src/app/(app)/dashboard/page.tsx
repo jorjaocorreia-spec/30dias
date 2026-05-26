@@ -2,15 +2,15 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users } from 'lucide-react'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useAppStore, getCurrentWeekKey } from '@/store/useAppStore'
 import {
-  buildWeekSummary, formatCurrency, formatWeekLabel,
+  buildWeekSummary, formatCurrency, formatWeekLabel, getEffectiveAmount,
   getPreviousWeekKey, getNextWeekKey, getWeekDays, formatDate, toLocalDateKey,
 } from '@/lib/weekHelpers'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
@@ -18,7 +18,7 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon'
 const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 export default function DashboardPage() {
-  const { expenses, categories, preferences, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution, getSharedPendingTotal } = useAppStore()
+  const { expenses, categories, preferences, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution, getSharedPendingTotal, markParticipantAsPaid } = useAppStore()
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
   const today = toLocalDateKey(new Date())
   const [selectedDay, setSelectedDay] = useState(today)
@@ -68,6 +68,43 @@ export default function DashboardPage() {
   })()
   const monthBalance = getMonthlyBalance(currentMonthKey)
   const sharedPending = getSharedPendingTotal(currentMonthKey)
+
+  const [sharedDrawerOpen, setSharedDrawerOpen] = useState(false)
+  const [drawerMonth, setDrawerMonth] = useState(currentMonthKey)
+
+  const sharedExpenses = useMemo(
+    () => expenses
+      .filter(e => e.date.startsWith(drawerMonth) && e.sharedWith?.length)
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    [expenses, drawerMonth]
+  )
+
+  const drawerPendingTotal = useMemo(
+    () => sharedExpenses.reduce((total, e) => {
+      const pending = (e.sharedWith ?? []).filter(p => !p.paid).reduce((s, p) => s + p.amount, 0)
+      return total + pending
+    }, 0),
+    [sharedExpenses]
+  )
+
+  const formatMonthLabel = (m: string) => {
+    const [year, month] = m.split('-')
+    return new Date(Number(year), Number(month) - 1, 1)
+      .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  }
+
+  const prevDrawerMonth = () => {
+    const [year, month] = drawerMonth.split('-').map(Number)
+    const d = new Date(year, month - 2, 1)
+    setDrawerMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+  }
+
+  const nextDrawerMonth = () => {
+    const [year, month] = drawerMonth.split('-').map(Number)
+    const d = new Date(year, month, 1)
+    const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (next <= currentMonthKey) setDrawerMonth(next)
+  }
 
   const selectedDayExpenses = summary.expenses
     .filter((e) => e.date === selectedDay)
@@ -148,15 +185,18 @@ export default function DashboardPage() {
             sub: 'de despesas divididas',
             color: '#f59e0b',
             colSpanMobile: false,
+            onClick: () => setSharedDrawerOpen(true),
           }] : []),
-        ].map(({ icon: Icon, label, value, sub, color, colSpanMobile }, i) => (
+        ].map(({ icon: Icon, label, value, sub, color, colSpanMobile, onClick }, i) => (
           <motion.div
             key={label}
-            className={`p-4 rounded-2xl border ${colSpanMobile ? 'col-span-2 lg:col-span-1' : ''}`}
+            className={`p-4 rounded-2xl border ${colSpanMobile ? 'col-span-2 lg:col-span-1' : ''} ${onClick ? 'cursor-pointer' : ''}`}
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+            onClick={onClick}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.07 }}
+            whileTap={onClick ? { scale: 0.97 } : undefined}
           >
             <div className="flex items-start justify-between mb-2">
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
@@ -484,6 +524,210 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       )}
+
+      {/* Shared Expenses Drawer */}
+      <AnimatePresence>
+        {sharedDrawerOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40"
+              style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSharedDrawerOpen(false)}
+            />
+            <motion.div
+              className="fixed bottom-0 left-0 right-0 z-50 flex flex-col"
+              style={{
+                background: 'var(--bg-card)',
+                borderTop: '1px solid var(--border)',
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                maxHeight: '85vh',
+              }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+                <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#f59e0b20' }}>
+                    <Users size={15} style={{ color: '#f59e0b' }} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">A Receber</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {drawerPendingTotal > 0
+                        ? `${formatCurrency(drawerPendingTotal)} pendente`
+                        : 'Tudo recebido!'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={prevDrawerMonth}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg"
+                    style={{ background: 'var(--bg-input)' }}
+                  >
+                    <ChevronLeft size={13} />
+                  </button>
+                  <span className="text-xs font-medium px-1" style={{ minWidth: 90, textAlign: 'center' }}>
+                    {formatMonthLabel(drawerMonth)}
+                  </span>
+                  <button
+                    onClick={nextDrawerMonth}
+                    disabled={drawerMonth >= currentMonthKey}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg disabled:opacity-30"
+                    style={{ background: 'var(--bg-input)' }}
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+                  <button
+                    onClick={() => setSharedDrawerOpen(false)}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg ml-1"
+                    style={{ background: 'var(--bg-input)' }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable list */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                {sharedExpenses.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Users size={32} style={{ opacity: 0.3 }} />
+                    <p className="text-sm">Nenhuma despesa dividida em {formatMonthLabel(drawerMonth)}</p>
+                  </div>
+                ) : (
+                  sharedExpenses.map(expense => {
+                    const cat = categories.find(c => c.id === expense.categoryId)
+                    const pendingCount = (expense.sharedWith ?? []).filter(p => !p.paid).length
+                    const paidCount = (expense.sharedWith ?? []).filter(p => p.paid).length
+                    return (
+                      <div
+                        key={expense.id}
+                        className="rounded-2xl overflow-hidden"
+                        style={{ border: '1px solid var(--border)' }}
+                      >
+                        {/* Expense header row */}
+                        <div
+                          className="flex items-center gap-3 p-3"
+                          style={{ background: 'var(--bg-input)' }}
+                        >
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: (cat?.color ?? '#6b7280') + '25' }}
+                          >
+                            <CategoryIcon name={cat?.icon ?? 'MoreHorizontal'} size={16} style={{ color: cat?.color ?? '#6b7280' }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{expense.description}</p>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              {formatDate(expense.date)} · {formatCurrency(expense.amount)} total
+                            </p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>minha parte</p>
+                            <p className="text-sm font-bold">{formatCurrency(getEffectiveAmount(expense))}</p>
+                          </div>
+                        </div>
+
+                        {/* Status bar */}
+                        <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-input)' }}>
+                          {pendingCount === 0 ? (
+                            <span className="text-xs font-medium" style={{ color: '#10b981' }}>
+                              ✓ Todos pagaram
+                            </span>
+                          ) : (
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              {paidCount}/{(expense.sharedWith ?? []).length} pagaram
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Participants */}
+                        <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                          {expense.sharedWith?.map(p => (
+                            <div key={p.id} className="flex items-center gap-3 px-3 py-2.5">
+                              {/* Avatar inicial */}
+                              <div
+                                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                                style={{
+                                  background: p.paid ? '#10b98120' : 'var(--bg-input)',
+                                  color: p.paid ? '#10b981' : 'var(--text-muted)',
+                                }}
+                              >
+                                {p.name.charAt(0).toUpperCase()}
+                              </div>
+
+                              {/* Nome + data */}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{p.name}</p>
+                                {p.paid && p.paidAt ? (
+                                  <p className="text-xs" style={{ color: '#10b981' }}>
+                                    Pago em {formatDate(p.paidAt)}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pendente</p>
+                                )}
+                              </div>
+
+                              {/* Valor */}
+                              <p
+                                className="text-sm font-bold flex-shrink-0"
+                                style={{ color: p.paid ? '#10b981' : 'inherit' }}
+                              >
+                                {formatCurrency(p.amount)}
+                              </p>
+
+                              {/* Toggle button */}
+                              <button
+                                onClick={() => markParticipantAsPaid(expense.id, p.id, !p.paid)}
+                                className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-xl flex-shrink-0"
+                                style={{
+                                  background: p.paid ? '#10b98120' : 'var(--bg-input)',
+                                  color: p.paid ? '#10b981' : 'var(--text-muted)',
+                                  border: `1px solid ${p.paid ? '#10b98140' : 'var(--border)'}`,
+                                  minWidth: 72,
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                {p.paid ? <Check size={11} /> : null}
+                                {p.paid ? 'Pago' : 'Pendente'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+
+                {/* Footer link */}
+                <div className="pt-2 pb-4 text-center">
+                  <Link
+                    href="/expenses"
+                    onClick={() => setSharedDrawerOpen(false)}
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    Ver todas as despesas →
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Recent expenses */}
       <div
