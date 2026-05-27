@@ -20,5 +20,6 @@ export async function sendWhatsAppMessage(to: string, text: string): Promise<voi
   if (!res.ok) {
     const body = await res.text().catch(() => '')
     console.error(`Evolution API error ${res.status}:`, body)
+    throw new Error(`Evolution API ${res.status}: ${body}`)
   }
 }

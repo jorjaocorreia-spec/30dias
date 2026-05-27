@@ -12,6 +12,15 @@ function brazilToday(): { day: number; year: number; month: number } {
   }
 }
 
+// Normaliza número para formato Evolution API: somente dígitos com prefixo 55
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.startsWith('55') && digits.length >= 12) return digits
+  // DDD + número sem código de país
+  if (digits.length === 10 || digits.length === 11) return '55' + digits
+  return digits
+}
+
 // Último dia do mês para normalizar due_date_day (ex: dia 31 em fevereiro → 28)
 function lastDayOfMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate()
@@ -94,10 +103,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   for (const m of months ?? []) confirmedAmount[m.fixed_expense_id] = m.amount
 
   let sentCount = 0
+  const errors: string[] = []
 
   for (const [userId, { today, tomorrow }] of Object.entries(byUser)) {
-    const phone = phoneByUser[userId]
-    if (!phone) continue
+    const rawPhone = phoneByUser[userId]
+    if (!rawPhone) continue
+
+    const phone = normalizePhone(rawPhone)
 
     const lines: string[] = []
 
@@ -123,10 +135,19 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (!lines.length) continue
 
     const message = `💳 *7Dias — Lembrete de vencimento*\n\n${lines.join('\n')}`
-    await sendWhatsAppMessage(phone, message)
-    sentCount++
+
+    try {
+      await sendWhatsAppMessage(phone, message)
+      sentCount++
+      console.log(`[cron-reminders] sent to ${phone}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      errors.push(`phone=${phone} err=${msg}`)
+      console.error(`[cron-reminders] failed for ${phone}:`, msg)
+    }
   }
 
-  console.log(`[cron-reminders] sent=${sentCount} date=${currentMonth}-${String(todayDay).padStart(2, '0')}`)
-  return NextResponse.json({ sent: sentCount })
+  const date = `${currentMonth}-${String(todayDay).padStart(2, '0')}`
+  console.log(`[cron-reminders] done sent=${sentCount} errors=${errors.length} date=${date}`)
+  return NextResponse.json({ sent: sentCount, errors: errors.length ? errors : undefined, date })
 }

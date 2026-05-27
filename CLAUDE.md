@@ -146,7 +146,7 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 | `/establishments` | CRUD; selecionar preenche categoria no `ExpenseForm` |
 | `/fixed-expenses` | Templates + confirmação mensal, seção Pendentes (amber), histórico |
 | `/income` | Fontes recorrentes + entradas mensais, seção Pendentes (amber), saldo mensal |
-| `/budget` | Modo fixo: discricionário + fixas (🔒 auto) + total. Modo categoria: coluna fixas readonly |
+| `/budget` | Modo fixo: discricionário + fixas (🔒 auto) + total. Modo categoria: coluna fixas readonly. Ambos os modos exibem card **Estimativa mensal** = `(semanal + fixas) × 4` |
 | `/summary` | Total, AreaChart, donut, barras animadas por categoria, histórico semanal paginado |
 
 **Dashboard — card "A Receber":** aparece automaticamente quando `getSharedPendingTotal()` > 0 no mês corrente. KPI grid passa de 3 para 4 colunas nesse caso (mobile: 2×2).
