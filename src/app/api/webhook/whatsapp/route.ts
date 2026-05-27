@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { extractExpense } from '@/lib/whatsapp/extractExpense'
 import { sendWhatsAppMessage } from '@/lib/whatsapp/sendMessage'
+import { detectIntent } from '@/lib/whatsapp/detectIntent'
+import {
+  handleWeekQuery,
+  handleMonthQuery,
+  handlePendingQuery,
+  handleSummaryQuery,
+  handleHelp,
+} from '@/lib/whatsapp/queryHandlers'
 import { getWeekKey } from '@/lib/weekHelpers'
 import { nanoid } from 'nanoid'
 
@@ -111,6 +119,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const userId = prefs.user_id
   console.log('[WA] userId found:', userId)
+
+  // Route queries before attempting expense extraction
+  const intent = detectIntent(text)
+  console.log('[WA] intent:', intent)
+
+  if (intent !== 'expense') {
+    let reply: string
+    if (intent === 'help') {
+      reply = handleHelp()
+    } else if (intent === 'query_week') {
+      reply = await handleWeekQuery(userId, supabaseAdmin)
+    } else if (intent === 'query_month') {
+      reply = await handleMonthQuery(userId, supabaseAdmin)
+    } else if (intent === 'query_pending') {
+      reply = await handlePendingQuery(userId, supabaseAdmin)
+    } else {
+      reply = await handleSummaryQuery(userId, supabaseAdmin)
+    }
+    await sendWhatsAppMessage(phone, reply)
+    return NextResponse.json({ ok: true, intent })
+  }
 
   const [{ data: categories }, { data: establishments }] = await Promise.all([
     supabaseAdmin.from('categories').select('id, name').eq('user_id', userId),

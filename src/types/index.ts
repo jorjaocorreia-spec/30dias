@@ -91,6 +91,28 @@ export interface IncomeEntry {
   notes?: string
 }
 
+export interface FinancialGoal {
+  id: string
+  name: string
+  targetAmount: number
+  deadline: string           // YYYY-MM
+  icon: string
+  color: string
+  notes?: string
+  weeklyAmount?: number      // override manual; senão auto-calculado
+  deductFromBudget: boolean
+  isActive: boolean
+  createdAt: string          // YYYY-MM-DD
+  completedAt?: string       // YYYY-MM-DD
+}
+
+export interface GoalContribution {
+  id: string
+  goalId: string
+  month: string   // YYYY-MM
+  amount: number
+}
+
 export interface WeekSummary {
   weekKey: string
   totalAmount: number

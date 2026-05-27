@@ -64,6 +64,8 @@ interface FixedExpense {
   id: string; description: string; suggestedAmount: number; categoryId: string
   establishmentId?: string; paymentMethod: PaymentMethod; notes?: string
   isActive: boolean; createdAt: string   // YYYY-MM-DD
+  dueDateDay?: number      // dia do mês do vencimento (1–31)
+  reminderEnabled?: boolean
 }
 interface FixedExpenseMonth { id: string; fixedExpenseId: string; month: string; amount: number }
 interface UserPreferences {
@@ -93,6 +95,7 @@ interface IncomeEntry {
 - `syncFixedExpenses()` gera entradas semanais (segundas) com `amount = Math.round((fem.amount / 4) * 100) / 100`
 - Chamar após qualquer mutação em `fixedExpenseMonths` e em `onRehydrateStorage`
 - Deletar template → remove `fixedExpenseMonths` + `expenses` vinculados
+- `dueDateDay` + `reminderEnabled`: lembrete WhatsApp 1 dia antes e no dia do vencimento. Ver seção "Lembretes de vencimento"
 
 ### Despesas divididas (split)
 - `amount` = valor total pago; `sharedWith` = partes de cada participante
@@ -178,6 +181,9 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 
 - [ ] Exportar dados como CSV
 - [ ] Gráfico de evolução mensal (receitas vs despesas)
+- [ ] WhatsApp bidirecional — consultas por mensagem (semana, mês, a receber, resumo, ajuda)
+- [ ] Projeção inteligente do mês — card no dashboard com estimativa baseada no ritmo semanal atual
+- [ ] Metas financeiras — objetivos com prazo, valor-alvo e reserva semanal sugerida
 
 ## Lembretes de vencimento (despesas fixas)
 

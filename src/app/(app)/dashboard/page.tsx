@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users } from 'lucide-react'
 import {
@@ -18,7 +19,8 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon'
 const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 export default function DashboardPage() {
-  const { expenses, categories, preferences, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution, getSharedPendingTotal, markParticipantAsPaid } = useAppStore()
+  const { expenses, categories, preferences, financialGoals, goalContributions, getGoalProgress, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution, getSharedPendingTotal, markParticipantAsPaid } = useAppStore()
+  const router = useRouter()
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
   const today = toLocalDateKey(new Date())
   const [selectedDay, setSelectedDay] = useState(today)
@@ -68,6 +70,30 @@ export default function DashboardPage() {
   })()
   const monthBalance = getMonthlyBalance(currentMonthKey)
   const sharedPending = getSharedPendingTotal(currentMonthKey)
+
+  const activeGoals = useMemo(
+    () => financialGoals.filter(g => g.isActive && !g.completedAt),
+    [financialGoals]
+  )
+  const avgGoalProgress = useMemo(() => {
+    if (activeGoals.length === 0) return 0
+    const total = activeGoals.reduce((sum, g) => sum + getGoalProgress(g.id).percentage, 0)
+    return Math.round(total / activeGoals.length)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGoals, goalContributions])
+
+  const projection = useMemo(() => {
+    const now = new Date()
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const daysElapsed = now.getDate()
+    const totalSpent = expenses
+      .filter(e => e.date.startsWith(currentMonthKey))
+      .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
+    if (totalSpent === 0) return null
+    const projected = (totalSpent / daysElapsed) * daysInMonth
+    const delta = monthBalance.income > 0 ? projected - monthBalance.income : null
+    return { projected, delta, daysElapsed }
+  }, [expenses, currentMonthKey, monthBalance.income])
 
   const [sharedDrawerOpen, setSharedDrawerOpen] = useState(false)
   const [drawerMonth, setDrawerMonth] = useState(currentMonthKey)
@@ -153,8 +179,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards — 2 cols mobile, 3 cols desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+      {/* KPI Cards — 2 cols mobile, 3 or 4 cols desktop */}
+      <div className={`grid grid-cols-2 gap-3 mb-5 ${(sharedPending > 0 || activeGoals.length > 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         {[
           {
             icon: Wallet,
@@ -164,7 +190,7 @@ export default function DashboardPage() {
             color: '#10b981',
           },
           {
-            icon: Target,
+            icon: TrendingDown,
             label: 'Disponível',
             value: formatCurrency(Math.abs(remaining)),
             sub: remaining < 0 ? 'acima do limite' : 'restante',
@@ -176,7 +202,7 @@ export default function DashboardPage() {
             value: String(summary.expenses.length),
             sub: 'esta semana',
             color: '#8b5cf6',
-            colSpanMobile: sharedPending === 0,
+            colSpanMobile: sharedPending === 0 && activeGoals.length === 0,
           },
           ...(sharedPending > 0 ? [{
             icon: ArrowUpDown,
@@ -186,6 +212,15 @@ export default function DashboardPage() {
             color: '#f59e0b',
             colSpanMobile: false,
             onClick: () => setSharedDrawerOpen(true),
+          }] : []),
+          ...(activeGoals.length > 0 ? [{
+            icon: Target,
+            label: 'Metas',
+            value: `${avgGoalProgress}%`,
+            sub: `${activeGoals.length} ativa${activeGoals.length > 1 ? 's' : ''}`,
+            color: '#10b981',
+            colSpanMobile: false,
+            onClick: () => router.push('/goals'),
           }] : []),
         ].map(({ icon: Icon, label, value, sub, color, colSpanMobile, onClick }, i) => (
           <motion.div
@@ -350,6 +385,46 @@ export default function DashboardPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* Monthly projection */}
+      {projection && (
+        <motion.div
+          className="p-4 rounded-2xl border mb-5"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#8b5cf620' }}>
+                <TrendingUp size={13} style={{ color: '#8b5cf6' }} />
+              </div>
+              <p className="text-sm font-semibold">Projeção do mês</p>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {projection.daysElapsed}d de dados
+            </p>
+          </div>
+
+          <p className="text-2xl font-bold mb-1">{formatCurrency(projection.projected)}</p>
+
+          {projection.delta !== null ? (
+            <div className="flex items-center gap-1.5">
+              {projection.delta > 0
+                ? <TrendingUp size={13} style={{ color: '#ef4444' }} />
+                : <TrendingDown size={13} style={{ color: '#10b981' }} />
+              }
+              <p className="text-sm" style={{ color: projection.delta > 0 ? '#ef4444' : '#10b981' }}>
+                {formatCurrency(Math.abs(projection.delta))}{' '}
+                {projection.delta > 0 ? 'acima da sua renda' : 'abaixo da sua renda'}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Sem renda registrada este mês
+            </p>
+          )}
+        </motion.div>
+      )}
 
       {/* Charts — stacked on mobile, side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">

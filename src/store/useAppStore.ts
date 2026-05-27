@@ -3,10 +3,10 @@
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { Category, Establishment, Expense, ExpenseParticipant, FixedExpense, FixedExpenseMonth, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry } from '@/types'
+import { Category, Establishment, Expense, ExpenseParticipant, FinancialGoal, FixedExpense, FixedExpenseMonth, GoalContribution, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/categories'
 import { DEFAULT_INCOME_CATEGORIES } from '@/data/incomeCategories'
-import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey, getEffectiveAmount } from '@/lib/weekHelpers'
+import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey, getEffectiveAmount, getWeeksUntilDeadline } from '@/lib/weekHelpers'
 import { nanoid } from 'nanoid'
 
 // ── DB ↔ TypeScript mapping helpers ──────────────────────────────────────────
@@ -60,6 +60,8 @@ interface AppState {
   incomeCategories: IncomeCategory[]
   incomeSources: IncomeSource[]
   incomeEntries: IncomeEntry[]
+  financialGoals: FinancialGoal[]
+  goalContributions: GoalContribution[]
   preferences: UserPreferences
 
   // Auth
@@ -111,6 +113,21 @@ interface AppState {
   updateIncomeEntry: (id: string, data: Partial<Omit<IncomeEntry, 'id'>>) => void
   deleteIncomeEntry: (id: string) => void
 
+  // Financial Goals
+  addFinancialGoal: (data: Omit<FinancialGoal, 'id' | 'createdAt'>) => void
+  updateFinancialGoal: (id: string, data: Partial<Omit<FinancialGoal, 'id' | 'createdAt'>>) => void
+  deleteFinancialGoal: (id: string) => void
+
+  // Goal Contributions
+  addGoalContribution: (data: Omit<GoalContribution, 'id'>) => void
+  updateGoalContribution: (id: string, amount: number) => void
+  deleteGoalContribution: (id: string) => void
+
+  // Goal Helpers
+  getGoalProgress: (goalId: string) => { contributed: number; remaining: number; weeklyNeeded: number; weeksLeft: number; percentage: number; effectiveWeekly: number }
+  getGoalWeeklyTotal: (deductOnly?: boolean) => number
+  getGoalCategoryContribution: () => Record<string, number>
+
   // Helpers
   getMonthlyBalance: (month: string) => { income: number; expenses: number; balance: number }
   getFixedWeeklyContribution: (month?: string) => number
@@ -139,6 +156,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   incomeCategories: [],
   incomeSources: [],
   incomeEntries: [],
+  financialGoals: [],
+  goalContributions: [],
   preferences: DEFAULT_PREFERENCES,
 
   // ── Auth ────────────────────────────────────────────────────────────────────
@@ -169,6 +188,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
           incomeCategories: [],
           incomeSources: [],
           incomeEntries: [],
+          financialGoals: [],
+          goalContributions: [],
           preferences: DEFAULT_PREFERENCES,
         })
       }
@@ -201,7 +222,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (!user) return
     set({ isLoading: true })
 
-    const [catRes, estRes, expRes, feRes, femRes, icatRes, isrcRes, ieRes, prefRes] =
+    const [catRes, estRes, expRes, feRes, femRes, icatRes, isrcRes, ieRes, prefRes, goalsRes, contribRes] =
       await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('establishments').select('*'),
@@ -212,6 +233,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
         supabase.from('income_sources').select('*'),
         supabase.from('income_entries').select('*'),
         supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('financial_goals').select('*'),
+        supabase.from('goal_contributions').select('*'),
       ])
 
     let categories = catRes.data?.map(r => fromDB<Category>(r)) ?? []
@@ -243,6 +266,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
       incomeCategories,
       incomeSources: isrcRes.data?.map(r => fromDB<IncomeSource>(r)) ?? [],
       incomeEntries: ieRes.data?.map(r => fromDB<IncomeEntry>(r)) ?? [],
+      financialGoals: goalsRes.data?.map(r => fromDB<FinancialGoal>(r)) ?? [],
+      goalContributions: contribRes.data?.map(r => fromDB<GoalContribution>(r)) ?? [],
       preferences,
       isLoading: false,
     })
@@ -498,6 +523,87 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ incomeEntries: state.incomeEntries.filter(e => e.id !== id) }))
     const { user } = get()
     if (user) supabase.from('income_entries').delete().eq('id', id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  // ── Financial Goals ─────────────────────────────────────────────────────────
+  addFinancialGoal: (data) => {
+    const goal: FinancialGoal = { ...data, id: nanoid(), createdAt: getTodayKey() }
+    set(state => ({ financialGoals: [...state.financialGoals, goal] }))
+    const { user } = get()
+    if (user) supabase.from('financial_goals').insert(toDB(goal, user.id)).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  updateFinancialGoal: (id, data) => {
+    set(state => ({ financialGoals: state.financialGoals.map(g => g.id === id ? { ...g, ...data } : g) }))
+    const { user } = get()
+    if (user) supabase.from('financial_goals').update(dbUpdate(data)).eq('id', id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  deleteFinancialGoal: (id) => {
+    set(state => ({
+      financialGoals: state.financialGoals.filter(g => g.id !== id),
+      goalContributions: state.goalContributions.filter(c => c.goalId !== id),
+    }))
+    const { user } = get()
+    if (user) {
+      Promise.all([
+        supabase.from('financial_goals').delete().eq('id', id),
+        supabase.from('goal_contributions').delete().eq('goal_id', id),
+      ]).then(results => results.forEach(({ error }) => { if (error) console.error(error) }))
+    }
+  },
+
+  // ── Goal Contributions ──────────────────────────────────────────────────────
+  addGoalContribution: (data) => {
+    const contribution: GoalContribution = { ...data, id: nanoid() }
+    set(state => ({ goalContributions: [...state.goalContributions, contribution] }))
+    const { user } = get()
+    if (user) supabase.from('goal_contributions').insert(toDB(contribution, user.id)).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  updateGoalContribution: (id, amount) => {
+    set(state => ({ goalContributions: state.goalContributions.map(c => c.id === id ? { ...c, amount } : c) }))
+    const { user } = get()
+    if (user) supabase.from('goal_contributions').update({ amount }).eq('id', id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  deleteGoalContribution: (id) => {
+    set(state => ({ goalContributions: state.goalContributions.filter(c => c.id !== id) }))
+    const { user } = get()
+    if (user) supabase.from('goal_contributions').delete().eq('id', id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  // ── Goal Helpers ────────────────────────────────────────────────────────────
+  getGoalProgress: (goalId) => {
+    const { financialGoals, goalContributions } = get()
+    const goal = financialGoals.find(g => g.id === goalId)
+    if (!goal) return { contributed: 0, remaining: 0, weeklyNeeded: 0, weeksLeft: 1, percentage: 0, effectiveWeekly: 0 }
+    const contributed = goalContributions.filter(c => c.goalId === goalId).reduce((sum, c) => sum + c.amount, 0)
+    const remaining = Math.max(0, goal.targetAmount - contributed)
+    const weeksLeft = getWeeksUntilDeadline(goal.deadline)
+    const weeklyNeeded = remaining > 0 ? Math.ceil((remaining / weeksLeft) * 100) / 100 : 0
+    const effectiveWeekly = goal.weeklyAmount ?? weeklyNeeded
+    const percentage = goal.targetAmount > 0 ? Math.min(100, Math.round((contributed / goal.targetAmount) * 100)) : 0
+    return { contributed, remaining, weeklyNeeded, weeksLeft, percentage, effectiveWeekly }
+  },
+
+  getGoalWeeklyTotal: (deductOnly = false) => {
+    const { financialGoals } = get()
+    return financialGoals
+      .filter(g => g.isActive && !g.completedAt && (!deductOnly || g.deductFromBudget))
+      .reduce((sum, g) => sum + get().getGoalProgress(g.id).effectiveWeekly, 0)
+  },
+
+  getGoalCategoryContribution: () => {
+    const { financialGoals } = get()
+    const result: Record<string, number> = {}
+    financialGoals
+      .filter(g => g.isActive && !g.completedAt && g.deductFromBudget)
+      .forEach(g => {
+        const { effectiveWeekly } = get().getGoalProgress(g.id)
+        if (g.icon) result[g.id] = (result[g.id] ?? 0) + effectiveWeekly
+      })
+    return result
   },
 
   // ── Helpers ─────────────────────────────────────────────────────────────────

@@ -30,7 +30,7 @@ export default function IntegrationsPage() {
       <div className="mb-6">
         <h1 className="text-xl font-bold">Integrações</h1>
         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-          Conecte o WhatsApp para registrar despesas por mensagem
+          Registre despesas e consulte seu financeiro direto pelo WhatsApp
         </p>
       </div>
 
@@ -49,7 +49,7 @@ export default function IntegrationsPage() {
           </div>
           <div>
             <p className="text-sm font-semibold">WhatsApp</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Registre despesas por mensagem</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Registre despesas e consulte seu financeiro</p>
           </div>
           <div className="ml-auto">
             {preferences.whatsappNumber ? (
@@ -110,12 +110,15 @@ export default function IntegrationsPage() {
           {error && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{error}</p>}
         </div>
 
-        {/* Como usar */}
-        <div className="px-5 py-4">
+        {/* Registrar despesas */}
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-2 mb-3">
             <Info size={14} style={{ color: 'var(--text-muted)' }} />
-            <p className="text-sm font-medium">Como registrar despesas</p>
+            <p className="text-sm font-medium">Registrar despesas</p>
           </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+            Mande uma mensagem descrevendo o gasto — o bot entende linguagem natural.
+          </p>
           <div className="space-y-2">
             {[
               { msg: 'gastei 47 reais no mercado', resp: '✅ R$ 47,00 · Alimentação · 21/05' },
@@ -132,6 +135,63 @@ export default function IntegrationsPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Consultas disponíveis */}
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={14} style={{ color: 'var(--text-muted)' }} />
+            <p className="text-sm font-medium">Consultas disponíveis</p>
+          </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+            Além de registrar, você pode consultar seu financeiro direto pelo chat.
+          </p>
+          <div className="space-y-2">
+            {[
+              {
+                cmd: 'semana',
+                desc: 'Saldo da semana atual',
+                resp: '📊 Semana atual · Gasto: R$ 450 · Disponível: R$ 550 (55% livre)',
+              },
+              {
+                cmd: 'mês',
+                desc: 'Balanço do mês corrente',
+                resp: '📅 Maio 2026 · Receitas: R$ 5.000 · Despesas: R$ 2.800 · Saldo: R$ 2.200',
+              },
+              {
+                cmd: 'a receber',
+                desc: 'Valores pendentes de participantes',
+                resp: '💳 A receber · João → R$ 50 · Maria → R$ 30 · Total: R$ 80',
+              },
+              {
+                cmd: 'resumo',
+                desc: 'Visão compacta de semana + mês',
+                resp: '📊 Semana: R$ 450 de R$ 1.000 · 📅 Maio: saldo R$ 2.200',
+              },
+              {
+                cmd: 'ajuda',
+                desc: 'Lista todos os comandos disponíveis',
+                resp: '🤖 7Dias — Comandos disponíveis...',
+              },
+            ].map(({ cmd, desc, resp }) => (
+              <div key={cmd} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-2 px-3 py-2"
+                  style={{ background: 'rgba(6,182,212,0.06)', borderBottom: '1px solid var(--border)' }}>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-lg"
+                    style={{ background: 'rgba(6,182,212,0.15)', color: '#06b6d4' }}>
+                    {cmd}
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{desc}</span>
+                </div>
+                <div className="px-3 py-2 text-xs" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+                  🤖 {resp}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+            Qualquer outra mensagem é interpretada como uma despesa.
+          </p>
         </div>
       </motion.div>
 
