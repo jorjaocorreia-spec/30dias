@@ -246,7 +246,7 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 |--------|---------------|---------|
 | `query_week` | "semana", "semanal" | Gasto + orçamento + % livre da semana atual |
 | `query_month` | "mês", "mensal", "balanço" | Receitas / despesas / saldo do mês |
-| `query_pending` | "a receber", "pendente", "cobrar" | Participantes com `paid=false` no mês corrente (máx 5) |
+| `query_pending` | "receber", "a receber", "pendente", "cobrar" | Participantes com `paid=false` no mês corrente (máx 5) |
 | `query_summary` | "resumo", "como estou" | Combinação compacta de semana + mês |
 | `help` | "ajuda", "comandos", "menu" | Lista estática de todos os comandos |
 | `expense` | qualquer outra coisa | Extração de despesa via Haiku |
