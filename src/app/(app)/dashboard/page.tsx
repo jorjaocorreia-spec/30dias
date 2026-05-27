@@ -781,12 +781,26 @@ export default function DashboardPage() {
                           🔁
                         </span>
                       )}
+                      {expense.sharedWith?.length ? (
+                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0"
+                          style={{ background: '#06b6d420', color: '#06b6d4', fontSize: 10 }}>
+                          <Users size={9} /> ÷
+                        </span>
+                      ) : null}
                     </div>
                     <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                       {cat?.name} · {formatDate(expense.date)}
                     </p>
                   </div>
-                  <p className="text-sm font-bold flex-shrink-0">{formatCurrency(expense.amount)}</p>
+                  <div className="flex-shrink-0 text-right">
+                    {expense.sharedWith?.length ? (
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>minha parte</p>
+                    ) : null}
+                    <p className="text-sm font-bold">{formatCurrency(getEffectiveAmount(expense))}</p>
+                    {expense.sharedWith?.length && getEffectiveAmount(expense) !== expense.amount ? (
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>de {formatCurrency(expense.amount)}</p>
+                    ) : null}
+                  </div>
                 </Link>
               )
             })}

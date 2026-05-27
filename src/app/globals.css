@@ -11,6 +11,7 @@
   --accent: #10b981;
   --accent-light: #d1fae5;
   --sidebar-w: 224px;
+  --sidebar-collapsed-w: 60px;
   --topbar-h: 56px;
   --bottomnav-h: 64px;
 }
@@ -64,6 +65,12 @@ body {
   flex-direction: column;
   border-right: 1px solid var(--border);
   background-color: var(--bg-card);
+  overflow: hidden;
+  transition: width 0.25s ease;
+}
+
+.sidebar-collapsed .app-sidebar {
+  width: var(--sidebar-collapsed-w);
 }
 
 .app-topbar {
@@ -113,5 +120,9 @@ body {
     margin-left: var(--sidebar-w);
     padding-top: 0;
     padding-bottom: 0;
+    transition: margin-left 0.25s ease;
+  }
+  .sidebar-collapsed .app-main {
+    margin-left: var(--sidebar-collapsed-w);
   }
 }

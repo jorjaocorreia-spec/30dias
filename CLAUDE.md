@@ -179,6 +179,20 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 - [ ] Exportar dados como CSV
 - [ ] Gráfico de evolução mensal (receitas vs despesas)
 
+## Lembretes de vencimento (despesas fixas)
+
+- `FixedExpense` tem `dueDateDay?: number` (1–31) e `reminderEnabled?: boolean`
+- Migration: `supabase/migrations/20260526_fixed_expense_due_date.sql`
+- Endpoint cron: `GET /api/cron/fixed-expense-reminders?secret=CRON_SECRET`
+  - Protegido por `CRON_SECRET` env var (header `x-cron-secret` ou query `secret`)
+  - Lê despesas ativas com `reminder_enabled = true` direto do Supabase (service role)
+  - Verifica se `effectiveDueDay` (normalizado para último dia do mês) == hoje ou amanhã (fuso BRT = UTC-3)
+  - Consolida todas as despesas de cada usuário em **uma única mensagem** por dia
+  - Usa `fixed_expense_months.amount` do mês corrente quando disponível; fallback = `suggested_amount`
+- Agendador externo: **cron-job.org** (gratuito), diariamente às **08:00 BRT (11:00 UTC)**
+  - URL: `https://jorge-7dias.27pl2o.easypanel.host/api/cron/fixed-expense-reminders?secret=CRON_SECRET`
+  - `CRON_SECRET`: gerar com `openssl rand -hex 32` e adicionar no Easypanel
+
 ## WhatsApp — detalhes técnicos
 
 - **Evolution API v2.3.7**: `https://jorge-evolution-api.27pl2o.easypanel.host`, instância `7dias`
@@ -205,5 +219,5 @@ curl -X POST https://jorge-evolution-api.27pl2o.easypanel.host/webhook/set/7dias
 - Easypanel: `http://31.97.248.13:3000/` → projeto `jorge`, serviço `7dias`
 - Nixpacks + Node 20 (`NIXPACKS_NODE_VERSION=20`). Repo: `https://github.com/jorjaocorreia-spec/7dias.git` (branch `main`)
 - **Restrição:** apenas projeto `jorge` pode ser alterado na VPS
-- Env vars necessárias: `NIXPACKS_NODE_VERSION`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `WEBHOOK_SECRET`
+- Env vars necessárias: `NIXPACKS_NODE_VERSION`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `WEBHOOK_SECRET`, `CRON_SECRET`
 - ⚠️ Não misturar bloco raw com variáveis individuais — causa duplicatas e sobrescrita silenciosa

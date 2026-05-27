@@ -49,6 +49,8 @@ export interface FixedExpense {
   notes?: string
   isActive: boolean
   createdAt: string        // YYYY-MM-DD
+  dueDateDay?: number      // dia do mês do vencimento (1–31)
+  reminderEnabled?: boolean
 }
 
 export interface FixedExpenseMonth {

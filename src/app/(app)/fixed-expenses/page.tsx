@@ -60,6 +60,8 @@ interface TemplateForm {
   paymentMethod: PaymentMethod
   notes: string
   isActive: boolean
+  dueDateDay: string        // '' | '1'–'31'
+  reminderEnabled: boolean
 }
 
 const defaultTemplateForm: TemplateForm = {
@@ -70,13 +72,15 @@ const defaultTemplateForm: TemplateForm = {
   paymentMethod: 'pix',
   notes: '',
   isActive: true,
+  dueDateDay: '',
+  reminderEnabled: false,
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
 
 export default function FixedExpensesPage() {
   const {
-    fixedExpenses, fixedExpenseMonths, categories, establishments,
+    fixedExpenses, fixedExpenseMonths, categories, establishments, preferences,
     addFixedExpense, updateFixedExpense, deleteFixedExpense,
     addFixedExpenseMonth, updateFixedExpenseMonth, deleteFixedExpenseMonth,
     addCategory, addEstablishment,
@@ -155,6 +159,8 @@ export default function FixedExpensesPage() {
       paymentMethod: fe.paymentMethod,
       notes: fe.notes ?? '',
       isActive: fe.isActive,
+      dueDateDay: fe.dueDateDay ? String(fe.dueDateDay) : '',
+      reminderEnabled: fe.reminderEnabled ?? false,
     })
     setTemplateSuccess('')
     setShowTemplateForm(true)
@@ -164,6 +170,7 @@ export default function FixedExpensesPage() {
   const saveTemplate = () => {
     if (!templateForm.description.trim() || !templateForm.categoryId) return
     const suggestedAmount = parseFloat(templateForm.suggestedAmount) || 0
+    const dueDateDay = templateForm.dueDateDay ? parseInt(templateForm.dueDateDay) : undefined
     const data = {
       description: templateForm.description.trim(),
       suggestedAmount,
@@ -172,6 +179,8 @@ export default function FixedExpensesPage() {
       paymentMethod: templateForm.paymentMethod,
       notes: templateForm.notes || undefined,
       isActive: templateForm.isActive,
+      dueDateDay,
+      reminderEnabled: dueDateDay ? templateForm.reminderEnabled : false,
     }
     if (editingTemplate) {
       updateFixedExpense(editingTemplate.id, data)
@@ -440,12 +449,21 @@ export default function FixedExpensesPage() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{fe.description}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-sm">{fe.description}</p>
+                      {fe.reminderEnabled && <span className="text-sm">🔔</span>}
+                    </div>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       {cat && (
                         <span className="text-xs px-1.5 py-0.5 rounded-lg font-medium"
                           style={{ background: cat.color + '20', color: cat.color }}>
                           {cat.name}
+                        </span>
+                      )}
+                      {fe.dueDateDay && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-lg font-medium"
+                          style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
+                          Vence dia {fe.dueDateDay}
                         </span>
                       )}
                       {fe.suggestedAmount > 0 && (
@@ -646,6 +664,61 @@ export default function FixedExpensesPage() {
                   Pré-preenchido ao registrar cada mês. Pode ser alterado.
                 </p>
               </div>
+
+              {/* Due date day */}
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Dia de vencimento — opcional
+                </label>
+                <select
+                  value={templateForm.dueDateDay}
+                  onChange={(e) => setTemplateForm({ ...templateForm, dueDateDay: e.target.value, reminderEnabled: e.target.value ? templateForm.reminderEnabled : false })}
+                  className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
+                  style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                >
+                  <option value="">Sem vencimento definido</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                    <option key={d} value={String(d)}>Todo dia {d}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* WhatsApp reminder toggle */}
+              {templateForm.dueDateDay && (
+                <div className="flex items-center justify-between p-3.5 rounded-2xl" style={{ background: 'var(--bg-input)' }}>
+                  <div className="flex-1 min-w-0 pr-3">
+                    <p className="text-sm font-medium">Lembrete via WhatsApp</p>
+                    {preferences.whatsappNumber ? (
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        Aviso 1 dia antes e no dia do vencimento
+                      </p>
+                    ) : (
+                      <p className="text-xs mt-0.5" style={{ color: '#f59e0b' }}>
+                        Configure seu número em Preferências para ativar
+                      </p>
+                    )}
+                  </div>
+                  {preferences.whatsappNumber ? (
+                    <button
+                      type="button"
+                      onClick={() => setTemplateForm({ ...templateForm, reminderEnabled: !templateForm.reminderEnabled })}
+                      style={{
+                        width: 44, height: 24, borderRadius: 12, flexShrink: 0,
+                        background: templateForm.reminderEnabled ? 'var(--accent)' : 'var(--border)',
+                        border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                        position: 'absolute', top: 3, left: templateForm.reminderEnabled ? 23 : 3,
+                        transition: 'left 0.2s',
+                      }} />
+                    </button>
+                  ) : (
+                    <span className="text-lg">🔕</span>
+                  )}
+                </div>
+              )}
 
               {/* Category */}
               <div>

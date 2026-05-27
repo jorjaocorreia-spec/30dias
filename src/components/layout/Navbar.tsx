@@ -1,8 +1,9 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Sun, Moon, LogOut, Plug } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Sun, Moon, LogOut, Plug, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const navItems = [
@@ -27,8 +28,72 @@ function isActive(pathname: string, href: string) {
 export function Navbar() {
   const pathname = usePathname()
   const { preferences, setTheme, logout } = useAppStore()
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Sync body class with collapsed state
+  useEffect(() => {
+    if (collapsed) {
+      document.body.classList.add('sidebar-collapsed')
+    } else {
+      document.body.classList.remove('sidebar-collapsed')
+    }
+    return () => document.body.classList.remove('sidebar-collapsed')
+  }, [collapsed])
+
+  // Initialize from localStorage (after hydration)
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar-collapsed') === 'true'
+    if (saved) setCollapsed(true)
+  }, [])
+
+  const toggle = useCallback((val: boolean) => {
+    setCollapsed(val)
+    localStorage.setItem('sidebar-collapsed', String(val))
+  }, [])
 
   const toggleTheme = () => setTheme(preferences.theme === 'dark' ? 'light' : 'dark')
+
+  const iconBtn = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, borderRadius: 8,
+    color: 'var(--text-muted)', background: 'transparent',
+    cursor: 'pointer', border: 'none', flexShrink: 0,
+  } as const
+
+  const navLink = (active: boolean): React.CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: collapsed ? 'center' : 'flex-start',
+    gap: collapsed ? 0 : 12,
+    padding: collapsed ? '9px' : '9px 12px',
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: 500,
+    background: active ? 'var(--accent-light)' : 'transparent',
+    color: active ? 'var(--accent)' : 'var(--text-muted)',
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    transition: 'opacity 0.15s',
+  })
+
+  const bottomBtn: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: collapsed ? 'center' : 'flex-start',
+    gap: collapsed ? 0 : 12,
+    padding: collapsed ? '9px' : '9px 12px',
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: 500,
+    color: 'var(--text-muted)',
+    background: 'transparent',
+    cursor: 'pointer',
+    border: 'none',
+    width: '100%',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+  }
 
   return (
     <>
@@ -36,61 +101,86 @@ export function Navbar() {
       <aside className="app-sidebar">
         {/* Logo */}
         <div
-          className="flex items-center gap-3 px-5 py-6"
-          style={{ borderBottom: '1px solid var(--border)' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'space-between',
+            padding: '16px',
+            borderBottom: '1px solid var(--border)',
+            minHeight: 72,
+            flexShrink: 0,
+          }}
         >
           <div
-            className="flex items-center justify-center flex-shrink-0 rounded-lg"
             style={{
-              width: 32, height: 32,
-              background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+              display: 'flex', alignItems: 'center', gap: 12,
+              cursor: collapsed ? 'pointer' : 'default',
+              overflow: 'hidden',
             }}
+            onClick={collapsed ? () => toggle(false) : undefined}
+            title={collapsed ? 'Expandir menu' : undefined}
           >
-            <span className="text-white font-bold text-sm">7</span>
+            <div
+              style={{
+                width: 32, height: 32, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+              }}
+            >
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>7</span>
+            </div>
+            {!collapsed && (
+              <span className="gradient-text" style={{ fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap' }}>
+                7Dias
+              </span>
+            )}
           </div>
-          <span className="font-bold text-base gradient-text">7Dias</span>
+
+          {!collapsed && (
+            <button onClick={() => toggle(true)} title="Recolher menu" style={iconBtn}>
+              <ChevronLeft size={16} />
+            </button>
+          )}
         </div>
 
+        {/* Expand button when collapsed */}
+        {collapsed && (
+          <div style={{ padding: '8px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
+            <button onClick={() => toggle(false)} title="Expandir menu" style={iconBtn}>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+
         {/* Nav */}
-        <nav className="flex-1 py-4 px-3" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <nav style={{ flex: 1, padding: '16px 8px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', overflowX: 'hidden' }}>
           {navItems.map(({ href, icon: Icon, label }) => {
             const active = isActive(pathname, href)
             return (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium"
-                style={{
-                  background: active ? 'var(--accent-light)' : 'transparent',
-                  color: active ? 'var(--accent)' : 'var(--text-muted)',
-                  textDecoration: 'none',
-                  transition: 'opacity 0.15s',
-                }}
-              >
+              <Link key={href} href={href} title={collapsed ? label : undefined} style={navLink(active)}>
                 <Icon size={18} style={{ flexShrink: 0 }} />
-                {label}
+                {!collapsed && label}
               </Link>
             )
           })}
         </nav>
 
         {/* Bottom */}
-        <div className="px-3 py-4" style={{ borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ padding: '8px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
           <button
             onClick={toggleTheme}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium w-full"
-            style={{ color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
+            title={collapsed ? (preferences.theme === 'dark' ? 'Modo claro' : 'Modo escuro') : undefined}
+            style={bottomBtn}
           >
-            {preferences.theme === 'dark' ? <Sun size={18} style={{ flexShrink: 0 }} /> : <Moon size={18} style={{ flexShrink: 0 }} />}
-            {preferences.theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            {preferences.theme === 'dark'
+              ? <Sun size={18} style={{ flexShrink: 0 }} />
+              : <Moon size={18} style={{ flexShrink: 0 }} />}
+            {!collapsed && (preferences.theme === 'dark' ? 'Modo claro' : 'Modo escuro')}
           </button>
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium w-full"
-            style={{ color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
-          >
+          <button onClick={logout} title={collapsed ? 'Sair' : undefined} style={bottomBtn}>
             <LogOut size={18} style={{ flexShrink: 0 }} />
-            Sair
+            {!collapsed && 'Sair'}
           </button>
         </div>
       </aside>
