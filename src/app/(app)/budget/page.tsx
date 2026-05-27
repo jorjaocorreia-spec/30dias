@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, Target, Check, Lock } from 'lucide-react'
+import { Wallet, Target, Check, Lock, Calendar } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { formatCurrency } from '@/lib/weekHelpers'
@@ -177,6 +177,68 @@ export default function BudgetPage() {
         </motion.div>
       )}
 
+      {/* Monthly estimate — fixed mode */}
+      {budgetMode === 'fixed' && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mt-4 p-5 rounded-2xl border"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #10b98120, #06b6d420)' }}
+            >
+              <Calendar size={15} style={{ color: 'var(--accent)' }} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Estimativa mensal</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                Com base em 4 semanas por mês
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Discricionário</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {formatCurrency(weeklyBudget)}/sem × 4
+                </span>
+                <span className="text-sm font-medium">{formatCurrency(weeklyBudget * 4)}</span>
+              </div>
+            </div>
+            {hasFixedContribution && (
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <Lock size={10} /> Fixas (mensal)
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {formatCurrency(fixedWeekly)}/sem × 4
+                  </span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                    {formatCurrency(fixedWeekly * 4)}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div
+              className="flex items-center justify-between pt-2 mt-2"
+              style={{ borderTop: '1px solid var(--border)' }}
+            >
+              <span className="text-sm font-semibold">Total estimado / mês</span>
+              <span className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
+                {formatCurrency((weeklyBudget + fixedWeekly) * 4)}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Per category mode */}
       {budgetMode === 'per_category' && (
         <motion.div
@@ -302,6 +364,65 @@ export default function BudgetPage() {
               {savedCat ? <><Check size={15} /> Salvo!</> : 'Salvar tudo'}
             </button>
           </div>
+          {/* Monthly estimate — per category mode */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mt-4 p-5 rounded-2xl border"
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #10b98120, #06b6d420)' }}
+              >
+                <Calendar size={15} style={{ color: 'var(--accent)' }} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Estimativa mensal</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Com base em 4 semanas por mês
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Discricionário</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {formatCurrency(totalCat)}/sem × 4
+                  </span>
+                  <span className="text-sm font-medium">{formatCurrency(totalCat * 4)}</span>
+                </div>
+              </div>
+              {hasAnyCatFixed && (
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <Lock size={10} /> Fixas (mensal)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {formatCurrency(totalCatFixed)}/sem × 4
+                    </span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                      {formatCurrency(totalCatFixed * 4)}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div
+                className="flex items-center justify-between pt-2 mt-2"
+                style={{ borderTop: '1px solid var(--border)' }}
+              >
+                <span className="text-sm font-semibold">Total estimado / mês</span>
+                <span className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
+                  {formatCurrency((totalCat + totalCatFixed) * 4)}
+                </span>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </div>

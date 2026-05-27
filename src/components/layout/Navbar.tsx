@@ -105,7 +105,7 @@ export function Navbar() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: collapsed ? 'center' : 'space-between',
-            padding: '16px',
+            padding: collapsed ? '16px 0' : '16px 20px',
             borderBottom: '1px solid var(--border)',
             minHeight: 72,
             flexShrink: 0,
