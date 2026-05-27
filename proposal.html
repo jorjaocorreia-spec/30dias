@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7Dias — Proposta de Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Space+Mono:wght@400;700&family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ─── Proposta: "Archi" — Dark Financial Editorial ─── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #111110;
+  --bg-card:     #191918;
+  --bg-raised:   #222120;
+  --bg-input:    #1E1D1C;
+  --border:      #2A2928;
+  --border-soft: #232221;
+  --text:        #EDE8E3;
+  --text-muted:  #7A7470;
+  --text-dim:    #4A4745;
+  --accent:      #10b981;
+  --accent-dim:  rgba(16,185,129,0.12);
+  --amber:       #E8B86D;
+  --amber-dim:   rgba(232,184,109,0.12);
+  --red:         #FF6B6B;
+  --red-dim:     rgba(255,107,107,0.10);
+  --cyan:        #5AB4E5;
+  --purple:      #A78BFA;
+
+  --font-display: 'Cormorant', Georgia, serif;
+  --font-mono:    'Space Mono', 'Courier New', monospace;
+  --font-ui:      'Figtree', system-ui, sans-serif;
+
+  --sidebar-w: 220px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); -webkit-font-smoothing: antialiased; }
+
+/* ─── LAYOUT ─── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  padding: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 1px; height: 100%;
+  background: linear-gradient(to bottom, transparent, var(--border) 15%, var(--border) 85%, transparent);
+}
+
+.sidebar-brand {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.brand-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.brand-7 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--amber);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.brand-dias {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.brand-tagline {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Week pulse badge */
+.week-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 20px;
+  padding: 10px 12px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(232,184,109,0.2);
+  border-radius: var(--radius-sm);
+}
+
+.week-badge-ring {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.week-badge-info { flex: 1; min-width: 0; }
+.week-badge-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); font-family: var(--font-mono); }
+.week-badge-week { font-size: 12px; font-weight: 600; color: var(--amber); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Nav items */
+.nav { flex: 1; padding: 8px 12px; overflow-y: auto; }
+.nav-section-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 14px 10px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: 1px;
+  position: relative;
+}
+
+.nav-item:hover { color: var(--text); background: var(--bg-raised); }
+
+.nav-item.active {
+  color: var(--accent);
+  background: var(--accent-dim);
+  font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.nav-icon {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+
+/* Sidebar bottom */
+.sidebar-bottom {
+  padding: 16px 12px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.user-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: background 0.15s;
+}
+.user-item:hover { background: var(--bg-raised); }
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.user-email { font-size: 11px; color: var(--text-muted); }
+
+/* ─── MAIN ─── */
+.main { flex: 1; overflow-y: auto; position: relative; }
+
+/* Topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px;
+  height: 60px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.topbar-left { display: flex; align-items: baseline; gap: 8px; }
+.page-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.page-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.btn-icon {
+  width: 34px; height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+  color: var(--text-muted);
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+.btn-primary {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
+}
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-primary svg { width: 14px; height: 14px; }
+
+/* ─── PAGE CONTENT ─── */
+.page-content { padding: 28px 32px 48px; max-width: 1180px; }
+
+/* Week Navigator */
+.week-nav {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 28px;
+}
+.week-nav-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-muted);
+  transition: all 0.15s;
+}
+.week-nav-btn:hover { color: var(--text); border-color: var(--border); background: var(--bg-raised); }
+
+.week-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.week-current-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ─── KPI GRID ─── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.kpi-card:hover { border-color: var(--border); }
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20px; right: 20px;
+  height: 1px;
+}
+.kpi-card.accent-green::before { background: var(--accent); }
+.kpi-card.accent-amber::before { background: var(--amber); }
+.kpi-card.accent-red::before { background: var(--red); }
+.kpi-card.accent-cyan::before { background: var(--cyan); }
+
+.kpi-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -1px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.kpi-value .currency {
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--text-muted);
+  margin-right: 1px;
+  vertical-align: top;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex; align-items: center; gap: 4px;
+}
+
+.kpi-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 7px; border-radius: 100px;
+}
+.kpi-badge.green { background: var(--accent-dim); color: var(--accent); }
+.kpi-badge.red { background: var(--red-dim); color: var(--red); }
+.kpi-badge.amber { background: var(--amber-dim); color: var(--amber); }
+
+/* ─── BUDGET SECTION ─── */
+.budget-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+
+/* THE RING — week progress dial */
+.budget-ring-wrap {
+  flex-shrink: 0;
+  position: relative;
+  width: 120px; height: 120px;
+}
+
+.budget-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.ring-pct {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.ring-pct-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+.budget-info { flex: 1; }
+.budget-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.budget-amounts {
+  display: flex; gap: 24px; margin-bottom: 16px;
+}
+.budget-amount-item { }
+.budget-amount-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+.budget-amount-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.budget-amount-value.positive { color: var(--accent); }
+.budget-amount-value.negative { color: var(--red); }
+
+/* Segmented progress bar */
+.progress-track {
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.progress-fill.green { background: var(--accent); }
+.progress-fill.amber { background: var(--amber); }
+.progress-fill.red { background: var(--red); }
+
+.progress-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* ─── CHARTS ROW ─── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+}
+.chart-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.chart-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Custom bar chart */
+.bar-chart-wrap {
+  display: flex; align-items: flex-end;
+  gap: 8px; height: 100px;
+  padding-bottom: 4px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; height: 100%;
+  cursor: pointer;
+}
+
+.bar-track {
+  flex: 1; width: 100%;
+  background: var(--bg-input);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  overflow: hidden;
+  display: flex; align-items: flex-end;
+  transition: background 0.15s;
+}
+.bar-col:hover .bar-track { background: var(--bg-raised); }
+.bar-col.active .bar-track { background: var(--bg-raised); }
+
+.bar-fill {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+
+.bar-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+.bar-col.active .bar-label { color: var(--text-muted); }
+
+/* Category donut */
+.donut-wrap {
+  position: relative;
+  width: 110px; height: 110px;
+  margin: 0 auto 16px;
+}
+.donut-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.donut-total {
+  font-family: var(--font-mono);
+  font-size: 14px; font-weight: 700;
+  color: var(--text); line-height: 1;
+}
+.donut-label { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+.category-legend { display: flex; flex-direction: column; gap: 6px; }
+.cat-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.cat-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.cat-name { flex: 1; font-size: 12px; color: var(--text-muted); }
+.cat-amount { font-family: var(--font-mono); font-size: 11px; color: var(--text); font-weight: 700; }
+.cat-pct { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-left: 4px; }
+
+/* ─── RECENT EXPENSES ─── */
+.expenses-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.expenses-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.expenses-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.see-all-link {
+  font-size: 12px; color: var(--accent);
+  text-decoration: none; font-weight: 500;
+  display: flex; align-items: center; gap: 4px;
+}
+
+.expense-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background 0.12s;
+  cursor: pointer;
+}
+.expense-row:last-child { border-bottom: none; }
+.expense-row:hover { background: var(--bg-raised); }
+
+.expense-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+
+.expense-info { flex: 1; min-width: 0; }
+.expense-desc { font-size: 13.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.expense-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; display: flex; gap: 8px; }
+
+.expense-amount {
+  font-family: var(--font-mono);
+  font-size: 14px; font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.expense-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+
+/* ─── SCROLL ANIMATION STUBS ─── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.kpi-card { animation: fadeSlideUp 0.4s ease both; }
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.1s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.2s; }
+.budget-section { animation: fadeSlideUp 0.4s 0.22s ease both; }
+.charts-row { animation: fadeSlideUp 0.4s 0.28s ease both; }
+.expenses-card { animation: fadeSlideUp 0.4s 0.34s ease both; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ─── COMPARISON PANEL ─── */
+.comparison-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  background: linear-gradient(90deg, #111110 0%, #1A1918 50%, #111110 100%);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  gap: 32px;
+  z-index: 100;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.comparison-badge {
+  padding: 3px 12px; border-radius: 100px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.badge-proposal { background: var(--accent-dim); color: var(--accent); }
+.badge-note { background: var(--amber-dim); color: var(--amber); }
+
+/* Push content below banner */
+body { padding-top: 40px; }
+.sidebar { height: calc(100vh - 40px); }
+.main { height: calc(100vh - 40px); }
+</style>
+</head>
+<body>
+
+<!-- Comparison banner -->
+<div class="comparison-banner">
+  <span class="comparison-badge badge-note">↑ PROPOSTA DE REDESIGN — 7DIAS</span>
+  <span>abre ao lado do app atual para comparar</span>
+  <span class="comparison-badge badge-proposal">MOCKUP INTERATIVO</span>
+</div>
+
+<div class="app">
+
+  <!-- ─── SIDEBAR ─── -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <span class="brand-7">7</span>
+        <span class="brand-dias">Dias</span>
+      </div>
+      <div class="brand-tagline">controle semanal</div>
+    </div>
+
+    <!-- Week context badge -->
+    <div class="week-badge">
+      <svg class="week-badge-ring" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="11" stroke="#2A2928" stroke-width="2.5"/>
+        <!-- 73% progress -->
+        <circle cx="14" cy="14" r="11"
+          stroke="#E8B86D" stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-dasharray="69.1" stroke-dashoffset="18.7"
+          transform="rotate(-90 14 14)"/>
+        <text x="14" y="18" text-anchor="middle" font-family="'Space Mono'" font-size="6" fill="#E8B86D" font-weight="700">73%</text>
+      </svg>
+      <div class="week-badge-info">
+        <div class="week-badge-label">Semana atual</div>
+        <div class="week-badge-week">W22 · 26 mai → 01 jun</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="nav-section-label">Principal</div>
+
+      <a class="nav-item active" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="1" y="1" width="6" height="7" rx="1.5"/>
+          <rect x="9" y="1" width="6" height="4" rx="1.5"/>
+          <rect x="1" y="10" width="6" height="5" rx="1.5"/>
+          <rect x="9" y="7" width="6" height="8" rx="1.5"/>
+        </svg>
+        Dashboard
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M5.5 8.5l1.5 1.5 3.5-3.5"/>
+        </svg>
+        Despesas
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2 4h12M2 8h8M2 12h5"/>
+        </svg>
+        Categorias
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="1.5" y="3.5" width="13" height="10" rx="2"/>
+          <path d="M1.5 6.5h13"/>
+          <path d="M5.5 3.5V2M10.5 3.5V2"/>
+        </svg>
+        Fixas
+      </a>
+
+      <div class="nav-section-label">Financeiro</div>
+
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M8 14V2M3 5l5-3 5 3M3 9l5 2 5-2"/>
+        </svg>
+        Receitas
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"/>
+          <path d="M8 5v3l2 2"/>
+        </svg>
+        Orçamento
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M1.5 12.5l4-6 3 3 3-5 3 3.5"/>
+        </svg>
+        Resumo
+      </a>
+
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <polygon points="8,2 10,6 14,6.5 11,9.5 11.8,13.5 8,11.5 4.2,13.5 5,9.5 2,6.5 6,6"/>
+        </svg>
+        Metas
+      </a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-item">
+        <div class="user-avatar">JC</div>
+        <div>
+          <div class="user-name">Jorge Correia</div>
+          <div class="user-email">jorjaocorreia@gmail.com</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ─── MAIN ─── -->
+  <main class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Dashboard</span>
+        <span class="page-subtitle">/ Maio 2026</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-icon" title="Notificações">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M8 2a4.5 4.5 0 00-4.5 4.5v2L2 11h12l-1.5-2.5V6.5A4.5 4.5 0 008 2zM6.5 13a1.5 1.5 0 003 0"/>
+          </svg>
+        </button>
+        <button class="btn-icon" title="Buscar">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/>
+          </svg>
+        </button>
+        <button class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M8 2v12M2 8h12"/>
+          </svg>
+          Nova Despesa
+        </button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Week navigator -->
+      <div class="week-nav">
+        <button class="week-nav-btn">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 2.5L4 6l3.5 3.5"/></svg>
+        </button>
+        <span class="week-label">26 maio → 01 junho, 2026</span>
+        <span class="week-current-badge">semana atual</span>
+        <button class="week-nav-btn" style="opacity:0.3">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg>
+        </button>
+      </div>
+
+      <!-- KPI GRID -->
+      <div class="kpi-grid">
+
+        <div class="kpi-card accent-amber">
+          <div class="kpi-label">Gasto na Semana</div>
+          <div class="kpi-value"><span class="currency">R$</span>847<span style="font-size:20px">,30</span></div>
+          <div class="kpi-sub">
+            <span class="kpi-badge amber">↑ 12%</span>
+            <span>vs semana passada</span>
+          </div>
+        </div>
+
+        <div class="kpi-card accent-green">
+          <div class="kpi-label">Saldo Restante</div>
+          <div class="kpi-value" style="color: var(--accent)"><span class="currency" style="color:var(--accent)">R$</span>302<span style="font-size:20px">,70</span></div>
+          <div class="kpi-sub">
+            <span class="kpi-badge green">✓ 26%</span>
+            <span>do orçamento livre</span>
+          </div>
+        </div>
+
+        <div class="kpi-card accent-cyan">
+          <div class="kpi-label">Saldo do Mês</div>
+          <div class="kpi-value"><span class="currency">R$</span>1.248<span style="font-size:20px">,00</span></div>
+          <div class="kpi-sub">
+            <span class="kpi-badge green">↑</span>
+            <span>receitas − despesas</span>
+          </div>
+        </div>
+
+        <div class="kpi-card accent-red">
+          <div class="kpi-label">A Receber</div>
+          <div class="kpi-value" style="color: var(--amber)"><span class="currency" style="color:var(--amber)">R$</span>180<span style="font-size:20px">,00</span></div>
+          <div class="kpi-sub">
+            <span class="kpi-badge amber">2</span>
+            <span>participantes pendentes</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BUDGET PROGRESS SECTION -->
+      <div class="budget-section">
+
+        <!-- The Ring -->
+        <div class="budget-ring-wrap">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <!-- Background ring -->
+            <circle cx="60" cy="60" r="48" stroke="#2A2928" stroke-width="8" fill="none"/>
+            <!-- Day markers -->
+            <circle cx="60" cy="60" r="48" stroke="#1A1918" stroke-width="8" fill="none"
+              stroke-dasharray="2 18.28" stroke-dashoffset="0"
+              transform="rotate(-90 60 60)"/>
+            <!-- Budget progress: 73% -->
+            <circle cx="60" cy="60" r="48"
+              stroke="#E8B86D"
+              stroke-width="8"
+              fill="none"
+              stroke-linecap="round"
+              stroke-dasharray="301.6" stroke-dashoffset="81.4"
+              transform="rotate(-90 60 60)"
+              style="transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)"/>
+            <!-- Inner fixed ring -->
+            <circle cx="60" cy="60" r="36" stroke="#1E1D1C" stroke-width="6" fill="none"/>
+            <circle cx="60" cy="60" r="36"
+              stroke="#10b981"
+              stroke-width="6"
+              fill="none"
+              stroke-linecap="round"
+              stroke-dasharray="226.2" stroke-dashoffset="61.1"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="budget-ring-center">
+            <span class="ring-pct">73%</span>
+            <span class="ring-pct-label">gasto</span>
+          </div>
+        </div>
+
+        <div class="budget-info">
+          <div class="budget-title">Orçamento da Semana</div>
+          <div class="budget-amounts">
+            <div class="budget-amount-item">
+              <div class="budget-amount-label">Orçamento total</div>
+              <div class="budget-amount-value">R$ 1.150,00</div>
+            </div>
+            <div class="budget-amount-item">
+              <div class="budget-amount-label">Gasto</div>
+              <div class="budget-amount-value" style="color: var(--amber)">R$ 847,30</div>
+            </div>
+            <div class="budget-amount-item">
+              <div class="budget-amount-label">Livre</div>
+              <div class="budget-amount-value positive">R$ 302,70</div>
+            </div>
+          </div>
+
+          <div class="progress-track">
+            <div class="progress-fill amber" style="width: 73%"></div>
+          </div>
+          <div class="progress-labels">
+            <span>0%</span>
+            <span style="color:var(--amber)">73% · R$ 847,30</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <!-- Ring legend -->
+        <div style="flex-shrink:0; display:flex; flex-direction:column; gap:10px; min-width:130px;">
+          <div style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px;">Legenda</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:10px; height:3px; background:var(--amber); border-radius:2px;"></div>
+            <span style="font-size:12px; color:var(--text-muted);">Discricionário</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:10px; height:3px; background:var(--accent); border-radius:2px;"></div>
+            <span style="font-size:12px; color:var(--text-muted);">Fixas (auto)</span>
+          </div>
+          <div style="margin-top:8px; padding:8px 12px; background:var(--bg-input); border-radius:var(--radius-sm);">
+            <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">Projeção mensal</div>
+            <div style="font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--text);">R$ 3.389<span style="font-size:10px; color:var(--text-muted)">/mês</span></div>
+            <div style="font-size:11px; color:var(--red); margin-top:2px;">↑ R$ 389 vs renda</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="charts-row">
+
+        <!-- Daily bar chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Gastos por dia — W22</span>
+            <div style="font-family:var(--font-mono); font-size:10px; color:var(--accent);">Seg selecionado</div>
+          </div>
+          <div class="bar-chart-wrap">
+            <!-- Mon -->
+            <div class="bar-col active">
+              <div class="bar-track">
+                <div class="bar-fill" style="height:55%; background:var(--accent);"></div>
+              </div>
+              <span class="bar-label">Seg</span>
+            </div>
+            <!-- Tue -->
+            <div class="bar-col">
+              <div class="bar-track">
+                <div class="bar-fill" style="height:80%; background:var(--amber);"></div>
+              </div>
+              <span class="bar-label">Ter</span>
+            </div>
+            <!-- Wed -->
+            <div class="bar-col">
+              <div class="bar-track">
+                <div class="bar-fill" style="height:30%; background:#3A3836;"></div>
+              </div>
+              <span class="bar-label">Qua</span>
+            </div>
+            <!-- Thu -->
+            <div class="bar-col">
+              <div class="bar-track">
+                <div class="bar-fill" style="height:65%; background:#3A3836;"></div>
+              </div>
+              <span class="bar-label">Qui</span>
+            </div>
+            <!-- Fri -->
+            <div class="bar-col">
+              <div class="bar-track">
+                <div class="bar-fill" style="height:40%; background:#3A3836;"></div>
+              </div>
+              <span class="bar-label">Sex</span>
+            </div>
+            <!-- Sat -->
+            <div class="bar-col">
+              <div class="bar-track">
+                <div class="bar-fill" style="height:15%; background:#3A3836;"></div>
+              </div>
+              <span class="bar-label">Sáb</span>
+            </div>
+            <!-- Sun -->
+            <div class="bar-col">
+              <div class="bar-track">
+                <div class="bar-fill" style="height:5%; background:#2A2928;"></div>
+              </div>
+              <span class="bar-label" style="color:var(--text-dim)">Dom</span>
+            </div>
+          </div>
+
+          <!-- Day detail -->
+          <div style="margin-top:14px; padding:12px 14px; background:var(--bg-input); border-radius:var(--radius-sm); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:12px; color:var(--text-muted)">Segunda-feira, 26 mai</div>
+              <div style="font-family:var(--font-mono); font-size:16px; font-weight:700; color:var(--accent); margin-top:2px;">R$ 237,80</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted)">4 transações</div>
+          </div>
+        </div>
+
+        <!-- Category donut -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Por categoria</span>
+          </div>
+
+          <div class="donut-wrap">
+            <svg viewBox="0 0 110 110" width="110" height="110">
+              <!-- Alimentação 42% -->
+              <circle cx="55" cy="55" r="40"
+                fill="none" stroke="#F97316" stroke-width="12"
+                stroke-dasharray="105.5 259.8" stroke-dashoffset="0"
+                transform="rotate(-90 55 55)"/>
+              <!-- Transporte 22% -->
+              <circle cx="55" cy="55" r="40"
+                fill="none" stroke="#60BDFF" stroke-width="12"
+                stroke-dasharray="55.4 310"
+                stroke-dashoffset="-105.5"
+                transform="rotate(-90 55 55)"/>
+              <!-- Saúde 18% -->
+              <circle cx="55" cy="55" r="40"
+                fill="none" stroke="#10b981" stroke-width="12"
+                stroke-dasharray="45.3 320"
+                stroke-dashoffset="-160.9"
+                transform="rotate(-90 55 55)"/>
+              <!-- Outros 18% -->
+              <circle cx="55" cy="55" r="40"
+                fill="none" stroke="#A78BFA" stroke-width="12"
+                stroke-dasharray="45.3 320"
+                stroke-dashoffset="-206.2"
+                transform="rotate(-90 55 55)"/>
+              <!-- Center hole -->
+              <circle cx="55" cy="55" r="28" fill="#191918"/>
+            </svg>
+            <div class="donut-center">
+              <span class="donut-total">R$ 847</span>
+              <span class="donut-label">total</span>
+            </div>
+          </div>
+
+          <div class="category-legend">
+            <div class="cat-row">
+              <div class="cat-dot" style="background:#F97316"></div>
+              <span class="cat-name">Alimentação</span>
+              <span class="cat-amount">R$ 355</span>
+              <span class="cat-pct">42%</span>
+            </div>
+            <div class="cat-row">
+              <div class="cat-dot" style="background:#60BDFF"></div>
+              <span class="cat-name">Transporte</span>
+              <span class="cat-amount">R$ 186</span>
+              <span class="cat-pct">22%</span>
+            </div>
+            <div class="cat-row">
+              <div class="cat-dot" style="background:#10b981"></div>
+              <span class="cat-name">Saúde</span>
+              <span class="cat-amount">R$ 153</span>
+              <span class="cat-pct">18%</span>
+            </div>
+            <div class="cat-row">
+              <div class="cat-dot" style="background:#A78BFA"></div>
+              <span class="cat-name">Outros</span>
+              <span class="cat-amount">R$ 153</span>
+              <span class="cat-pct">18%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT EXPENSES -->
+      <div class="expenses-card">
+        <div class="expenses-header">
+          <span class="expenses-title">Despesas Recentes — Segunda, 26 mai</span>
+          <a class="see-all-link" href="#">
+            Ver todas
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg>
+          </a>
+        </div>
+
+        <div class="expense-row">
+          <div class="expense-icon" style="background:rgba(249,115,22,0.12);">🍔</div>
+          <div class="expense-info">
+            <div class="expense-desc">iFood — Almoço</div>
+            <div class="expense-meta"><span>12:34</span><span>·</span><span>Pix</span><span>·</span><span style="color:var(--accent)">Alimentação</span></div>
+          </div>
+          <span class="expense-badge" style="background:var(--bg-input); color:var(--text-muted)">PIX</span>
+          <span class="expense-amount">R$ 47,90</span>
+        </div>
+
+        <div class="expense-row">
+          <div class="expense-icon" style="background:rgba(96,189,255,0.12);">🚌</div>
+          <div class="expense-info">
+            <div class="expense-desc">Uber — Manhã</div>
+            <div class="expense-meta"><span>09:15</span><span>·</span><span>Crédito</span><span>·</span><span style="color:var(--cyan)">Transporte</span></div>
+          </div>
+          <span class="expense-badge" style="background:rgba(96,189,255,0.1); color:var(--cyan)">CRED</span>
+          <span class="expense-amount">R$ 18,50</span>
+        </div>
+
+        <div class="expense-row">
+          <div class="expense-icon" style="background:rgba(16,185,129,0.12);">💊</div>
+          <div class="expense-info">
+            <div class="expense-desc">Farmácia — Remédios</div>
+            <div class="expense-meta">
+              <span>16:20</span><span>·</span><span>Crédito</span><span>·</span><span style="color:var(--accent)">Saúde</span>
+              <span style="background:rgba(167,139,250,0.12); color:#A78BFA; padding:1px 6px; border-radius:100px; font-size:10px;">+ 1 pessoa</span>
+            </div>
+          </div>
+          <span class="expense-badge" style="background:rgba(167,139,250,0.1); color:#A78BFA">SPLIT</span>
+          <span class="expense-amount">R$ 87,00</span>
+        </div>
+
+        <div class="expense-row">
+          <div class="expense-icon" style="background:rgba(249,115,22,0.12);">☕</div>
+          <div class="expense-info">
+            <div class="expense-desc">Café + Pão de Queijo</div>
+            <div class="expense-meta"><span>08:05</span><span>·</span><span>Dinheiro</span><span>·</span><span style="color:var(--accent)">Alimentação</span></div>
+          </div>
+          <span class="expense-badge" style="background:var(--bg-input); color:var(--text-dim)">CASH</span>
+          <span class="expense-amount">R$ 12,50</span>
+        </div>
+
+      </div>
+
+    </div><!-- /page-content -->
+  </main>
+</div>
+
+<!-- Interactive: click bars -->
+<script>
+  const bars = document.querySelectorAll('.bar-col');
+  bars.forEach(bar => {
+    bar.addEventListener('click', () => {
+      bars.forEach(b => b.classList.remove('active'));
+      bar.classList.add('active');
+      // change active fill color
+      bars.forEach(b => {
+        const fill = b.querySelector('.bar-fill');
+        if(b.classList.contains('active')) {
+          fill.style.background = 'var(--accent)';
+        } else {
+          fill.style.background = '#3A3836';
+        }
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

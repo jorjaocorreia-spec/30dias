@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7Dias — Proposta 3: Cédula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ─── Proposta 3: "Cédula" — Editorial Minimalista Claro ─── */
+/* Inspiração: FT Weekend, The Economist digital, Stripe Dashboard */
+/* Diferencial: fundo branco-quente com tipografia editorial forte */
+/* Paleta monocromática com UM acento — máxima clareza */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --paper:       #FAFAF8;
+  --paper-2:     #F5F4F1;
+  --paper-3:     #EEECEA;
+  --ink:         #1A1916;
+  --ink-soft:    #3D3B37;
+  --ink-muted:   #7A7772;
+  --ink-faint:   #C4C1BB;
+  --rule:        #E8E5E0;
+
+  --accent:      #10b981;
+  --accent-bg:   #F0FDF9;
+  --accent-ink:  #065F46;
+  --red:         #DC2626;
+  --red-bg:      #FEF2F2;
+  --amber:       #D97706;
+  --amber-bg:    #FFFBEB;
+  --blue:        #2563EB;
+
+  --font-serif:  'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-mono:   'IBM Plex Mono', 'Courier New', monospace;
+  --font-sans:   'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --sidebar-w: 220px;
+  --r: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Subtle paper texture via repeating gradient */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 23px, var(--rule) 24px),
+    repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(0,0,0,0.01) 24px);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.app { display: flex; height: 100vh; position: relative; z-index: 1; }
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ink);
+  position: relative;
+  z-index: 10;
+}
+
+/* The sidebar is dark ink — contrast against the bright main */
+
+.sidebar-brand {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.brand-block {
+  margin-bottom: 4px;
+}
+
+.brand-serif {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: #FAFAF8;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  display: flex; align-items: baseline; gap: 1px;
+}
+
+.brand-7 {
+  color: var(--accent);
+  font-style: italic;
+  font-size: 34px;
+  font-weight: 900;
+  margin-right: 1px;
+}
+
+.brand-rule {
+  width: 100%; height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 10px 0 8px;
+}
+
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(250,250,248,0.3);
+}
+
+/* Week strip */
+.week-strip {
+  display: flex; align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 10px;
+}
+
+.week-strip-num {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.week-strip-info { }
+.week-strip-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(250,250,248,0.3);
+}
+.week-strip-dates {
+  font-size: 11px;
+  color: rgba(250,250,248,0.5);
+  margin-top: 2px;
+}
+
+/* Nav */
+.nav { flex: 1; padding: 8px 12px; overflow-y: auto; }
+
+.nav-section-label {
+  font-family: var(--font-mono);
+  font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(250,250,248,0.2);
+  padding: 16px 10px 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r);
+  text-decoration: none;
+  color: rgba(250,250,248,0.45);
+  font-size: 13px; font-weight: 500;
+  transition: all 0.12s;
+  margin-bottom: 1px;
+}
+.nav-item:hover { color: rgba(250,250,248,0.8); background: rgba(255,255,255,0.05); }
+.nav-item.active {
+  color: var(--ink);
+  background: var(--accent);
+  font-weight: 600;
+}
+.nav-icon { width: 15px; height: 15px; opacity: 0.7; flex-shrink: 0; }
+.nav-item.active .nav-icon { opacity: 1; }
+.nav-item.active { color: #fff; }
+
+/* Sidebar bottom */
+.sidebar-bottom { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.05); }
+.user-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--r);
+  cursor: pointer; transition: background 0.12s;
+}
+.user-item:hover { background: rgba(255,255,255,0.05); }
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 600; color: rgba(250,250,248,0.8); }
+.user-email { font-size: 10px; color: rgba(250,250,248,0.3); }
+
+/* ─── MAIN ─── */
+.main { flex: 1; overflow-y: auto; }
+
+/* Topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 36px;
+  height: 56px;
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+}
+
+.topbar-left { display: flex; align-items: baseline; gap: 10px; }
+.page-title {
+  font-family: var(--font-serif);
+  font-size: 20px; font-weight: 600;
+  color: var(--ink); letter-spacing: -0.3px;
+}
+.page-crumb {
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--ink-muted);
+}
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.btn-outline {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r);
+  border: 1.5px solid var(--rule);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.12s;
+  font-family: var(--font-sans);
+}
+.btn-outline:hover { border-color: var(--ink-muted); color: var(--ink); }
+
+.btn-solid {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 18px;
+  border-radius: var(--r);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px; font-weight: 700;
+  border: none; cursor: pointer;
+  transition: all 0.12s;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+}
+.btn-solid:hover { background: var(--ink-soft); }
+
+/* ─── PAGE ─── */
+.page-content { padding: 32px 36px 48px; max-width: 1180px; }
+
+/* Week navigator */
+.week-nav {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.week-btn {
+  width: 28px; height: 28px; border-radius: var(--r);
+  border: 1.5px solid var(--rule); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ink-muted); transition: all 0.12s;
+}
+.week-btn:hover { border-color: var(--ink-muted); color: var(--ink); }
+.week-label { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); }
+.week-pill {
+  padding: 2px 10px; border-radius: 100px;
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  border: 1px solid rgba(16,185,129,0.2);
+  letter-spacing: 0.05em;
+}
+
+/* ─── BIG NUMBER ROW ─── */
+/* The signature element: massive editorial numbers */
+.big-numbers {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.big-num {
+  padding: 24px 28px;
+  border-right: 1px solid var(--rule);
+  position: relative;
+}
+.big-num:last-child { border-right: none; }
+
+/* Highlight first card */
+.big-num.featured {
+  background: var(--ink);
+}
+
+.big-num-label {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+.big-num.featured .big-num-label { color: rgba(250,250,248,0.4); }
+
+.big-num-value {
+  font-family: var(--font-serif);
+  font-size: 44px; font-weight: 700;
+  line-height: 1;
+  letter-spacing: -2px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.big-num.featured .big-num-value { color: var(--accent); }
+.big-num-value .curr {
+  font-size: 18px; font-weight: 400;
+  color: var(--ink-muted);
+  vertical-align: top; margin-top: 8px;
+  display: inline-block;
+  margin-right: 2px;
+}
+.big-num.featured .curr { color: rgba(16,185,129,0.5); }
+
+.big-num-sub {
+  font-size: 12px; color: var(--ink-muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.big-num.featured .big-num-sub { color: rgba(250,250,248,0.4); }
+
+.chip {
+  display: inline-flex; align-items: center;
+  padding: 1px 8px; border-radius: 100px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+}
+.chip.up { background: var(--accent-bg); color: var(--accent-ink); }
+.chip.down { background: var(--red-bg); color: var(--red); }
+.chip.warn { background: var(--amber-bg); color: var(--amber); }
+
+/* ─── BUDGET BAR ─── */
+.budget-bar-section {
+  border: 1.5px solid var(--rule);
+  border-radius: var(--r-md);
+  padding: 22px 28px;
+  margin-bottom: 24px;
+  background: var(--paper);
+  display: flex; gap: 32px; align-items: center;
+}
+
+.budget-bar-chart { flex: 1; }
+.budget-bar-title {
+  font-family: var(--font-serif);
+  font-size: 17px; font-weight: 600; color: var(--ink);
+  margin-bottom: 4px;
+}
+.budget-bar-meta {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--ink-muted); margin-bottom: 18px;
+}
+
+/* Segmented bar */
+.seg-bar { height: 10px; border-radius: 2px; background: var(--paper-3); display: flex; overflow: hidden; margin-bottom: 10px; }
+.seg-spent {
+  height: 100%;
+  background: var(--ink);
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.seg-fixed {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+.bar-legend {
+  display: flex; gap: 20px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--ink-muted);
+}
+.legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+/* Budget aside */
+.budget-aside {
+  min-width: 200px;
+  flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.aside-item {
+  padding: 12px 16px;
+  border-radius: var(--r);
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+}
+.aside-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+.aside-value { font-family: var(--font-serif); font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: var(--ink); }
+
+/* ─── CHARTS ROW ─── */
+.charts-row { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 24px; }
+
+.chart-box {
+  border: 1.5px solid var(--rule);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  background: var(--paper);
+}
+
+.chart-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+.chart-title-txt {
+  font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* Bars */
+.bar-area { display: flex; align-items: flex-end; gap: 8px; height: 100px; }
+.bar-c { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; cursor: pointer; }
+.bar-tr { flex: 1; width: 100%; background: var(--paper-3); border-radius: 2px 2px 0 0; display: flex; align-items: flex-end; transition: background 0.12s; }
+.bar-c:hover .bar-tr { background: var(--paper-2); }
+.bar-c.active .bar-tr { background: var(--ink); }
+.bar-fi { width: 100%; border-radius: 2px 2px 0 0; transition: height 0.7s cubic-bezier(0.4,0,0.2,1); }
+.bar-lb { font-family: var(--font-mono); font-size: 8.5px; color: var(--ink-faint); }
+.bar-c.active .bar-lb { color: var(--ink); font-weight: 600; }
+
+.day-pill {
+  margin-top: 12px; padding: 10px 16px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.day-pill-date { font-size: 11px; color: var(--ink-muted); font-family: var(--font-mono); }
+.day-pill-val { font-family: var(--font-serif); font-size: 20px; font-weight: 700; color: var(--accent); }
+.day-pill-cnt { font-size: 11px; color: var(--ink-muted); }
+
+/* Category bars */
+.cat-list { display: flex; flex-direction: column; gap: 14px; }
+.cat-entry { }
+.cat-top { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; }
+.cat-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.cat-n { flex: 1; font-size: 13px; font-weight: 500; color: var(--ink); }
+.cat-v { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--ink); }
+.cat-p { font-family: var(--font-mono); font-size: 10px; color: var(--ink-muted); }
+.cat-bar { height: 4px; background: var(--paper-3); border-radius: 2px; overflow: hidden; }
+.cat-bar-fill { height: 100%; border-radius: 2px; }
+
+/* ─── EXPENSES TABLE ─── */
+.exp-table {
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.exp-thead {
+  display: grid; grid-template-columns: 1fr 120px 100px 80px;
+  padding: 10px 20px;
+  background: var(--ink);
+  gap: 12px;
+}
+.th {
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(250,250,248,0.4);
+}
+
+.exp-row {
+  display: grid; grid-template-columns: 1fr 120px 100px 80px;
+  padding: 12px 20px;
+  gap: 12px;
+  border-bottom: 1px solid var(--rule);
+  align-items: center;
+  transition: background 0.1s; cursor: pointer;
+}
+.exp-row:last-child { border-bottom: none; }
+.exp-row:hover { background: var(--paper-2); }
+
+.exp-main { display: flex; align-items: center; gap: 10px; }
+.exp-icon-sq {
+  width: 32px; height: 32px; border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.exp-desc-txt { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.exp-cat-txt { font-size: 11px; color: var(--ink-muted); margin-top: 1px; }
+
+.exp-cat-badge {
+  font-size: 11px; font-weight: 500;
+  padding: 2px 8px; border-radius: 4px;
+  justify-self: start;
+}
+.exp-method {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--ink-muted); letter-spacing: 0.08em;
+}
+.exp-amt {
+  font-family: var(--font-serif); font-size: 16px; font-weight: 700;
+  color: var(--ink); text-align: right; letter-spacing: -0.5px;
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes slideIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.big-numbers { animation: slideIn 0.35s 0.05s ease both; }
+.budget-bar-section { animation: slideIn 0.35s 0.1s ease both; }
+.charts-row { animation: slideIn 0.35s 0.15s ease both; }
+.exp-table { animation: slideIn 0.35s 0.2s ease both; }
+
+/* ─── SCROLL ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--paper-2); }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+/* ─── BANNER ─── */
+.banner {
+  position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 100;
+  background: var(--ink);
+  display: flex; align-items: center; justify-content: center; gap: 28px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.1em; color: rgba(250,250,248,0.4);
+}
+.b-chip { padding: 3px 12px; border-radius: 4px; font-weight: 700; letter-spacing: 0.08em; }
+.chip-p3 { background: var(--accent); color: white; }
+.chip-desc { border: 1px solid rgba(255,255,255,0.1); color: rgba(250,250,248,0.5); }
+
+body { padding-top: 38px; }
+.sidebar { height: calc(100vh - 38px); }
+.main { height: calc(100vh - 38px); }
+</style>
+</head>
+<body>
+
+<!-- Banner -->
+<div class="banner">
+  <span class="b-chip chip-p3">PROPOSTA 3 — "CÉDULA"</span>
+  <span>Editorial Minimalista · Playfair Display + IBM Plex Mono</span>
+  <span class="b-chip chip-desc">Light / Refinado</span>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR — ink dark contrasting with bright main -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-block">
+        <div class="brand-serif">
+          <span class="brand-7">7</span>Dias
+        </div>
+      </div>
+      <div class="brand-rule"></div>
+      <div class="brand-sub">gestão por ciclos · semanal</div>
+    </div>
+
+    <div class="week-strip">
+      <div class="week-strip-num">22</div>
+      <div class="week-strip-info">
+        <div class="week-strip-label">semana corrente</div>
+        <div class="week-strip-dates">26 mai → 01 jun 2026</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="nav-section-label">Principal</div>
+      <a class="nav-item active" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="1" y="1" width="6" height="7" rx="1.5"/><rect x="9" y="1" width="6" height="4" rx="1.5"/>
+          <rect x="1" y="10" width="6" height="5" rx="1.5"/><rect x="9" y="7" width="6" height="8" rx="1.5"/>
+        </svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"/><path d="M5.5 8.5l1.5 1.5 3.5-3.5"/>
+        </svg>
+        Despesas
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2 4h12M2 8h8M2 12h5"/>
+        </svg>
+        Categorias
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="1.5" y="3.5" width="13" height="10" rx="2"/><path d="M1.5 6.5h13"/>
+        </svg>
+        Fixas
+      </a>
+
+      <div class="nav-section-label">Financeiro</div>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M8 14V2M3 5l5-3 5 3M3 9l5 2 5-2"/>
+        </svg>
+        Receitas
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"/><path d="M8 5v3l2 2"/>
+        </svg>
+        Orçamento
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M1.5 12.5l4-6 3 3 3-5 3 3.5"/>
+        </svg>
+        Resumo
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <polygon points="8,2 10,6 14,6.5 11,9.5 11.8,13.5 8,11.5 4.2,13.5 5,9.5 2,6.5 6,6"/>
+        </svg>
+        Metas
+      </a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-item">
+        <div class="user-avatar">JC</div>
+        <div>
+          <div class="user-name">Jorge Correia</div>
+          <div class="user-email">jorjaocorreia@gmail.com</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN — bright paper -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Dashboard</span>
+        <span class="page-crumb">/ Maio 2026 / Semana 22</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-outline">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/>
+          </svg>
+          Buscar
+        </button>
+        <button class="btn-solid">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M8 2v12M2 8h12"/>
+          </svg>
+          Nova Despesa
+        </button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Week navigator -->
+      <div class="week-nav">
+        <button class="week-btn">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 2.5L4 6l3.5 3.5"/></svg>
+        </button>
+        <span class="week-label">26 maio → 01 junho, 2026</span>
+        <span class="week-pill">semana atual</span>
+        <button class="week-btn" style="opacity:0.3">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg>
+        </button>
+      </div>
+
+      <!-- BIG NUMBERS — the editorial signature element -->
+      <div class="big-numbers">
+
+        <div class="big-num featured">
+          <div class="big-num-label">Saldo Restante</div>
+          <div class="big-num-value">
+            <span class="curr">R$</span>302<span style="font-size:24px">,70</span>
+          </div>
+          <div class="big-num-sub">
+            <span class="chip up">26% livre</span>
+            do orçamento
+          </div>
+        </div>
+
+        <div class="big-num">
+          <div class="big-num-label">Gasto na Semana</div>
+          <div class="big-num-value" style="font-size:36px">
+            <span class="curr">R$</span>847<span style="font-size:20px">,30</span>
+          </div>
+          <div class="big-num-sub">
+            <span class="chip warn">↑ 12%</span>
+            vs sem. passada
+          </div>
+        </div>
+
+        <div class="big-num">
+          <div class="big-num-label">Saldo do Mês</div>
+          <div class="big-num-value" style="font-size:36px">
+            <span class="curr">R$</span>1.248
+          </div>
+          <div class="big-num-sub">
+            <span class="chip up">positivo</span>
+          </div>
+        </div>
+
+        <div class="big-num">
+          <div class="big-num-label">A Receber</div>
+          <div class="big-num-value" style="font-size:36px; color:var(--amber)">
+            <span class="curr" style="color:var(--ink-muted)">R$</span>180
+          </div>
+          <div class="big-num-sub">
+            <span class="chip warn">2</span>
+            pendentes
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BUDGET BAR -->
+      <div class="budget-bar-section">
+        <div class="budget-bar-chart">
+          <div class="budget-bar-title">Orçamento da Semana — W22</div>
+          <div class="budget-bar-meta">Semana 26 mai → 01 jun · 73% utilizado · 4 dias restantes</div>
+
+          <div class="seg-bar">
+            <div class="seg-spent" style="width:60%"></div>
+            <div class="seg-fixed" style="width:13%"></div>
+          </div>
+
+          <div class="bar-legend">
+            <span><span class="legend-dot" style="background:var(--ink)"></span>Discricionário — R$ 690,00</span>
+            <span><span class="legend-dot" style="background:var(--accent)"></span>Fixas — R$ 157,30</span>
+            <span style="color:var(--ink-faint)"><span class="legend-dot" style="background:var(--paper-3)"></span>Livre — R$ 302,70</span>
+          </div>
+        </div>
+
+        <div class="budget-aside">
+          <div class="aside-item">
+            <div class="aside-label">Projeção mensal</div>
+            <div class="aside-value" style="color:var(--red)">R$ 3.389</div>
+          </div>
+          <div class="aside-item">
+            <div class="aside-label">Orçamento total</div>
+            <div class="aside-value">R$ 1.150</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-head">
+            <span class="chart-title-txt">Gastos por dia — W22</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent)">Segunda selecionada</span>
+          </div>
+          <div class="bar-area">
+            <div class="bar-c active">
+              <div class="bar-tr"><div class="bar-fi" style="height:55%;background:var(--accent)"></div></div>
+              <span class="bar-lb">Seg</span>
+            </div>
+            <div class="bar-c">
+              <div class="bar-tr"><div class="bar-fi" style="height:80%;background:var(--ink-soft)"></div></div>
+              <span class="bar-lb">Ter</span>
+            </div>
+            <div class="bar-c">
+              <div class="bar-tr"><div class="bar-fi" style="height:30%;background:var(--ink-faint)"></div></div>
+              <span class="bar-lb">Qua</span>
+            </div>
+            <div class="bar-c">
+              <div class="bar-tr"><div class="bar-fi" style="height:65%;background:var(--ink-faint)"></div></div>
+              <span class="bar-lb">Qui</span>
+            </div>
+            <div class="bar-c">
+              <div class="bar-tr"><div class="bar-fi" style="height:40%;background:var(--ink-faint)"></div></div>
+              <span class="bar-lb">Sex</span>
+            </div>
+            <div class="bar-c">
+              <div class="bar-tr"><div class="bar-fi" style="height:15%;background:var(--paper-3)"></div></div>
+              <span class="bar-lb">Sáb</span>
+            </div>
+            <div class="bar-c">
+              <div class="bar-tr"><div class="bar-fi" style="height:5%;background:var(--paper-3)"></div></div>
+              <span class="bar-lb" style="color:var(--ink-faint)">Dom</span>
+            </div>
+          </div>
+          <div class="day-pill">
+            <div>
+              <div class="day-pill-date">Segunda-feira, 26 mai</div>
+              <div class="day-pill-val">R$ 237,80</div>
+            </div>
+            <div class="day-pill-cnt">4 transações</div>
+          </div>
+        </div>
+
+        <div class="chart-box">
+          <div class="chart-head">
+            <span class="chart-title-txt">Por categoria</span>
+          </div>
+          <div class="cat-list">
+            <div class="cat-entry">
+              <div class="cat-top">
+                <div class="cat-sq" style="background:#F97316"></div>
+                <span class="cat-n">Alimentação</span>
+                <span class="cat-v">R$ 355</span>
+                <span class="cat-p">42%</span>
+              </div>
+              <div class="cat-bar"><div class="cat-bar-fill" style="width:42%;background:#F97316"></div></div>
+            </div>
+            <div class="cat-entry">
+              <div class="cat-top">
+                <div class="cat-sq" style="background:var(--blue)"></div>
+                <span class="cat-n">Transporte</span>
+                <span class="cat-v">R$ 186</span>
+                <span class="cat-p">22%</span>
+              </div>
+              <div class="cat-bar"><div class="cat-bar-fill" style="width:22%;background:var(--blue)"></div></div>
+            </div>
+            <div class="cat-entry">
+              <div class="cat-top">
+                <div class="cat-sq" style="background:var(--accent)"></div>
+                <span class="cat-n">Saúde</span>
+                <span class="cat-v">R$ 153</span>
+                <span class="cat-p">18%</span>
+              </div>
+              <div class="cat-bar"><div class="cat-bar-fill" style="width:18%;background:var(--accent)"></div></div>
+            </div>
+            <div class="cat-entry">
+              <div class="cat-top">
+                <div class="cat-sq" style="background:var(--amber)"></div>
+                <span class="cat-n">Outros</span>
+                <span class="cat-v">R$ 153</span>
+                <span class="cat-p">18%</span>
+              </div>
+              <div class="cat-bar"><div class="cat-bar-fill" style="width:18%;background:var(--amber)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPENSES TABLE — editorial tabular layout -->
+      <div class="exp-table">
+        <div class="exp-thead">
+          <span class="th">Descrição</span>
+          <span class="th">Categoria</span>
+          <span class="th">Método</span>
+          <span class="th" style="text-align:right">Valor</span>
+        </div>
+
+        <div class="exp-row">
+          <div class="exp-main">
+            <div class="exp-icon-sq" style="background:rgba(249,115,22,0.1)">🍔</div>
+            <div>
+              <div class="exp-desc-txt">iFood — Almoço</div>
+              <div class="exp-cat-txt">12:34 · Segunda, 26 mai</div>
+            </div>
+          </div>
+          <span class="exp-cat-badge" style="background:rgba(249,115,22,0.08);color:#C2410C">Alimentação</span>
+          <span class="exp-method">PIX</span>
+          <span class="exp-amt">R$ 47,90</span>
+        </div>
+
+        <div class="exp-row">
+          <div class="exp-main">
+            <div class="exp-icon-sq" style="background:rgba(37,99,235,0.08)">🚌</div>
+            <div>
+              <div class="exp-desc-txt">Uber — Manhã</div>
+              <div class="exp-cat-txt">09:15 · Segunda, 26 mai</div>
+            </div>
+          </div>
+          <span class="exp-cat-badge" style="background:rgba(37,99,235,0.08);color:var(--blue)">Transporte</span>
+          <span class="exp-method">CRÉDITO</span>
+          <span class="exp-amt">R$ 18,50</span>
+        </div>
+
+        <div class="exp-row">
+          <div class="exp-main">
+            <div class="exp-icon-sq" style="background:rgba(16,185,129,0.08)">💊</div>
+            <div>
+              <div class="exp-desc-txt">Farmácia — Remédios</div>
+              <div class="exp-cat-txt">16:20 · + 1 pessoa</div>
+            </div>
+          </div>
+          <span class="exp-cat-badge" style="background:var(--accent-bg);color:var(--accent-ink)">Saúde</span>
+          <span class="exp-method">CRÉDITO</span>
+          <span class="exp-amt">R$ 87,00</span>
+        </div>
+
+        <div class="exp-row">
+          <div class="exp-main">
+            <div class="exp-icon-sq" style="background:rgba(249,115,22,0.08)">☕</div>
+            <div>
+              <div class="exp-desc-txt">Café + Pão de Queijo</div>
+              <div class="exp-cat-txt">08:05 · Segunda, 26 mai</div>
+            </div>
+          </div>
+          <span class="exp-cat-badge" style="background:rgba(249,115,22,0.08);color:#C2410C">Alimentação</span>
+          <span class="exp-method">DINHEIRO</span>
+          <span class="exp-amt">R$ 12,50</span>
+        </div>
+
+      </div><!-- /exp-table -->
+
+    </div>
+  </main>
+</div>
+
+<script>
+const bars = document.querySelectorAll('.bar-c');
+bars.forEach(bar => {
+  bar.addEventListener('click', () => {
+    bars.forEach(b => {
+      b.classList.remove('active');
+      const f = b.querySelector('.bar-fi');
+      f.style.background = 'var(--ink-faint)';
+    });
+    bar.classList.add('active');
+    const f = bar.querySelector('.bar-fi');
+    f.style.background = 'var(--accent)';
+  });
+});
+</script>
+</body>
+</html>

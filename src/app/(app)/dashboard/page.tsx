@@ -147,8 +147,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold">Dashboard</h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-syne)', letterSpacing: '-0.3px' }}>Dashboard</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.05em' }}>
             {formatWeekLabel(weekKey)}
           </p>
         </div>
@@ -234,12 +234,12 @@ export default function DashboardPage() {
             whileTap={onClick ? { scale: 0.97 } : undefined}
           >
             <div className="flex items-start justify-between mb-2">
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 9 }}>{label}</p>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: color + '20' }}>
-                <Icon size={14} style={{ color }} />
+                <Icon size={14} style={{ color, filter: `drop-shadow(0 0 4px ${color}80)` }} />
               </div>
             </div>
-            <p className="text-xl font-bold leading-none mb-1">{value}</p>
+            <p className="text-xl font-bold leading-none mb-1" style={{ fontFamily: 'var(--font-dm-mono)', letterSpacing: '-0.5px' }}>{value}</p>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{sub}</p>
           </motion.div>
         ))}
@@ -253,7 +253,7 @@ export default function DashboardPage() {
       >
         <div className="flex justify-between items-center mb-2.5">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold">Orçamento da semana</p>
+            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Orçamento da semana</p>
             {preferences.budgetMode === 'per_category' && (
               <span
                 className="text-xs px-2 py-0.5 rounded-lg font-medium"
@@ -266,7 +266,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <span
               className="text-sm font-bold"
-              style={{ color: budgetPercent >= 90 ? '#ef4444' : 'var(--accent)' }}
+              style={{ color: budgetPercent >= 90 ? '#f43f5e' : 'var(--accent)', fontFamily: 'var(--font-dm-mono)' }}
             >
               {budgetPercent.toFixed(0)}%
             </span>
@@ -287,8 +287,11 @@ export default function DashboardPage() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             style={{
               background: budgetPercent >= 90
-                ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                ? 'linear-gradient(90deg, #f59e0b, #f43f5e)'
                 : 'linear-gradient(90deg, #10b981, #06b6d4)',
+              boxShadow: budgetPercent >= 90
+                ? '0 0 12px rgba(244,63,94,0.5), 0 0 24px rgba(245,158,11,0.3)'
+                : '0 0 12px rgba(16,185,129,0.5), 0 0 24px rgba(6,182,212,0.3)',
             }}
           />
         </div>
@@ -334,7 +337,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
       >
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold">Saldo do mês</p>
+          <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Saldo do mês</p>
           <Link
             href="/income"
             className="text-xs px-2 py-1 rounded-lg"
@@ -351,18 +354,18 @@ export default function DashboardPage() {
               </div>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Receitas</p>
             </div>
-            <p className="text-base font-bold" style={{ color: '#10b981' }}>
+            <p className="text-base font-bold" style={{ color: '#10b981', fontFamily: 'var(--font-dm-mono)' }}>
               {formatCurrency(monthBalance.income)}
             </p>
           </div>
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#ef444420' }}>
-                <TrendingDown size={11} style={{ color: '#ef4444' }} />
+              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#f43f5e20' }}>
+                <TrendingDown size={11} style={{ color: '#f43f5e' }} />
               </div>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Despesas</p>
             </div>
-            <p className="text-base font-bold" style={{ color: '#ef4444' }}>
+            <p className="text-base font-bold" style={{ color: '#f43f5e', fontFamily: 'var(--font-dm-mono)' }}>
               {formatCurrency(monthBalance.expenses)}
             </p>
           </div>
@@ -378,7 +381,7 @@ export default function DashboardPage() {
             </div>
             <p
               className="text-base font-bold"
-              style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b' }}
+              style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', fontFamily: 'var(--font-dm-mono)' }}
             >
               {monthBalance.balance >= 0 ? '+' : ''}{formatCurrency(monthBalance.balance)}
             </p>
@@ -405,7 +408,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <p className="text-2xl font-bold mb-1">{formatCurrency(projection.projected)}</p>
+          <p className="text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-dm-mono)', letterSpacing: '-0.5px' }}>{formatCurrency(projection.projected)}</p>
 
           {projection.delta !== null ? (
             <div className="flex items-center gap-1.5">
@@ -435,7 +438,7 @@ export default function DashboardPage() {
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold">Gastos por dia</p>
+            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Gastos por dia</p>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Clique para filtrar</p>
           </div>
           <ResponsiveContainer width="100%" height={160}>
@@ -489,7 +492,7 @@ export default function DashboardPage() {
           className="lg:col-span-2 p-4 rounded-2xl border"
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
         >
-          <p className="text-sm font-semibold mb-3">Por categoria</p>
+          <p className="text-sm font-semibold mb-3" style={{ fontFamily: 'var(--font-syne)' }}>Por categoria</p>
           {categoryData.length > 0 ? (
             <div className="flex items-center gap-4">
               <ResponsiveContainer width={110} height={110}>

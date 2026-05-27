@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7Dias — Proposta 2: Bloom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ─── Proposta 2: "Bloom" — Gradient Mesh + Glassmorphism ─── */
+/* Inspiração: Raycast, Linear, apps de criação premium */
+/* Diferencial: fundo vivo com gradiente mesh + cards de vidro */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --mesh-1: #0f0f14;
+  --mesh-a: #10b981;   /* emerald */
+  --mesh-b: #7c3aed;   /* violeta */
+  --mesh-c: #06b6d4;   /* cyan */
+  --mesh-d: #f59e0b;   /* amber */
+
+  --glass-bg: rgba(255,255,255,0.035);
+  --glass-bg-hover: rgba(255,255,255,0.06);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-border-hover: rgba(255,255,255,0.15);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+
+  --text: #F0EDF8;
+  --text-muted: rgba(240,237,248,0.5);
+  --text-dim: rgba(240,237,248,0.2);
+
+  --accent: #10b981;
+  --accent-glow: rgba(16,185,129,0.3);
+  --violet: #8b5cf6;
+  --violet-glow: rgba(139,92,246,0.3);
+  --amber: #f59e0b;
+  --cyan: #06b6d4;
+  --red: #f43f5e;
+
+  --font-display: 'Syne', system-ui, sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+  --font-ui: 'Nunito', system-ui, sans-serif;
+
+  --sidebar-w: 220px;
+  --r: 16px;
+  --r-lg: 24px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--mesh-1);
+  color: var(--text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ─── MESH BACKGROUND ─── */
+.mesh-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.mesh-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.28;
+  animation: float 8s ease-in-out infinite;
+}
+.mesh-orb.a { width: 600px; height: 600px; top: -200px; left: -100px; background: var(--mesh-a); animation-delay: 0s; }
+.mesh-orb.b { width: 500px; height: 500px; top: 50%; right: -150px; background: var(--mesh-b); animation-delay: -2s; opacity: 0.2; }
+.mesh-orb.c { width: 400px; height: 400px; bottom: -100px; left: 30%; background: var(--mesh-c); animation-delay: -4s; opacity: 0.15; }
+.mesh-orb.d { width: 300px; height: 300px; top: 40%; left: 40%; background: var(--mesh-d); animation-delay: -6s; opacity: 0.1; }
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 15px) scale(0.97); }
+}
+
+/* Noise texture */
+.mesh-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 200px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ─── LAYOUT ─── */
+.app { display: flex; height: 100vh; position: relative; z-index: 1; }
+
+/* ─── GLASS SIDEBAR ─── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8,8,14,0.6);
+  border-right: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-brand {
+  padding: 26px 20px 18px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.brand-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 6px;
+}
+
+.brand-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 18px; font-weight: 800;
+  color: white;
+  box-shadow: 0 0 20px rgba(16,185,129,0.4);
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.brand-tagline {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+/* Week orb badge */
+.week-orb {
+  margin: 14px 16px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.1));
+  border: 1px solid rgba(16,185,129,0.2);
+  box-shadow: 0 0 20px rgba(16,185,129,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.week-orb-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  flex-shrink: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+
+.week-orb-info { }
+.week-orb-label { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); letter-spacing: 0.08em; }
+.week-orb-value { font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 1px; }
+
+/* Nav */
+.nav { flex: 1; padding: 6px 10px; overflow-y: auto; }
+
+.nav-section-label {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 14px 10px 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer; text-decoration: none;
+  color: var(--text-muted);
+  font-size: 13px; font-weight: 600;
+  transition: all 0.15s;
+  margin-bottom: 1px;
+}
+
+.nav-item:hover {
+  color: var(--text);
+  background: var(--glass-bg-hover);
+  border: 1px solid transparent;
+}
+
+.nav-item.active {
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.08));
+  border: 1px solid rgba(16,185,129,0.2);
+  box-shadow: 0 0 16px rgba(16,185,129,0.08);
+}
+
+.nav-icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+.nav-item.active .nav-icon { opacity: 1; filter: drop-shadow(0 0 4px var(--accent)); }
+
+.nav-badge {
+  margin-left: auto;
+  font-size: 10px; font-family: var(--font-mono);
+  padding: 1px 7px; border-radius: 100px;
+  background: rgba(245,158,11,0.15);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.2);
+}
+
+/* Sidebar bottom */
+.sidebar-bottom { padding: 14px 10px; border-top: 1px solid var(--glass-border); }
+.user-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  cursor: pointer; transition: background 0.15s;
+}
+.user-item:hover { background: var(--glass-bg-hover); }
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: white;
+  box-shadow: 0 0 12px rgba(16,185,129,0.35); flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.user-status { font-size: 10px; color: var(--accent); display: flex; align-items: center; gap: 4px; }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+/* ─── MAIN ─── */
+.main { flex: 1; overflow-y: auto; position: relative; }
+
+/* Topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+  height: 58px;
+  background: rgba(8,8,14,0.5);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+}
+
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.page-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text); }
+.page-chip {
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 3px 10px; border-radius: 100px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.btn-glass {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+  font-family: var(--font-ui);
+}
+.btn-glass:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); color: var(--text); }
+
+.btn-primary-glow {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  color: white;
+  font-size: 13px; font-weight: 700;
+  border: none; cursor: pointer;
+  box-shadow: 0 0 24px rgba(16,185,129,0.35), 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+  font-family: var(--font-ui);
+}
+.btn-primary-glow:hover { transform: translateY(-1px); box-shadow: 0 0 32px rgba(16,185,129,0.5), 0 8px 20px rgba(0,0,0,0.4); }
+
+/* ─── PAGE CONTENT ─── */
+.page-content { padding: 24px 28px 48px; max-width: 1180px; }
+
+/* ─── HERO METRICS ─── */
+/* 3 big glass cards in a row */
+.hero-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.metric-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+  cursor: default;
+}
+.metric-glass:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Glow accent on each card */
+.metric-glass::before {
+  content: '';
+  position: absolute;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  opacity: 0.12;
+  filter: blur(40px);
+  top: -40px; right: -40px;
+}
+.metric-glass.glow-green::before { background: var(--accent); }
+.metric-glass.glow-violet::before { background: var(--violet); }
+.metric-glass.glow-amber::before { background: var(--amber); }
+.metric-glass.glow-red::before { background: var(--red); }
+.metric-glass.glow-cyan::before { background: var(--cyan); }
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 6px;
+}
+.metric-label::before {
+  content: '';
+  width: 16px; height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 10px;
+  letter-spacing: -1.5px;
+}
+.metric-value .curr { font-size: 18px; font-weight: 400; opacity: 0.5; margin-right: 2px; vertical-align: top; margin-top: 7px; display: inline-block; }
+
+.metric-footer {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-muted);
+}
+
+.tag-glow {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 9px; border-radius: 100px;
+  font-size: 11px; font-weight: 700;
+  font-family: var(--font-mono);
+}
+.tag-green { background: rgba(16,185,129,0.15); color: var(--accent); border: 1px solid rgba(16,185,129,0.25); box-shadow: 0 0 10px rgba(16,185,129,0.15); }
+.tag-red { background: rgba(244,63,94,0.12); color: var(--red); border: 1px solid rgba(244,63,94,0.2); }
+.tag-amber { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+.tag-violet { background: rgba(139,92,246,0.12); color: var(--violet); border: 1px solid rgba(139,92,246,0.2); }
+
+/* ─── BUDGET GLASS PANEL ─── */
+.budget-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--glass-shadow);
+}
+
+.budget-row { display: flex; align-items: center; gap: 24px; }
+.budget-left { flex-shrink: 0; }
+.budget-right { flex: 1; }
+
+.budget-header {
+  display: flex; align-items: baseline; gap: 10px;
+  margin-bottom: 14px;
+}
+.budget-title {
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 700;
+  color: var(--text);
+}
+.budget-week {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Glowing progress bar */
+.glow-track {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: visible;
+  position: relative;
+  margin-bottom: 10px;
+}
+.glow-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, #10b981, #06b6d4);
+  box-shadow: 0 0 12px rgba(16,185,129,0.5), 0 0 24px rgba(6,182,212,0.3);
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+}
+.glow-fill::after {
+  content: '';
+  position: absolute;
+  right: -1px; top: 50%;
+  transform: translateY(-50%);
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #06b6d4;
+  box-shadow: 0 0 12px var(--cyan), 0 0 24px rgba(6,182,212,0.6);
+}
+
+.budget-numbers {
+  display: flex; gap: 20px; margin-bottom: 6px;
+}
+.b-num { }
+.b-num-label { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+.b-num-val { font-family: var(--font-mono); font-size: 14px; font-weight: 700; margin-top: 2px; color: var(--text); }
+.b-num-val.em { color: var(--accent); }
+
+/* Ring */
+.ring-svg { display: block; }
+
+/* ─── CHARTS ─── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 5fr 3fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: 20px 22px;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--glass-shadow);
+}
+
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.card-title {
+  font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Bar chart */
+.bar-wrap { display: flex; align-items: flex-end; gap: 8px; height: 90px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; cursor: pointer; }
+.bar-track {
+  flex: 1; width: 100%;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px 6px 0 0;
+  position: relative; overflow: hidden;
+  display: flex; align-items: flex-end;
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: border-color 0.15s;
+}
+.bar-col:hover .bar-track { border-color: rgba(255,255,255,0.1); }
+.bar-fill {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+.bar-col.active .bar-fill { box-shadow: 0 0 16px rgba(16,185,129,0.5); }
+.bar-lbl { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-dim); letter-spacing: 0.05em; }
+.bar-col.active .bar-lbl { color: var(--text-muted); }
+
+/* Day detail pill */
+.day-detail {
+  margin-top: 14px; padding: 11px 16px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.15);
+  border-radius: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 0 16px rgba(16,185,129,0.05);
+}
+.day-detail-date { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+.day-detail-val { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--accent); text-shadow: 0 0 12px rgba(16,185,129,0.5); }
+.day-detail-count { font-size: 11px; color: var(--text-muted); }
+
+/* Categories */
+.cat-items { display: flex; flex-direction: column; gap: 10px; }
+.cat-item { }
+.cat-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.cat-dot { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; }
+.cat-name-txt { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); }
+.cat-amt { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.cat-track {
+  height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
+}
+.cat-fill { height: 100%; border-radius: 2px; }
+
+/* ─── EXPENSES ─── */
+.expenses-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--glass-shadow);
+}
+.exp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.exp-title { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); }
+.see-all { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 3px; }
+
+.exp-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--glass-border);
+  transition: background 0.12s;
+  cursor: pointer;
+}
+.exp-row:last-child { border-bottom: none; }
+.exp-row:hover { background: var(--glass-bg-hover); }
+
+.exp-icon {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.exp-info { flex: 1; min-width: 0; }
+.exp-desc { font-size: 13.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exp-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 6px; }
+.exp-amount { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text); flex-shrink: 0; }
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.hero-metrics { animation: fadeUp 0.4s 0.05s ease both; }
+.budget-panel { animation: fadeUp 0.4s 0.12s ease both; }
+.charts-row { animation: fadeUp 0.4s 0.18s ease both; }
+.expenses-glass { animation: fadeUp 0.4s 0.24s ease both; }
+
+/* ─── SCROLL ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* ─── BANNER ─── */
+.banner {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 38px; z-index: 100;
+  background: rgba(8,8,14,0.8);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  gap: 28px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.1em; color: var(--text-muted);
+}
+.banner-badge { padding: 3px 12px; border-radius: 100px; font-weight: 700; }
+.badge-p2 { background: rgba(139,92,246,0.2); color: var(--violet); border: 1px solid rgba(139,92,246,0.3); box-shadow: 0 0 10px rgba(139,92,246,0.2); }
+.badge-desc { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-muted); }
+
+body { padding-top: 38px; }
+.sidebar { height: calc(100vh - 38px); }
+.main { height: calc(100vh - 38px); }
+</style>
+</head>
+<body>
+
+<!-- Gradient mesh background -->
+<div class="mesh-bg">
+  <div class="mesh-orb a"></div>
+  <div class="mesh-orb b"></div>
+  <div class="mesh-orb c"></div>
+  <div class="mesh-orb d"></div>
+</div>
+
+<!-- Banner -->
+<div class="banner">
+  <span class="banner-badge badge-p2">PROPOSTA 2 — "BLOOM"</span>
+  <span>Gradient Mesh + Glassmorphism + Syne + DM Mono</span>
+  <span class="banner-badge badge-desc">Dark / Vibrante</span>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-row">
+        <div class="brand-icon">7</div>
+        <span class="brand-name">Dias</span>
+      </div>
+      <div class="brand-tagline">// controle semanal</div>
+    </div>
+
+    <div class="week-orb">
+      <div class="week-orb-dot"></div>
+      <div class="week-orb-info">
+        <div class="week-orb-label">Ao vivo · W22</div>
+        <div class="week-orb-value">26 mai → 01 jun</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="nav-section-label">// principal</div>
+
+      <a class="nav-item active" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="1" y="1" width="6" height="7" rx="1.5"/><rect x="9" y="1" width="6" height="4" rx="1.5"/>
+          <rect x="1" y="10" width="6" height="5" rx="1.5"/><rect x="9" y="7" width="6" height="8" rx="1.5"/>
+        </svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"/><path d="M5.5 8.5l1.5 1.5 3.5-3.5"/>
+        </svg>
+        Despesas
+        <span class="nav-badge">12</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2 4h12M2 8h8M2 12h5"/>
+        </svg>
+        Categorias
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="1.5" y="3.5" width="13" height="10" rx="2"/><path d="M1.5 6.5h13"/>
+        </svg>
+        Fixas
+      </a>
+
+      <div class="nav-section-label">// financeiro</div>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M8 14V2M3 5l5-3 5 3M3 9l5 2 5-2"/>
+        </svg>
+        Receitas
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"/><path d="M8 5v3l2 2"/>
+        </svg>
+        Orçamento
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M1.5 12.5l4-6 3 3 3-5 3 3.5"/>
+        </svg>
+        Resumo
+      </a>
+      <a class="nav-item" href="#">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <polygon points="8,2 10,6 14,6.5 11,9.5 11.8,13.5 8,11.5 4.2,13.5 5,9.5 2,6.5 6,6"/>
+        </svg>
+        Metas
+      </a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-item">
+        <div class="user-avatar">JC</div>
+        <div>
+          <div class="user-name">Jorge Correia</div>
+          <div class="user-status"><span class="status-dot"></span>online</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="page-title">Dashboard</span>
+        <span class="page-chip">Maio 2026</span>
+        <span class="page-chip">W22</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-glass">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/>
+          </svg>
+          Buscar
+        </button>
+        <button class="btn-primary-glow">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M8 2v12M2 8h12"/>
+          </svg>
+          Nova Despesa
+        </button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- HERO METRICS -->
+      <div class="hero-metrics">
+        <div class="metric-glass glow-green">
+          <div class="metric-label">Saldo Restante</div>
+          <div class="metric-value" style="color:var(--accent)">
+            <span class="curr">R$</span>302<span style="font-size:22px">,70</span>
+          </div>
+          <div class="metric-footer">
+            <span class="tag-glow tag-green">26% livre</span>
+            <span>do orçamento semanal</span>
+          </div>
+        </div>
+
+        <div class="metric-glass glow-violet">
+          <div class="metric-label">Gasto na Semana</div>
+          <div class="metric-value">
+            <span class="curr">R$</span>847<span style="font-size:22px">,30</span>
+          </div>
+          <div class="metric-footer">
+            <span class="tag-glow tag-violet">↑ 12%</span>
+            <span>vs semana passada</span>
+          </div>
+        </div>
+
+        <div class="metric-glass glow-cyan">
+          <div class="metric-label">Saldo do Mês</div>
+          <div class="metric-value">
+            <span class="curr">R$</span>1.248
+          </div>
+          <div class="metric-footer">
+            <span class="tag-glow tag-green">positivo</span>
+            <span>receitas − despesas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUDGET PANEL -->
+      <div class="budget-panel">
+        <div class="budget-row">
+
+          <!-- Ring -->
+          <div class="budget-left">
+            <svg class="ring-svg" width="110" height="110" viewBox="0 0 110 110">
+              <defs>
+                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#10b981"/>
+                  <stop offset="100%" stop-color="#06b6d4"/>
+                </linearGradient>
+              </defs>
+              <!-- BG -->
+              <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="10"/>
+              <!-- Fill 73% -->
+              <circle cx="55" cy="55" r="44" fill="none"
+                stroke="url(#ringGrad)"
+                stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="276.5" stroke-dashoffset="74.7"
+                transform="rotate(-90 55 55)"
+                style="filter: drop-shadow(0 0 8px rgba(16,185,129,0.6))"/>
+              <!-- Pct text -->
+              <text x="55" y="50" text-anchor="middle" font-family="'DM Mono'" font-size="18" fill="white" font-weight="700">73%</text>
+              <text x="55" y="65" text-anchor="middle" font-family="'DM Mono'" font-size="9" fill="rgba(240,237,248,0.4)" letter-spacing="1">gasto</text>
+            </svg>
+          </div>
+
+          <div class="budget-right">
+            <div class="budget-header">
+              <span class="budget-title">Orçamento Semanal</span>
+              <span class="budget-week">W22 · 26 mai</span>
+            </div>
+
+            <div class="budget-numbers">
+              <div class="b-num">
+                <div class="b-num-label">TOTAL</div>
+                <div class="b-num-val">R$ 1.150,00</div>
+              </div>
+              <div class="b-num">
+                <div class="b-num-label">GASTO</div>
+                <div class="b-num-val" style="color:var(--violet)">R$ 847,30</div>
+              </div>
+              <div class="b-num">
+                <div class="b-num-label">LIVRE</div>
+                <div class="b-num-val em">R$ 302,70</div>
+              </div>
+              <div class="b-num">
+                <div class="b-num-label">PROJEÇÃO</div>
+                <div class="b-num-val" style="color:var(--amber)">R$ 3.389/mês</div>
+              </div>
+            </div>
+
+            <div class="glow-track">
+              <div class="glow-fill" style="width:73%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">
+              <span>0%</span><span style="color:var(--text-muted)">73% utilizado</span><span>100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="charts-row">
+        <div class="glass-card">
+          <div class="card-header">
+            <span class="card-title">Gastos diários — W22</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent)">Seg selecionado</span>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-col active">
+              <div class="bar-track"><div class="bar-fill" style="height:55%;background:linear-gradient(180deg,#06b6d4,#10b981)"></div></div>
+              <span class="bar-lbl" style="color:var(--text-muted)">Seg</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-track"><div class="bar-fill" style="height:80%;background:rgba(139,92,246,0.5)"></div></div>
+              <span class="bar-lbl">Ter</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-track"><div class="bar-fill" style="height:30%;background:rgba(255,255,255,0.08)"></div></div>
+              <span class="bar-lbl">Qua</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-track"><div class="bar-fill" style="height:65%;background:rgba(255,255,255,0.08)"></div></div>
+              <span class="bar-lbl">Qui</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-track"><div class="bar-fill" style="height:40%;background:rgba(255,255,255,0.08)"></div></div>
+              <span class="bar-lbl">Sex</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-track"><div class="bar-fill" style="height:15%;background:rgba(255,255,255,0.05)"></div></div>
+              <span class="bar-lbl">Sáb</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-track"><div class="bar-fill" style="height:5%;background:rgba(255,255,255,0.03)"></div></div>
+              <span class="bar-lbl" style="color:var(--text-dim)">Dom</span>
+            </div>
+          </div>
+          <div class="day-detail">
+            <div>
+              <div class="day-detail-date">26 mai · Segunda-feira</div>
+              <div class="day-detail-val">R$ 237,80</div>
+            </div>
+            <div class="day-detail-count">4 transações</div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <span class="card-title">Por categoria</span>
+          </div>
+          <div class="cat-items">
+            <div class="cat-item">
+              <div class="cat-row-top">
+                <div class="cat-dot" style="background:#F97316"></div>
+                <span class="cat-name-txt">Alimentação</span>
+                <span class="cat-amt" style="color:#F97316">R$ 355</span>
+              </div>
+              <div class="cat-track"><div class="cat-fill" style="width:42%;background:#F97316;box-shadow:0 0 8px rgba(249,115,22,0.5)"></div></div>
+            </div>
+            <div class="cat-item">
+              <div class="cat-row-top">
+                <div class="cat-dot" style="background:var(--violet)"></div>
+                <span class="cat-name-txt">Transporte</span>
+                <span class="cat-amt" style="color:var(--violet)">R$ 186</span>
+              </div>
+              <div class="cat-track"><div class="cat-fill" style="width:22%;background:var(--violet);box-shadow:0 0 8px var(--violet-glow)"></div></div>
+            </div>
+            <div class="cat-item">
+              <div class="cat-row-top">
+                <div class="cat-dot" style="background:var(--accent)"></div>
+                <span class="cat-name-txt">Saúde</span>
+                <span class="cat-amt" style="color:var(--accent)">R$ 153</span>
+              </div>
+              <div class="cat-track"><div class="cat-fill" style="width:18%;background:var(--accent);box-shadow:0 0 8px var(--accent-glow)"></div></div>
+            </div>
+            <div class="cat-item">
+              <div class="cat-row-top">
+                <div class="cat-dot" style="background:var(--cyan)"></div>
+                <span class="cat-name-txt">Lazer</span>
+                <span class="cat-amt" style="color:var(--cyan)">R$ 153</span>
+              </div>
+              <div class="cat-track"><div class="cat-fill" style="width:18%;background:var(--cyan)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPENSES -->
+      <div class="expenses-glass">
+        <div class="exp-header">
+          <span class="exp-title">Despesas recentes · Segunda, 26 mai</span>
+          <a class="see-all" href="#">Ver todas →</a>
+        </div>
+        <div class="exp-row">
+          <div class="exp-icon" style="background:rgba(249,115,22,0.12)">🍔</div>
+          <div class="exp-info">
+            <div class="exp-desc">iFood — Almoço</div>
+            <div class="exp-meta"><span>12:34</span><span>·</span><span>Pix</span><span>·</span><span style="color:#F97316">Alimentação</span></div>
+          </div>
+          <span class="exp-amount">R$ 47,90</span>
+        </div>
+        <div class="exp-row">
+          <div class="exp-icon" style="background:rgba(139,92,246,0.12)">🚌</div>
+          <div class="exp-info">
+            <div class="exp-desc">Uber — Manhã</div>
+            <div class="exp-meta"><span>09:15</span><span>·</span><span>Crédito</span><span>·</span><span style="color:var(--violet)">Transporte</span></div>
+          </div>
+          <span class="exp-amount">R$ 18,50</span>
+        </div>
+        <div class="exp-row">
+          <div class="exp-icon" style="background:rgba(16,185,129,0.12)">💊</div>
+          <div class="exp-info">
+            <div class="exp-desc">Farmácia — Remédios</div>
+            <div class="exp-meta"><span>16:20</span><span>·</span><span>Crédito</span><span>·</span><span style="color:var(--accent)">Saúde</span><span style="background:rgba(139,92,246,0.12);color:var(--violet);padding:1px 7px;border-radius:100px;font-size:10px;">split</span></div>
+          </div>
+          <span class="exp-amount">R$ 87,00</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const bars = document.querySelectorAll('.bar-col');
+bars.forEach(bar => {
+  bar.addEventListener('click', () => {
+    bars.forEach(b => {
+      b.classList.remove('active');
+      const f = b.querySelector('.bar-fill');
+      f.style.background = 'rgba(255,255,255,0.08)';
+    });
+    bar.classList.add('active');
+    const f = bar.querySelector('.bar-fill');
+    f.style.background = 'linear-gradient(180deg,#06b6d4,#10b981)';
+    f.style.boxShadow = '0 0 16px rgba(16,185,129,0.5)';
+  });
+});
+</script>
+</body>
+</html>

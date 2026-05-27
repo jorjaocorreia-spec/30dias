@@ -1,12 +1,28 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Syne, DM_Mono, Nunito } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/layout/ThemeProvider'
 import { AuthProvider } from '@/components/layout/AuthProvider'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const syne = Syne({
   subsets: ['latin'],
+  variable: '--font-syne',
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+})
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  variable: '--font-dm-mono',
+  weight: ['300', '400', '500'],
+  display: 'swap',
+})
+
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-nunito',
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -16,8 +32,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // "dark" aplicado por padrão no servidor para evitar flash — ThemeProvider sincroniza com a preferência salva
-    <html lang="pt-BR" className={`${geistSans.variable} dark`} suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      className={`${syne.variable} ${dmMono.variable} ${nunito.variable} dark`}
+      suppressHydrationWarning
+    >
       <body>
         <ThemeProvider>
           <AuthProvider>
