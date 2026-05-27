@@ -60,14 +60,16 @@ function WeekRing({ percent }: { percent: number }) {
 
 export function Navbar() {
   const pathname = usePathname()
-  const { expenses, preferences, categories, getFixedWeeklyContribution, logout } = useAppStore()
+  const { expenses, preferences, categories, getFixedWeeklyContribution, getFixedCategoryContribution, logout } = useAppStore()
   const [collapsed, setCollapsed] = useState(false)
 
   const fixedWeekly = getFixedWeeklyContribution()
+  const fixedByCategory = getFixedCategoryContribution()
   const weekKey = getCurrentWeekKey()
 
   const effectiveBudget = preferences.budgetMode === 'per_category'
     ? Object.values(preferences.categoryBudgets ?? {}).reduce((a, b) => a + b, 0)
+      + Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
     : preferences.weeklyBudget + fixedWeekly
 
   const summary = buildWeekSummary(weekKey, expenses, effectiveBudget)
