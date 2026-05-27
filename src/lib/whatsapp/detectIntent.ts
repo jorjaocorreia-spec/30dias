@@ -25,7 +25,7 @@ const RULES: { type: Intent; patterns: RegExp[] }[] = [
   },
   {
     type: 'query_pending',
-    patterns: [/\ba receber\b/i, /\bpendente/i, /\bpend[eê]ncia/i, /quem me deve/i, /\bcobrar\b/i],
+    patterns: [/\ba receber\b/i, /\breceber\b/i, /\bpendente/i, /\bpend[eê]ncia/i, /quem me deve/i, /\bcobrar\b/i],
   },
 ]
 
