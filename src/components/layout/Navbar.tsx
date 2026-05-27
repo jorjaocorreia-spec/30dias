@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, Sun, Moon, LogOut, Plug, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, Sun, Moon, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const navItems = [
@@ -18,6 +18,7 @@ const navItems = [
   { href: '/establishments', icon: Store, label: 'Locais' },
   { href: '/summary', icon: BarChart2, label: 'Resumo' },
   { href: '/integrations', icon: Plug, label: 'Integrações' },
+  { href: '/help', icon: HelpCircle, label: 'Ajuda' },
 ]
 
 function isActive(pathname: string, href: string) {

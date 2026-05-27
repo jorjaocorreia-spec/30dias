@@ -125,4 +125,7 @@ body {
   .sidebar-collapsed .app-main {
     margin-left: var(--sidebar-collapsed-w);
   }
+  .help-toc {
+    display: block !important;
+  }
 }

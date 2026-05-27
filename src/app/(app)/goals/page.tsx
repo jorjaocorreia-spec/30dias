@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Check, Trophy } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
-import { formatCurrency, getWeeksUntilDeadline } from '@/lib/weekHelpers'
+import { formatCurrency, getWeeksUntilDeadline, getTodayKey } from '@/lib/weekHelpers'
 import { FinancialGoal } from '@/types'
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -567,7 +567,7 @@ export default function GoalsPage() {
                         <Pencil size={13} style={{ color: 'var(--text-muted)' }} />
                       </button>
                       <button
-                        onClick={() => updateFinancialGoal(goal.id, { completedAt: new Date().toISOString().slice(0, 10) })}
+                        onClick={() => updateFinancialGoal(goal.id, { completedAt: getTodayKey() })}
                         className="w-8 h-8 rounded-xl flex items-center justify-center"
                         style={{ background: 'var(--bg-input)' }}
                         title="Marcar como concluída"
@@ -695,7 +695,7 @@ export default function GoalsPage() {
                       <div className="flex gap-1">
                         {goal.completedAt && (
                           <button
-                            onClick={() => updateFinancialGoal(goal.id, { completedAt: undefined, isActive: true })}
+                            onClick={() => updateFinancialGoal(goal.id, { completedAt: null as any, isActive: true })}
                             className="text-xs px-2 py-1 rounded-lg"
                             style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
                           >

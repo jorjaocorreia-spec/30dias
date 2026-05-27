@@ -27,14 +27,17 @@ src/
 │       ├── categories/page.tsx
 │       ├── establishments/page.tsx
 │       ├── fixed-expenses/page.tsx
+│       ├── goals/page.tsx
 │       ├── income/page.tsx
 │       ├── budget/page.tsx
-│       └── summary/page.tsx
+│       ├── summary/page.tsx
+│       ├── integrations/page.tsx
+│       └── help/{page.tsx,[slug]/page.tsx}
 ├── components/layout/{Navbar,ThemeProvider}.tsx
 ├── components/ui/{CategoryIcon,ExpenseForm}.tsx
 ├── store/useAppStore.ts
 ├── lib/weekHelpers.ts
-├── data/{categories,incomeCategories,seedExpenses}.ts
+├── data/{categories,incomeCategories,seedExpenses,helpContent}.ts
 └── types/index.ts
 ```
 
@@ -68,6 +71,14 @@ interface FixedExpense {
   reminderEnabled?: boolean
 }
 interface FixedExpenseMonth { id: string; fixedExpenseId: string; month: string; amount: number }
+interface FinancialGoal {
+  id: string; name: string; targetAmount: number; deadline: string  // YYYY-MM
+  icon: string; color: string; notes?: string
+  weeklyAmount?: number      // override manual; senão auto-calculado
+  deductFromBudget: boolean  // se true, subtrai do orçamento semanal
+  isActive: boolean; createdAt: string; completedAt?: string  // YYYY-MM-DD
+}
+interface GoalContribution { id: string; goalId: string; month: string; amount: number }
 interface UserPreferences {
   theme: 'light' | 'dark' | 'system'; weeklyBudget: number
   budgetMode: 'fixed' | 'per_category'; categoryBudgets: Record<string, number>
@@ -107,10 +118,21 @@ interface IncomeEntry {
 - **`shares`** em `ExpenseParticipant`: quantas partes essa pessoa representa (casal = 2). "Dividir igual" distribui proporcionalmente; arredondamento ocorre após multiplicar (nunca antes)
 - **`userShares`** em `Expense`: partes do próprio usuário no split. Contador `+`/`−` na linha "Sua parte" do form. `getEffectiveAmount` continua correto pois retorna o resto após subtrair os participantes
 
+### Metas financeiras
+- `FinancialGoal` = template com alvo, prazo e config; `GoalContribution` = contribuição mensal registrada pelo usuário
+- Deletar meta → cascata remove `goalContributions` vinculados
+- `getGoalProgress(goalId)` → `{ contributed, remaining, weeklyNeeded, weeksLeft, percentage, effectiveWeekly }`
+  - `effectiveWeekly = goal.weeklyAmount ?? weeklyNeeded` (auto se não houver override)
+  - `weeklyNeeded = remaining / weeksLeft` calculado por `getWeeksUntilDeadline(deadline)` em `weekHelpers.ts`
+- `getGoalWeeklyTotal(deductOnly?)` → soma das semanais de metas ativas (deductOnly=true filtra só as que deduzem)
+- Metas com `deductFromBudget=true` aparecem na página de Orçamento como linha "🎯 Metas (automático)"
+- Migration: `supabase/migrations/20260527_financial_goals.sql` (já aplicada)
+- **Atenção:** para limpar `completedAt` ao reabrir uma meta, passar `null` (não `undefined`) em `updateFinancialGoal`. `dbUpdate` usa `Object.entries` que inclui `undefined`, mas o JSON.stringify o descarta → campo não vira NULL no banco. `null` é serializado corretamente.
+
 ### Budget automático de fixas
 - `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas
 - `getFixedCategoryContribution(month?)` → mesmo agrupado por `categoryId`
-- `effectiveBudget = weeklyBudget + fixedWeekly` (modo fixo) | `sum(categoryBudgets) + sum(fixedByCategory)` (por categoria)
+- `effectiveBudget = weeklyBudget + fixedWeekly + goalDeductWeekly` (modo fixo) | `sum(categoryBudgets) + sum(fixedByCategory) + goalDeductWeekly` (por categoria)
 
 ## Design system
 
@@ -120,7 +142,7 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 
 ## weekHelpers.ts
 
-- `weekKey` = `YYYY-WNN` (ISO). Helpers: `getCurrentWeekKey`, `getWeekKey(date)`, `getWeekStart`, `getWeekDays`, `buildWeekSummary`, `getPreviousWeekKey/getNextWeekKey`, `getEffectiveAmount`
+- `weekKey` = `YYYY-WNN` (ISO). Helpers: `getCurrentWeekKey`, `getWeekKey(date)`, `getWeekStart`, `getWeekDays`, `buildWeekSummary`, `getPreviousWeekKey/getNextWeekKey`, `getEffectiveAmount`, `getWeeksUntilDeadline(deadline)`
 - `formatCurrency` (pt-BR BRL), `formatDate` (pt-BR + dia da semana)
 - **`toLocalDateKey(d)`** — YYYY-MM-DD em hora local. **NUNCA** `.toISOString().split('T')[0]` (retorna UTC → bug de dia no Brasil)
 - `getTodayKey()` = `toLocalDateKey(new Date())`
@@ -130,29 +152,37 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 
 **Despesas:** `food, transport, bills, health, leisure, shopping, education, other`
 **Receitas:** `income-salary, income-freelance, income-investments, income-rent, income-sales, income-other`
-**Ícones disponíveis (30):** `Utensils Car FileText Heart Gamepad2 ShoppingBag BookOpen MoreHorizontal Dumbbell Activity Tv Music Coffee Plane Home Smartphone Zap Wifi Gift Scissors PawPrint Pill ShoppingCart Briefcase Bike Fuel Baby TrendingUp Laptop`
+**Ícones disponíveis (31):** `Utensils Car FileText Heart Gamepad2 ShoppingBag BookOpen MoreHorizontal Dumbbell Activity Tv Music Coffee Plane Home Smartphone Zap Wifi Gift Scissors PawPrint Pill ShoppingCart Briefcase Bike Fuel Baby TrendingUp Laptop Target`
 
 ## Auth & Segurança
 
 - Supabase Auth (email/password + Google OAuth). Guard em `(app)/layout.tsx`. Store: `login()`, `loginWithGoogle()`, `logout({ scope: 'global' })`, `loadUserData()`
-- RLS em 9 tabelas (`auth.uid() = user_id`). Security headers em `next.config.ts`. `signOut({ scope: 'global' })` invalida refresh token no servidor.
+- RLS em 11 tabelas (`auth.uid() = user_id`). Security headers em `next.config.ts`. `signOut({ scope: 'global' })` invalida refresh token no servidor.
 
 ## Páginas
 
 | Rota | Descrição |
 |------|-----------|
 | `/` | Landing + auth (Google SVG inline, Apple, email) |
-| `/dashboard` | KPIs, progresso orçamento, BarChart diário (clique = filtro dia), PieChart categoria, FAB |
+| `/dashboard` | KPIs, progresso orçamento, card projeção do mês, BarChart diário (clique = filtro dia), PieChart categoria, FAB |
 | `/expenses` | Lista com filtro categoria/período/tipo/divididas, editar/excluir inline, painel de participantes inline |
 | `/expenses/new` e `/expenses/[id]` | `ExpenseForm` sem/com `initialData` |
 | `/categories` | CRUD, bottom sheet (mobile)/inline (lg), picker ícone+cor, exclusão com modal |
 | `/establishments` | CRUD; selecionar preenche categoria no `ExpenseForm` |
 | `/fixed-expenses` | Templates + confirmação mensal, seção Pendentes (amber), histórico |
+| `/goals` | Metas financeiras: seção Pendentes (amber), cards com barra de progresso + sugestão semanal, modal de contribuição mensal, histórico expandível, concluir/pausar/excluir |
 | `/income` | Fontes recorrentes + entradas mensais, seção Pendentes (amber), saldo mensal |
-| `/budget` | Modo fixo: discricionário + fixas (🔒 auto) + total. Modo categoria: coluna fixas readonly. Ambos os modos exibem card **Estimativa mensal** = `(semanal + fixas) × 4` |
+| `/budget` | Modo fixo: discricionário + fixas (🔒 auto) + metas (🎯 auto, se deductFromBudget) + total. Modo categoria: idem. Ambos os modos exibem card **Estimativa mensal** = `(semanal + fixas + metas) × 4` + bloco informativo para metas sem dedução |
 | `/summary` | Total, AreaChart, donut, barras animadas por categoria, histórico semanal paginado |
+| `/integrations` | Card WhatsApp: salvar número, exemplos de mensagens para registro, lista de comandos de consulta |
+| `/help` | Central de ajuda: índice com busca e cards agrupados por categoria |
+| `/help/[slug]` | Artigo de ajuda com sumário lateral, blocos tipados (callout, steps, tabelas) e navegação prev/next |
 
-**Dashboard — card "A Receber":** aparece automaticamente quando `getSharedPendingTotal()` > 0 no mês corrente. KPI grid passa de 3 para 4 colunas nesse caso (mobile: 2×2).
+**Dashboard — card "A Receber":** aparece automaticamente quando `getSharedPendingTotal()` > 0 no mês corrente.
+**Dashboard — card "Metas":** aparece automaticamente quando há metas ativas (`isActive && !completedAt`); mostra % médio de progresso + quantidade. Click → `/goals`.
+**Dashboard — KPI grid:** passa de `lg:grid-cols-3` para `lg:grid-cols-4` quando há card "A Receber" ou card "Metas" (mobile sempre 2 cols).
+
+**Dashboard — card "Projeção do mês":** aparece quando há ≥1 despesa no mês corrente. Calcula `(totalSpentThisMonth / daysElapsed) × daysInMonth` e exibe delta vs renda (verde/vermelho). Mostra "Nd de dados" para transparência. Posicionado entre "Saldo do mês" e os gráficos.
 
 **Dashboard — filtro dia:** `selectedDay` inicia `getTodayKey()`, reseta ao mudar semana. Barras: selecionado=`#10b981`, hoje=`rgba(16,185,129,0.25)`, outros=`var(--bg-input)`. `dailyData` usa `toLocalDateKey`.
 
@@ -160,7 +190,7 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 
 | Elemento | Mobile | Desktop (lg:) |
 |----------|--------|---------------|
-| Nav | Bottom tab bar + top bar | Sidebar `w-56` (9 itens) |
+| Nav | Bottom tab bar + top bar | Sidebar `w-56` (12 itens) |
 | Main | `pt-14 pb-20` | `ml-56` |
 | KPIs | 2 cols | 3 cols |
 | Gráficos | Empilhados | Side-by-side (5 cols grid) |
@@ -181,9 +211,6 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 
 - [ ] Exportar dados como CSV
 - [ ] Gráfico de evolução mensal (receitas vs despesas)
-- [ ] WhatsApp bidirecional — consultas por mensagem (semana, mês, a receber, resumo, ajuda)
-- [ ] Projeção inteligente do mês — card no dashboard com estimativa baseada no ritmo semanal atual
-- [ ] Metas financeiras — objetivos com prazo, valor-alvo e reserva semanal sugerida
 
 ## Lembretes de vencimento (despesas fixas)
 
@@ -205,6 +232,24 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 - Route handler: `src/app/api/webhook/whatsapp/route.ts`
 - Extração: `src/lib/whatsapp/extractExpense.ts` (Claude Haiku, JSON puro sem markdown)
 - Envio: `src/lib/whatsapp/sendMessage.ts` (`POST /message/sendText/{instance}`)
+- Detecção de intent: `src/lib/whatsapp/detectIntent.ts` (regex, sem custo de IA)
+- Handlers de consulta: `src/lib/whatsapp/queryHandlers.ts` (Supabase direto, fuso BRT)
+
+**Fluxo de mensagem recebida:**
+1. `detectIntent(text)` classifica a mensagem por keyword matching
+2. Se intent ≠ `expense` → chama o handler correspondente → responde e retorna
+3. Se intent = `expense` → fluxo de extração via Haiku (comportamento original)
+
+**Intents suportados:**
+
+| Intent | Palavras-chave | Resposta |
+|--------|---------------|---------|
+| `query_week` | "semana", "semanal" | Gasto + orçamento + % livre da semana atual |
+| `query_month` | "mês", "mensal", "balanço" | Receitas / despesas / saldo do mês |
+| `query_pending` | "a receber", "pendente", "cobrar" | Participantes com `paid=false` no mês corrente (máx 5) |
+| `query_summary` | "resumo", "como estou" | Combinação compacta de semana + mês |
+| `help` | "ajuda", "comandos", "menu" | Lista estática de todos os comandos |
+| `expense` | qualquer outra coisa | Extração de despesa via Haiku |
 
 **Quirks Evolution API v2:**
 - `remoteJid` pode ser `@lid` → usar `remoteJidAlt` quando `addressingMode === 'lid'`
