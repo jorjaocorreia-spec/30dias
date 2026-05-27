@@ -134,11 +134,51 @@ interface IncomeEntry {
 - `getFixedCategoryContribution(month?)` → mesmo agrupado por `categoryId`
 - `effectiveBudget = weeklyBudget + fixedWeekly + goalDeductWeekly` (modo fixo) | `sum(categoryBudgets) + sum(fixedByCategory) + goalDeductWeekly` (por categoria)
 
-## Design system
+## Design system — Bloom
 
-CSS vars em `globals.css` (`:root` e `.dark`): `--bg`, `--bg-card`, `--bg-input`, `--border`, `--text`, `--text-muted`, `--accent` (#10b981), `--accent-light`, `--glass`, `--shadow`
+**Tema único: dark-only.** Não há toggle de tema; `.dark` vars são idênticas a `:root`. ThemeProvider ainda existe mas o botão de alternar foi removido da Navbar.
 
-Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-text` | `.glass`
+### Fontes (3 papéis distintos)
+Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
+- `--font-syne` → **Syne** — headings, brand, títulos de seção (`font-family: var(--font-syne)`)
+- `--font-dm-mono` → **DM Mono** — todos os valores monetários, percentuais, labels técnicas (`font-family: var(--font-dm-mono)`)
+- `--font-ui` = `var(--font-nunito)` → **Nunito** — texto UI, navegação, body (padrão em `body`)
+
+### CSS vars (`globals.css`)
+```
+--bg: #0F0F14                           fundo escuro (mesh base)
+--bg-card: rgba(255,255,255,0.04)       cards glass (semi-transparente)
+--bg-raised: rgba(255,255,255,0.07)     elementos elevados
+--bg-input: rgba(255,255,255,0.07)      inputs
+--border: rgba(255,255,255,0.08)        bordas glass
+--border-hover: rgba(255,255,255,0.15)  hover
+--text: #F0EDF8                         texto principal
+--text-muted: rgba(240,237,248,0.5)     texto secundário
+--text-dim: rgba(240,237,248,0.22)      texto mínimo
+
+--accent: #10b981                       emerald (money/success)
+--accent-light: rgba(16,185,129,0.15)   bg de badges/active
+--accent-glow: rgba(16,185,129,0.35)    box-shadow glow
+--violet: #8b5cf6 / --violet-light      roxo (dados secundários)
+--amber: #f59e0b / --amber-light        âmbar (atenção/semana)
+--cyan: #06b6d4 / --cyan-light          cyan (saldo/acento)
+--red: #f43f5e / --red-light            vermelho (erros/limite)
+--glass-shadow                          sombra padrão para cards glass
+```
+
+### Glassmorphism
+- `app-sidebar`, `app-topbar`, `app-bottomnav` têm `backdrop-filter: blur(20px)` em `globals.css`
+- Classe utilitária `.glass` aplica `backdrop-filter: blur(12px)` a qualquer elemento
+- Cards usam `background: var(--bg-card)` (rgba transparente) — a mesh abaixo fica visível
+
+### Mesh background
+- 2 orbs via `body::before` / `body::after` (emerald + violeta, animados em `@keyframes meshOrb`)
+- 2 orbs adicionais via JSX em `(app)/layout.tsx` (cyan + âmbar, `@keyframes meshOrbAlt`)
+- Todos fixed, z-index 0, pointer-events none — não interferem com interação
+
+### Gradiente de marca
+`linear-gradient(135deg, #10b981, #8b5cf6)` (emerald→violeta) — usado no ícone do brand na Navbar.
+`.gradient-text`: `linear-gradient(135deg, #10b981, #06b6d4)` (emerald→cyan) — para texto em destaque.
 
 ## weekHelpers.ts
 
@@ -201,6 +241,9 @@ Gradiente de marca: `linear-gradient(135deg, #10b981, #06b6d4)` | `.gradient-tex
 
 - **Layout estrutural em CSS puro** (`globals.css`): classes `app-sidebar`, `app-topbar`, `app-bottomnav`, `app-main` com media queries. Tailwind v4 + Turbopack é imprevisível para classes responsivas estruturais.
 - **Componentes usam `style={}` inline** para cor/bg/padding. Tailwind só para utilitários (`flex`, `items-center`, `rounded-xl`, `gap-*`). **Nunca** `dark:` prefix — usar CSS vars.
+- **Tipografia:** aplicar `fontFamily: 'var(--font-syne)'` em headings/títulos de seção; `fontFamily: 'var(--font-dm-mono)'` em valores monetários e percentuais. Nunca hardcode de nome de fonte.
+- **Dark-only:** não adicionar lógica de tema claro. O toggle foi removido da Navbar; `UserPreferences.theme` existe no store mas não é mais exposto na UI.
+- **Bottom nav mobile:** exibe apenas os 5 primeiros `navItems` (dashboard, adicionar, despesas, fixas, metas).
 - Datas: exibir com `new Date(date + 'T12:00:00')`. Salvar `weekKey` via `getWeekKey(date)`.
 - Store Zustand: usar `(set, get)` quando a action lê estado após mutação. `get().syncFixedExpenses()` após mutações em `fixedExpenseMonths`.
 - Recharts Tooltip: `(v) => [formatCurrency(Number(v)), 'Label']`
