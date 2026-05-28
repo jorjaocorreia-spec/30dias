@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle, MoreHorizontal, X } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { getCurrentWeekKey } from '@/store/useAppStore'
 import { buildWeekSummary, getWeekDays, toLocalDateKey } from '@/lib/weekHelpers'
@@ -23,7 +23,8 @@ const navItems = [
   { href: '/help', icon: HelpCircle, label: 'Ajuda', section: 'config' },
 ]
 
-const bottomNavItems = navItems.slice(0, 5)
+const bottomNavPrimary = navItems.slice(0, 4)
+const bottomNavMore = navItems.slice(4)
 
 function isActive(pathname: string, href: string) {
   if (href === '/expenses/new') return pathname === '/expenses/new'
@@ -62,6 +63,7 @@ export function Navbar() {
   const pathname = usePathname()
   const { expenses, preferences, categories, getFixedWeeklyContribution, getFixedCategoryContribution, logout } = useAppStore()
   const [collapsed, setCollapsed] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
 
   const fixedWeekly = getFixedWeeklyContribution()
   const fixedByCategory = getFixedCategoryContribution()
@@ -99,6 +101,10 @@ export function Navbar() {
     const saved = localStorage.getItem('sidebar-collapsed') === 'true'
     if (saved) setCollapsed(true)
   }, [])
+
+  useEffect(() => {
+    setMoreOpen(false)
+  }, [pathname])
 
   const toggle = useCallback((val: boolean) => {
     setCollapsed(val)
@@ -336,7 +342,7 @@ export function Navbar() {
 
       {/* ── Bottom nav mobile ── */}
       <nav className="app-bottomnav">
-        {bottomNavItems.map(({ href, icon: Icon, label }) => {
+        {bottomNavPrimary.map(({ href, icon: Icon, label }) => {
           const active = isActive(pathname, href)
           return (
             <Link
@@ -359,7 +365,132 @@ export function Navbar() {
             </Link>
           )
         })}
+        {/* Mais button */}
+        <button
+          onClick={() => setMoreOpen(true)}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 3,
+            padding: '10px 0',
+            color: moreOpen || bottomNavMore.some(i => isActive(pathname, i.href))
+              ? '#10b981'
+              : 'rgba(240,237,248,0.4)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <MoreHorizontal size={20} />
+          <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-nunito)' }}>Mais</span>
+        </button>
       </nav>
+
+      {/* ── More bottom sheet ── */}
+      {moreOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            onClick={() => setMoreOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 199,
+              background: 'rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(4px)',
+            }}
+          />
+          {/* Sheet */}
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
+            background: 'rgba(15,15,20,0.97)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: 'none',
+            borderRadius: '20px 20px 0 0',
+            padding: '12px 0 calc(env(safe-area-inset-bottom) + 12px)',
+          }}>
+            {/* Handle */}
+            <div style={{
+              width: 36, height: 4, borderRadius: 2,
+              background: 'rgba(255,255,255,0.15)',
+              margin: '0 auto 16px',
+            }} />
+            {/* Close button */}
+            <button
+              onClick={() => setMoreOpen(false)}
+              style={{
+                position: 'absolute', top: 12, right: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 32, borderRadius: 8,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(240,237,248,0.5)',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={15} />
+            </button>
+
+            {/* Sections */}
+            {[
+              { key: 'financial', label: 'Financeiro' },
+              { key: 'config', label: 'Configuração' },
+            ].map(({ key, label }) => {
+              const items = bottomNavMore.filter(i => i.section === key)
+              if (!items.length) return null
+              return (
+                <div key={key}>
+                  <div style={{
+                    fontFamily: 'var(--font-dm-mono)',
+                    fontSize: 9,
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(240,237,248,0.25)',
+                    padding: '4px 20px 8px',
+                  }}>{label}</div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: 4,
+                    padding: '0 12px 12px',
+                  }}>
+                    {items.map(({ href, icon: Icon, label: lbl }) => {
+                      const active = isActive(pathname, href)
+                      return (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setMoreOpen(false)}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            padding: '12px 4px',
+                            borderRadius: 12,
+                            background: active
+                              ? 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.08))'
+                              : 'rgba(255,255,255,0.04)',
+                            border: `1px solid ${active ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                            color: active ? '#10b981' : 'rgba(240,237,248,0.6)',
+                            textDecoration: 'none',
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Icon size={20} style={active ? { filter: 'drop-shadow(0 0 6px #10b981)' } : {}} />
+                          <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-nunito)', lineHeight: 1.2 }}>{lbl}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </>
   )
 }
