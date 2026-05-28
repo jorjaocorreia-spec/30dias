@@ -616,9 +616,9 @@ export default function DashboardPage() {
               onClick={() => setSharedDrawerOpen(false)}
             />
             <motion.div
-              className="fixed bottom-0 left-0 right-0 z-50 flex flex-col"
+              className="fixed bottom-0 left-0 lg:left-56 right-0 z-50 flex flex-col"
               style={{
-                background: 'var(--bg-card)',
+                background: '#1a1a24',
                 borderTop: '1px solid var(--border)',
                 borderTopLeftRadius: 24,
                 borderTopRightRadius: 24,
