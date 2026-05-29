@@ -14,7 +14,7 @@ export default function IntegrationsPage() {
   const handleSave = async () => {
     const cleaned = phone.replace(/\D/g, '')
     if (cleaned.length < 10 || cleaned.length > 15) {
-      setError('Informe o número com DDD e código do país. Ex: 5511999999999')
+      setError('Informe apenas DDD + número, sem o código do país. Ex: 45999999999')
       return
     }
     setError('')
@@ -73,12 +73,12 @@ export default function IntegrationsPage() {
             <p className="text-sm font-medium">Seu número de WhatsApp</p>
           </div>
           <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-            Número pessoal que você usará para enviar mensagens ao bot. Inclua o código do país e DDD sem espaços ou símbolos.
+            Número pessoal que você usará para enviar mensagens ao bot. Informe apenas DDD + número, sem o código do país (55). Sem espaços ou símbolos.
           </p>
           <div className="flex gap-3">
             <input
               type="tel"
-              placeholder="5511999999999"
+              placeholder="45999999999"
               value={phone}
               onChange={e => { setPhone(e.target.value); setError('') }}
               onKeyDown={e => e.key === 'Enter' && handleSave()}
