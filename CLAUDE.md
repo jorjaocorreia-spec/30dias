@@ -150,6 +150,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 --bg-card: rgba(255,255,255,0.04)       cards glass (semi-transparente)
 --bg-raised: rgba(255,255,255,0.07)     elementos elevados
 --bg-input: rgba(255,255,255,0.07)      inputs
+--bg-modal: #1A1A26                     modais e bottom sheets (sólido, sem transparência)
 --border: rgba(255,255,255,0.08)        bordas glass
 --border-hover: rgba(255,255,255,0.15)  hover
 --text: #F0EDF8                         texto principal
