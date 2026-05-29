@@ -147,13 +147,17 @@ export default function EstablishmentsPage() {
 
             <motion.div
               className="fixed lg:relative bottom-0 lg:bottom-auto left-0 lg:left-auto right-0 lg:right-auto z-50 lg:z-auto
-                         p-5 rounded-t-3xl lg:rounded-2xl border-t lg:border mt-6 space-y-4"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+                         rounded-t-3xl lg:rounded-2xl border-t lg:border mt-6"
+              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', maxHeight: 'calc(92vh - env(safe-area-inset-bottom))', overflowY: 'auto' }}
               initial={{ y: '100%', opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
+              <div className="lg:hidden flex justify-center pt-3">
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border-hover)' }} />
+              </div>
+              <div className="p-5 space-y-4">
               {/* Form header */}
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold">{editing ? 'Editar estabelecimento' : 'Novo estabelecimento'}</h2>
@@ -276,6 +280,7 @@ export default function EstablishmentsPage() {
               >
                 {editing ? 'Salvar alterações' : 'Criar estabelecimento'}
               </button>
+              </div>
             </motion.div>
           </>
         )}
