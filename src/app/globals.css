@@ -116,6 +116,16 @@ body::after {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
 
+/* ── Select nativo — força modo escuro no dropdown do browser ── */
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #1A1A26;
+  color: #F0EDF8;
+}
+
 /* ── Utilitários globais ── */
 .gradient-text {
   background: linear-gradient(135deg, #10b981, #06b6d4);
