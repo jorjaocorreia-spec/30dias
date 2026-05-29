@@ -30,7 +30,7 @@ export default function IntegrationsPage() {
       <div className="mb-6">
         <h1 className="text-xl font-bold">Integrações</h1>
         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-          Registre despesas e consulte seu financeiro direto pelo WhatsApp
+          Registre despesas, receitas e consulte seu financeiro direto pelo WhatsApp
         </p>
       </div>
 
@@ -49,7 +49,7 @@ export default function IntegrationsPage() {
           </div>
           <div>
             <p className="text-sm font-semibold">WhatsApp</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Registre despesas e consulte seu financeiro</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Registre despesas, receitas e consulte seu financeiro</p>
           </div>
           <div className="ml-auto">
             {preferences.whatsappNumber ? (
@@ -137,6 +137,33 @@ export default function IntegrationsPage() {
           </div>
         </div>
 
+        {/* Registrar receitas */}
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={14} style={{ color: 'var(--text-muted)' }} />
+            <p className="text-sm font-medium">Registrar receitas</p>
+          </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+            Use palavras como <span style={{ color: 'var(--text)' }}>recebi, recebimento, ganhei</span> ou <span style={{ color: 'var(--text)' }}>entrou</span> para registrar uma receita. O bot salva automaticamente na categoria certa.
+          </p>
+          <div className="space-y-2">
+            {[
+              { msg: 'recebi 150 do IRPF', resp: '✅ +R$ 150,00 · Investimentos · 29/05' },
+              { msg: 'recebimento 2000 salário via ted', resp: '✅ +R$ 2.000,00 · Salário · 29/05' },
+              { msg: 'ganhei 500 de freela no pix', resp: '✅ +R$ 500,00 · Freelance · 29/05' },
+            ].map(({ msg, resp }) => (
+              <div key={msg} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+                <div className="px-3 py-2 text-xs" style={{ background: 'rgba(139,92,246,0.06)', color: 'var(--text-muted)' }}>
+                  📱 <span style={{ color: 'var(--text)' }}>{msg}</span>
+                </div>
+                <div className="px-3 py-2 text-xs" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+                  🤖 {resp}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Consultas disponíveis */}
         <div className="px-5 py-4">
           <div className="flex items-center gap-2 mb-3">
@@ -190,7 +217,7 @@ export default function IntegrationsPage() {
             ))}
           </div>
           <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-            Qualquer outra mensagem é interpretada como uma despesa.
+            Mensagens com <span style={{ color: 'var(--text)' }}>recebi, recebimento, ganhei</span> ou <span style={{ color: 'var(--text)' }}>entrou</span> são salvas como receita. Qualquer outra é interpretada como despesa.
           </p>
         </div>
       </motion.div>

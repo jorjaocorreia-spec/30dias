@@ -1,5 +1,6 @@
 export type Intent =
   | 'expense'
+  | 'income'
   | 'query_week'
   | 'query_month'
   | 'query_pending'
@@ -10,6 +11,17 @@ const RULES: { type: Intent; patterns: RegExp[] }[] = [
   {
     type: 'help',
     patterns: [/\bajuda\b/i, /\bcomandos?\b/i, /\bmenu\b/i, /o que (voc[eê]|vc) (faz|pode)/i],
+  },
+  {
+    type: 'income',
+    patterns: [
+      /\brecebimento\b/i,
+      /\brecebi\b/i,
+      /\breceita\b/i,
+      /\bganhei\b/i,
+      /\bganhou\b/i,
+      /\bentrou\b/i,
+    ],
   },
   {
     type: 'query_summary',

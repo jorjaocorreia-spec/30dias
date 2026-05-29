@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { extractExpense } from '@/lib/whatsapp/extractExpense'
+import { extractIncome } from '@/lib/whatsapp/extractIncome'
 import { sendWhatsAppMessage } from '@/lib/whatsapp/sendMessage'
 import { detectIntent } from '@/lib/whatsapp/detectIntent'
 import {
@@ -114,6 +115,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (prefsError || !prefs?.user_id) {
     console.warn('[WA] unauthorized phone:', phone, '| alt:', phoneAlt)
+    try {
+      await sendWhatsAppMessage(phone, '⚠️ Número não cadastrado no *7Dias*. Acesse o app e adicione seu WhatsApp em *Integrações > WhatsApp*.')
+    } catch (e) {
+      console.error('[WA] failed to send not-found message:', e)
+    }
     return NextResponse.json({ ok: true, skipped: true, reason: 'phone not found' })
   }
 
@@ -123,6 +129,52 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Route queries before attempting expense extraction
   const intent = detectIntent(text)
   console.log('[WA] intent:', intent)
+
+  // Income registration — async like expense, handled separately
+  if (intent === 'income') {
+    const { data: incomeCategories } = await supabaseAdmin
+      .from('income_categories')
+      .select('id, name')
+      .eq('user_id', userId)
+
+    const result = await extractIncome(text, incomeCategories ?? [])
+    console.log('[WA] income extraction result:', JSON.stringify(result))
+
+    if (!result.success) {
+      await sendWhatsAppMessage(phone, `❌ ${result.reason}`)
+      return NextResponse.json({ ok: true, extracted: false, reason: result.reason })
+    }
+
+    const { income } = result
+    const incomeId = nanoid()
+    const month = income.receivedDate.slice(0, 7)
+
+    const { error: incomeInsertError } = await supabaseAdmin.from('income_entries').insert({
+      id: incomeId,
+      user_id: userId,
+      category_id: income.categoryId,
+      description: income.description,
+      amount: income.amount,
+      month,
+      received_date: income.receivedDate,
+      payment_method: income.paymentMethod,
+      notes: null,
+    })
+
+    if (incomeInsertError) {
+      console.error('[WA] income insert error:', incomeInsertError)
+      await sendWhatsAppMessage(phone, '❌ Erro ao salvar a receita. Tente novamente.')
+      return NextResponse.json({ ok: false, error: incomeInsertError.message }, { status: 500 })
+    }
+
+    const incomeAmount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(income.amount)
+    const incomeDateFmt = new Date(income.receivedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    const incomeCategoryName = (incomeCategories ?? []).find(c => c.id === income.categoryId)?.name ?? income.categoryId
+
+    await sendWhatsAppMessage(phone, `✅ *+${incomeAmount}* · ${incomeCategoryName} · ${incomeDateFmt}\n_${income.description}_`)
+    console.log('[WA] income saved:', incomeId)
+    return NextResponse.json({ ok: true, incomeEntryId: incomeId })
+  }
 
   if (intent !== 'expense') {
     let reply: string
