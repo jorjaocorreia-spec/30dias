@@ -148,7 +148,7 @@ export default function EstablishmentsPage() {
             <motion.div
               className="fixed lg:relative bottom-0 lg:bottom-auto left-0 lg:left-auto right-0 lg:right-auto z-50 lg:z-auto
                          rounded-t-3xl lg:rounded-2xl border-t lg:border mt-6"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', maxHeight: 'calc(92vh - env(safe-area-inset-bottom))', overflowY: 'auto' }}
+              style={{ background: 'var(--bg-modal)', borderColor: 'var(--border)', maxHeight: 'calc(92vh - env(safe-area-inset-bottom))', overflowY: 'auto' }}
               initial={{ y: '100%', opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}

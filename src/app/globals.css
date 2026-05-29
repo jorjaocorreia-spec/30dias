@@ -33,6 +33,9 @@
   --font-mono:     var(--font-dm-mono), 'Courier New', monospace;
   --font-ui:       var(--font-nunito), system-ui, sans-serif;
 
+  /* Modal — solid opaque background for overlays and bottom sheets */
+  --bg-modal:      #1A1A26;
+
   /* Glass */
   --glass-shadow:  0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);

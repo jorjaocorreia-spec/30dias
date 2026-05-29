@@ -735,7 +735,7 @@ export default function GoalsPage() {
               animate={{ y: 0 }}
               exit={{ y: 40 }}
               className="w-full max-w-sm p-5 rounded-2xl"
-              style={{ background: 'var(--bg-card)' }}
+              style={{ background: 'var(--bg-modal)' }}
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -821,7 +821,7 @@ export default function GoalsPage() {
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
               className="w-full max-w-xs p-5 rounded-2xl"
-              style={{ background: 'var(--bg-card)' }}
+              style={{ background: 'var(--bg-modal)' }}
             >
               <p className="font-semibold text-sm mb-1">Excluir meta?</p>
               <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>

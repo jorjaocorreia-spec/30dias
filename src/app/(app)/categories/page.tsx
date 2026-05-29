@@ -136,7 +136,7 @@ export default function CategoriesPage() {
             <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmDelete(null)} />
             <motion.div
               className="relative z-10 p-5 rounded-2xl border max-w-sm w-full space-y-4"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+              style={{ background: 'var(--bg-modal)', borderColor: 'var(--border)' }}
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
             >
               <div className="flex items-start gap-3">
@@ -186,7 +186,7 @@ export default function CategoriesPage() {
               ref={formRef}
               className="fixed lg:relative bottom-0 lg:bottom-auto left-0 lg:left-auto right-0 lg:right-auto z-50 lg:z-auto
                          rounded-t-3xl lg:rounded-2xl border-t lg:border mt-6"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', maxHeight: 'calc(92vh - env(safe-area-inset-bottom))', overflowY: 'auto' }}
+              style={{ background: 'var(--bg-modal)', borderColor: 'var(--border)', maxHeight: 'calc(92vh - env(safe-area-inset-bottom))', overflowY: 'auto' }}
               initial={{ y: '100%', opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
