@@ -258,6 +258,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 - [x] Mensagem de boas-vindas via WhatsApp ao cadastrar número: quando o usuário salva o número pela primeira vez na página `/integrations`, o bot deve enviar automaticamente uma mensagem se apresentando e listando todos os comandos disponíveis (mesma estrutura do intent `help`)
 - [ ] **Sistema de avisos inteligentes (a planejar):** notificações proativas dentro da plataforma — ex: recebimentos chegando em breve, pagamentos/vencimentos próximos, alerta de proximidade de limite de orçamento semanal/por categoria, e outros gatilhos contextuais relevantes. Ainda sem definição de UI, canais (in-app, WhatsApp) ou regras exatas.
 - [ ] **CRUD de categorias de receita (a planejar):** tela de gerenciamento de categorias de receita nos mesmos moldes da página `/categories` (despesas) — criar, editar, excluir, picker de ícone e cor. Hoje as `incomeCategories` são defaults fixos no store; a implementação exigirá persistência no Supabase e migração similar à de categorias de despesa.
+- [ ] **Resumo mensal em `/summary` (a planejar):** adicionar visão por mês ao resumo — permitir navegar entre meses e ver desempenho consolidado (receitas, despesas, saldo, breakdown por categoria). Hoje o resumo foca em semanas; a visão mensal complementa para análise de médio prazo.
 
 ## Lembretes de vencimento (despesas fixas)
 
