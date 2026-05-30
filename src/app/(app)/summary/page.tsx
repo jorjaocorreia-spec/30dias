@@ -17,20 +17,24 @@ const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const HISTORY_PAGE = 6
 
 export default function SummaryPage() {
-  const { expenses, categories, preferences } = useAppStore()
+  const { expenses, categories, preferences, getFixedWeeklyContribution, getGoalWeeklyTotal } = useAppStore()
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
   const [historyExpanded, setHistoryExpanded] = useState(false)
   const topRef = useRef<HTMLDivElement>(null)
   const isCurrentWeek = weekKey === getCurrentWeekKey()
 
+  const effectiveBudget = preferences.weeklyBudget + getFixedWeeklyContribution() + getGoalWeeklyTotal(true)
+
   const summary = useMemo(
-    () => buildWeekSummary(weekKey, expenses, preferences.weeklyBudget),
-    [weekKey, expenses, preferences.weeklyBudget]
+    () => buildWeekSummary(weekKey, expenses, effectiveBudget),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [weekKey, expenses, effectiveBudget]
   )
 
   const prevSummary = useMemo(
-    () => buildWeekSummary(getPreviousWeekKey(weekKey), expenses, preferences.weeklyBudget),
-    [weekKey, expenses, preferences.weeklyBudget]
+    () => buildWeekSummary(getPreviousWeekKey(weekKey), expenses, effectiveBudget),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [weekKey, expenses, effectiveBudget]
   )
 
   const weekDays = getWeekDays(weekKey)
@@ -64,7 +68,7 @@ export default function SummaryPage() {
       .filter((k) => k < getCurrentWeekKey())
       .sort((a, b) => b.localeCompare(a))
     return keys.map((k) => {
-      const s = buildWeekSummary(k, expenses, preferences.weeklyBudget)
+      const s = buildWeekSummary(k, expenses, effectiveBudget)
       return {
         weekKey: k,
         label: formatWeekLabel(k),
@@ -74,7 +78,8 @@ export default function SummaryPage() {
         pct: s.budget > 0 ? Math.min((s.totalAmount / s.budget) * 100, 100) : 0,
       }
     })
-  }, [expenses, preferences.weeklyBudget])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenses, effectiveBudget])
 
   const visibleHistory = historyExpanded ? pastWeeks : pastWeeks.slice(0, HISTORY_PAGE)
 
