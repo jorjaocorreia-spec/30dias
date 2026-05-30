@@ -546,21 +546,35 @@ export default function DashboardPage() {
               .map((cat) => {
                 const spent = summary.byCategory[cat.id] ?? 0
                 const budget = preferences.categoryBudgets?.[cat.id] ?? 0
-                const pct = Math.min((spent / budget) * 100, 100)
+                const rawPct = (spent / budget) * 100
+                const barPct = Math.min(rawPct, 100)
+                const isOver = rawPct > 100
+                const overAmount = spent - budget
                 return (
-                  <div key={cat.id}>
+                  <div
+                    key={cat.id}
+                    style={isOver ? {
+                      background: 'rgba(244,63,94,0.07)',
+                      border: '1px solid rgba(244,63,94,0.25)',
+                      borderRadius: 12,
+                      padding: '10px 12px',
+                      margin: '0 -12px',
+                    } : undefined}
+                  >
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ background: cat.color + '20' }}
+                          style={{ background: isOver ? 'rgba(244,63,94,0.15)' : cat.color + '20' }}
                         >
-                          <CategoryIcon name={cat.icon} size={13} style={{ color: cat.color }} />
+                          <CategoryIcon name={cat.icon} size={13} style={{ color: isOver ? '#f43f5e' : cat.color }} />
                         </div>
-                        <span className="text-sm font-medium">{cat.name}</span>
+                        <span className="text-sm font-medium" style={isOver ? { color: '#f43f5e' } : undefined}>{cat.name}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs font-semibold">{formatCurrency(spent)}</span>
+                        <span className="text-xs font-semibold" style={{ color: isOver ? '#f43f5e' : 'var(--text)' }}>
+                          {formatCurrency(spent)}
+                        </span>
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                           {' '}/ {formatCurrency(budget)}
                         </span>
@@ -568,31 +582,35 @@ export default function DashboardPage() {
                     </div>
                     <div
                       className="w-full h-1.5 rounded-full overflow-hidden"
-                      style={{ background: 'var(--bg-input)' }}
+                      style={{ background: isOver ? 'rgba(244,63,94,0.15)' : 'var(--bg-input)' }}
                     >
                       <motion.div
                         className="h-full rounded-full"
                         initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
+                        animate={{ width: `${barPct}%` }}
                         transition={{ duration: 0.7, ease: 'easeOut' }}
                         style={{
-                          background: pct >= 90
-                            ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
-                            : `linear-gradient(90deg, ${cat.color}, ${cat.color}bb)`,
+                          background: isOver
+                            ? 'linear-gradient(90deg, #f43f5e, #ef4444)'
+                            : rawPct >= 90
+                              ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                              : `linear-gradient(90deg, ${cat.color}, ${cat.color}bb)`,
                         }}
                       />
                     </div>
-                    {pct >= 80 && isCurrentWeek && (
+                    {isOver && isCurrentWeek && (
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        {pct > 100
-                          ? <XCircle size={11} style={{ color: '#ef4444', flexShrink: 0 }} />
-                          : <AlertTriangle size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                        }
-                        <p className="text-xs" style={{ color: pct > 100 ? '#ef4444' : '#f59e0b' }}>
-                          {pct > 100
-                            ? `Limite ultrapassado`
-                            : `${pct.toFixed(0)}% utilizado`
-                          }
+                        <XCircle size={11} style={{ color: '#f43f5e', flexShrink: 0 }} />
+                        <p className="text-xs font-medium" style={{ color: '#f43f5e' }}>
+                          Limite ultrapassado em {formatCurrency(overAmount)}
+                        </p>
+                      </div>
+                    )}
+                    {!isOver && rawPct >= 80 && isCurrentWeek && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <AlertTriangle size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                        <p className="text-xs" style={{ color: '#f59e0b' }}>
+                          {rawPct.toFixed(0)}% utilizado
                         </p>
                       </div>
                     )}
