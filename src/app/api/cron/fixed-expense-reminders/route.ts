@@ -134,7 +134,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     if (!lines.length) continue
 
-    const message = `💳 *7Dias — Lembrete de vencimento*\n\n${lines.join('\n')}`
+    const message = `💳 *30dias — Lembrete de vencimento*\n\n${lines.join('\n')}`
 
     try {
       await sendWhatsAppMessage(phone, message)

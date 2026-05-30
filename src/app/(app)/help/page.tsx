@@ -93,7 +93,7 @@ export default function HelpPage() {
           <HelpCircle size={28} color="#fff" />
         </div>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Central de Ajuda</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>Guias completos sobre todas as funcionalidades do 7Dias</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>Guias completos sobre todas as funcionalidades do 30dias</p>
       </div>
 
       {/* Search */}

@@ -1,16 +1,16 @@
 @AGENTS.md
 
-# 7Dias — Projeto
+# 30dias — Projeto
 
-MVP+ completo. Build: `npm run build`. Dev: `npm run dev` → `http://localhost:3000`. Produção: `https://jorge-7dias.27pl2o.easypanel.host`
+MVP+ completo. Build: `npm run build`. Dev: `npm run dev` → `http://localhost:3000`. Produção: `https://jorge-30dias.27pl2o.easypanel.host`
 
-Fintech premium de gestão financeira pessoal por ciclos semanais. App **responsivo com igual peso** mobile/desktop.
+Fintech premium de gestão financeira pessoal com **foco mensal** e acompanhamento semanal dentro do mês. App **responsivo com igual peso** mobile/desktop.
 
 ## Stack
 
 - **Next.js 16** (App Router) + **TypeScript**
 - **Tailwind CSS** (sem plugins, CSS vars para design system)
-- **Zustand** com `persist` (chave: `7dias-storage`)
+- **Zustand** com `persist` (chave: `30dias-storage`)
 - **React Hook Form** + **Zod** | **Recharts** | **Framer Motion**
 - **lucide-react** (atenção: `Chrome` não existe — usar SVG inline) | **nanoid**
 
@@ -111,7 +111,7 @@ interface IncomeEntry {
 ### Despesas divididas (split)
 - `amount` = valor total pago; `sharedWith` = partes de cada participante
 - `getEffectiveAmount(expense)` em `weekHelpers.ts` → `amount - soma(sharedWith)` = parte do usuário
-- **Todos os cálculos de orçamento e saldo usam `getEffectiveAmount`** (buildWeekSummary, getMonthlyBalance)
+- **Todos os cálculos de orçamento e saldo usam `getEffectiveAmount`** (cálculos mensais, getMonthlyBalance)
 - `markParticipantAsPaid(expenseId, participantId, paid)` — registra pagamento com data
 - `getSharedPendingTotal(month?)` — total a receber no mês (usado no card do dashboard)
 - Coluna `shared_with JSONB` na tabela `expenses` do Supabase (já migrada)
@@ -131,13 +131,14 @@ interface IncomeEntry {
 
 ### Budget automático de fixas
 
-- `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas — usado no Dashboard para cota semanal
-- `getFixedMonthlyContribution(month?)` → soma mensal real das fixas ativas confirmadas — usado na página de Orçamento
-- `getFixedCategoryContribution(month?)` → `getFixedWeeklyContribution` agrupado por `categoryId`
-- `getFixedMonthlyCategoryContribution(month?)` → `getFixedMonthlyContribution` agrupado por `categoryId`
-- **Cota semanal efetiva** (Dashboard/Navbar) = `monthlyBudget / weeksInMonth + fixedWeekly + goalDeductWeekly` (modo fixo) | `sum(categoryBudgets) / weeksInMonth + sum(fixedByCategory) + goalDeductWeekly` (por categoria)
+- `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas — usado na Navbar para cota semanal
+- `getFixedMonthlyContribution(month?)` → soma mensal real das fixas ativas confirmadas — usado no Dashboard e na página de Orçamento
+- `getFixedCategoryContribution(month?)` → `getFixedWeeklyContribution` agrupado por `categoryId` — Navbar
+- `getFixedMonthlyCategoryContribution(month?)` → `getFixedMonthlyContribution` agrupado por `categoryId` — Dashboard (breakdown por categoria)
+- **Cota semanal efetiva** (Navbar) = `monthlyBudget / weeksInMonth + fixedWeekly + goalDeductWeekly` (modo fixo) | `sum(categoryBudgets) / weeksInMonth + sum(fixedByCategory) + goalDeductWeekly` (por categoria)
 - `weeksInMonth` = `getWeekOfMonth(weekKey).total`
-- **Orçamento mensal total** (página Orçamento) = `monthlyBudget + fixedMonthly + goalDeductMonthly`
+- **Orçamento mensal total** (Dashboard + página Orçamento) = `monthlyBudget + fixedMonthly + goalDeductMonthly`
+  - `goalDeductMonthly = getGoalWeeklyTotal(true) × weeksOfMonth.length`
 
 ## Design system — Bloom
 
@@ -210,7 +211,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 | Rota | Descrição |
 |------|-----------|
 | `/` | Landing + auth (Google SVG inline, Apple, email) |
-| `/dashboard` | KPIs, progresso orçamento, card projeção do mês, BarChart diário (clique = filtro dia), PieChart categoria, FAB |
+| `/dashboard` | Navegação por mês (← →). KPIs mensais (gastos, disponível, receitas + condicionais A Receber/Metas). Saldo do mês. Barra de orçamento mensal. Projeção (só mês atual). BarChart semanal — 4–5 barras por mês, clique seleciona semana e exibe despesas. PieChart por categoria (mensal). |
 | `/expenses` | Lista com filtro categoria/período/tipo/divididas, editar/excluir inline, painel de participantes inline |
 | `/expenses/new` e `/expenses/[id]` | `ExpenseForm` sem/com `initialData` |
 | `/categories` | CRUD, bottom sheet (mobile)/inline (lg), picker ícone+cor, exclusão com modal |
@@ -224,13 +225,15 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 | `/help` | Central de ajuda: índice com busca e cards agrupados por categoria |
 | `/help/[slug]` | Artigo de ajuda com sumário lateral, blocos tipados (callout, steps, tabelas) e navegação prev/next |
 
-**Dashboard — card "A Receber":** aparece automaticamente quando `getSharedPendingTotal()` > 0 no mês corrente.
-**Dashboard — card "Metas":** aparece automaticamente quando há metas ativas (`isActive && !completedAt`); mostra % médio de progresso + quantidade. Click → `/goals`.
+**Dashboard — navegação mensal:** estado `monthKey` (YYYY-MM). Ao trocar mês, `selectedWeekKey` reseta para a semana atual (se no mês) ou a última semana do mês. Projeção só renderiza quando `isCurrentMonth`.
+
+**Dashboard — card "A Receber":** aparece quando `getSharedPendingTotal(monthKey)` > 0 no mês selecionado. Abre drawer já no `monthKey` selecionado.
+**Dashboard — card "Metas":** aparece quando há metas ativas (`isActive && !completedAt`); mostra % médio de progresso + quantidade. Click → `/goals`.
 **Dashboard — KPI grid:** passa de `lg:grid-cols-3` para `lg:grid-cols-4` quando há card "A Receber" ou card "Metas" (mobile sempre 2 cols).
 
-**Dashboard — card "Projeção do mês":** aparece quando há ≥1 despesa no mês corrente. Calcula `(totalSpentThisMonth / daysElapsed) × daysInMonth` e exibe delta vs renda (verde/vermelho). Mostra "Nd de dados" para transparência. Posicionado entre "Saldo do mês" e os gráficos.
+**Dashboard — card "Projeção do mês":** aparece apenas no mês atual quando `totalMonthlyExpenses > 0`. Calcula `(totalMonthlyExpenses / daysElapsed) × daysInMonth` e exibe delta vs renda. Mostra "Nd de dados" para transparência. Posicionado entre "Saldo do mês" e os gráficos.
 
-**Dashboard — filtro dia:** `selectedDay` inicia `getTodayKey()`, reseta ao mudar semana. Barras: selecionado=`#10b981`, hoje=`rgba(16,185,129,0.25)`, outros=`var(--bg-input)`. `dailyData` usa `toLocalDateKey`.
+**Dashboard — filtro semana:** `selectedWeekKey` inicia na semana atual. Barras do chart semanal: selecionada=`#10b981`, semana atual=`rgba(16,185,129,0.25)`, outras=`var(--bg-input)`. Clicar uma barra muda `selectedWeekKey` e exibe as despesas daquela semana na lista abaixo.
 
 ## Layout responsivo
 
@@ -279,12 +282,12 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
   - Consolida todas as despesas de cada usuário em **uma única mensagem** por dia
   - Usa `fixed_expense_months.amount` do mês corrente quando disponível; fallback = `suggested_amount`
 - Agendador externo: **cron-job.org** (gratuito), diariamente às **08:00 BRT (11:00 UTC)**
-  - URL: `https://jorge-7dias.27pl2o.easypanel.host/api/cron/fixed-expense-reminders?secret=CRON_SECRET`
+  - URL: `https://jorge-30dias.27pl2o.easypanel.host/api/cron/fixed-expense-reminders?secret=CRON_SECRET`
   - `CRON_SECRET`: gerar com `openssl rand -hex 32` e adicionar no Easypanel
 
 ## WhatsApp — detalhes técnicos
 
-- **Evolution API v2.3.7**: `https://jorge-evolution-api.27pl2o.easypanel.host`, instância `7dias`
+- **Evolution API v2.3.7**: `https://jorge-evolution-api.27pl2o.easypanel.host`, instância `30dias`
 - Route handler: `src/app/api/webhook/whatsapp/route.ts`
 - Extração: `src/lib/whatsapp/extractExpense.ts` (Claude Haiku, JSON puro sem markdown)
 - Envio: `src/lib/whatsapp/sendMessage.ts` (`POST /message/sendText/{instance}`)
@@ -315,16 +318,16 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 
 **Reconfigurar webhook:**
 ```bash
-curl -X POST https://jorge-evolution-api.27pl2o.easypanel.host/webhook/set/7dias \
+curl -X POST https://jorge-evolution-api.27pl2o.easypanel.host/webhook/set/30dias \
   -H "apikey: 429683C4C977415CAAFCCE10F7D57E11" \
   -H "Content-Type: application/json" \
-  -d '{"webhook":{"enabled":true,"url":"https://jorge-7dias.27pl2o.easypanel.host/api/webhook/whatsapp?secret=7dias-webhook-secret-2025","webhook_by_events":false,"webhook_base64":false,"events":["MESSAGES_UPSERT"]}}'
+  -d '{"webhook":{"enabled":true,"url":"https://jorge-30dias.27pl2o.easypanel.host/api/webhook/whatsapp?secret=30dias-webhook-secret-2025","webhook_by_events":false,"webhook_base64":false,"events":["MESSAGES_UPSERT"]}}'
 ```
 
 ## Deploy
 
-- Easypanel: `http://31.97.248.13:3000/` → projeto `jorge`, serviço `7dias`
-- Nixpacks + Node 20 (`NIXPACKS_NODE_VERSION=20`). Repo: `https://github.com/jorjaocorreia-spec/7dias.git` (branch `main`)
+- Easypanel: `http://31.97.248.13:3000/` → projeto `jorge`, serviço `30dias`
+- Nixpacks + Node 20 (`NIXPACKS_NODE_VERSION=20`). Repo: `https://github.com/jorjaocorreia-spec/30dias.git` (branch `main`)
 - **Restrição:** apenas projeto `jorge` pode ser alterado na VPS
 - Env vars necessárias: `NIXPACKS_NODE_VERSION`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`, `WEBHOOK_SECRET`, `CRON_SECRET`
 - ⚠️ Não misturar bloco raw com variáveis individuais — causa duplicatas e sobrescrita silenciosa

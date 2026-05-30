@@ -26,8 +26,8 @@ const nunito = Nunito({
 })
 
 export const metadata: Metadata = {
-  title: '7Dias — Controle financeiro semanal',
-  description: 'Seu dinheiro. A cada 7 dias.',
+  title: '30dias — Controle financeiro mensal',
+  description: 'Seu dinheiro. A cada 30 dias.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -12,7 +12,7 @@ export default defineConfig({
   timeout: 40_000,
   globalSetup: './tests/e2e/global-setup.ts',
   use: {
-    baseURL: process.env.TEST_BASE_URL || 'https://jorge-7dias.27pl2o.easypanel.host',
+    baseURL: process.env.TEST_BASE_URL || 'https://jorge-30dias.27pl2o.easypanel.host',
     headless: false,
     viewport: { width: 1280, height: 800 },
     storageState: 'tests/e2e/.auth/user.json',

@@ -187,7 +187,7 @@ export async function handleSummaryQuery(userId: string, admin: SupabaseClient):
 
 export function handleHelp(): string {
   return [
-    '🤖 *7Dias — Comandos disponíveis*',
+    '🤖 *30dias — Comandos disponíveis*',
     '',
     '*Registrar despesa:*',
     '_"gastei 50 no mercado no pix"_',
@@ -211,7 +211,7 @@ export function handleHelp(): string {
 
 export function getWelcomeMessage(): string {
   return [
-    '👋 *Bem-vindo ao 7Dias!*',
+    '👋 *Bem-vindo ao 30dias!*',
     '',
     'Sou seu assistente financeiro. Por aqui você registra despesas, receitas e consulta seu financeiro sem precisar abrir o app.',
     '',

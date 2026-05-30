@@ -116,7 +116,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (prefsError || !prefs?.user_id) {
     console.warn('[WA] unauthorized phone:', phone, '| alt:', phoneAlt)
     try {
-      await sendWhatsAppMessage(phone, '⚠️ Número não cadastrado no *7Dias*. Acesse o app e adicione seu WhatsApp em *Integrações > WhatsApp*.')
+      await sendWhatsAppMessage(phone, '⚠️ Número não cadastrado no *30dias*. Acesse o app e adicione seu WhatsApp em *Integrações > WhatsApp*.')
     } catch (e) {
       console.error('[WA] failed to send not-found message:', e)
     }

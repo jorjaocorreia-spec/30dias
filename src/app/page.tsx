@@ -7,7 +7,7 @@ import { TrendingUp, Shield, Zap, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const features = [
-  { icon: Zap, title: 'Ciclos semanais', desc: 'Controle em 7 dias para decisões mais rápidas e eficazes.' },
+  { icon: Zap, title: 'Ciclos semanais', desc: 'Controle em 30 dias para decisões mais rápidas e eficazes.' },
   { icon: TrendingUp, title: 'Visão clara', desc: 'Gráficos e resumos elegantes do seu padrão de gastos.' },
   { icon: Shield, title: 'Seus dados', desc: 'Dados sincronizados com segurança na nuvem, acessíveis em qualquer dispositivo.' },
 ]
@@ -73,9 +73,9 @@ export default function LandingPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'linear-gradient(135deg, #10b981, #06b6d4)',
           }}>
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>7</span>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 11 }}>30</span>
           </div>
-          <span className="gradient-text" style={{ fontWeight: 700, fontSize: 18 }}>7Dias</span>
+          <span className="gradient-text" style={{ fontWeight: 700, fontSize: 18 }}>30dias</span>
         </div>
         <button
           onClick={() => {
@@ -102,12 +102,12 @@ export default function LandingPage() {
             background: 'var(--accent-light)', fontSize: 12, fontWeight: 500,
           }}>
             <Zap size={12} />
-            Controle financeiro semanal
+            Controle financeiro mensal
           </div>
 
           <h1 style={{ fontSize: 'clamp(40px, 8vw, 72px)', fontWeight: 800, lineHeight: 1.05, marginBottom: 24 }}>
             Seu dinheiro.<br />
-            <span className="gradient-text">A cada 7 dias.</span>
+            <span className="gradient-text">A cada 30 dias.</span>
           </h1>
 
           <p style={{ fontSize: 'clamp(15px, 2vw, 18px)', color: 'var(--text-muted)', maxWidth: 480, marginBottom: 36, lineHeight: 1.6 }}>

@@ -45,7 +45,7 @@ test.describe('Segurança — Auditoria RLS: todas as tabelas bloqueiam acesso a
 test.describe('Segurança — Auditoria RLS: usuário autenticado não acessa dados de outros usuários', () => {
   for (const table of TABLES) {
     test(`RLS — tabela "${table}" filtra por user_id autenticado`, async ({ page }) => {
-      await page.goto('https://jorge-7dias.27pl2o.easypanel.host/dashboard')
+      await page.goto('https://jorge-30dias.27pl2o.easypanel.host/dashboard')
       await page.waitForTimeout(2000)
 
       // Recupera JWT do usuário logado

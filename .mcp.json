@@ -2,7 +2,7 @@
   "mcpServers": {
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "d:/7Dias"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "d:/30dias"]
     },
     "memory": {
       "command": "npx",

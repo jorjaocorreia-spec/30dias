@@ -2,7 +2,7 @@ import { chromium } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
-const BASE_URL = process.env.TEST_BASE_URL || 'https://jorge-7dias.27pl2o.easypanel.host'
+const BASE_URL = process.env.TEST_BASE_URL || 'https://jorge-30dias.27pl2o.easypanel.host'
 const AUTH_FILE = path.join(__dirname, '.auth/user.json')
 
 export default async function globalSetup() {

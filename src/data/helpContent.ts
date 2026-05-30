@@ -40,9 +40,9 @@ export const helpArticles: HelpArticle[] = [
     sections: [
       {
         id: 'o-que-e',
-        title: 'O que é o 7Dias',
+        title: 'O que é o 30dias',
         blocks: [
-          { type: 'p', text: 'O 7Dias é uma plataforma de gestão financeira pessoal com orçamento mensal e acompanhamento semanal. Você define quanto pode gastar no mês e a plataforma divide isso em cotas semanais — um recorte de tempo natural para acompanhar seu ritmo antes que o problema chegue ao fim do mês.' },
+          { type: 'p', text: 'O 30dias é uma plataforma de gestão financeira pessoal com orçamento mensal e acompanhamento semanal. Você define quanto pode gastar no mês e a plataforma divide isso em cotas semanais — um recorte de tempo natural para acompanhar seu ritmo antes que o problema chegue ao fim do mês.' },
           { type: 'p', text: 'A ideia central é simples: o mês é a unidade financeira real (salário, aluguel, contas). A semana é a unidade de acompanhamento — o ritmo certo para corrigir o curso antes que seja tarde demais.' },
           { type: 'callout', variant: 'info', title: 'Mensal + Semanal', text: 'O orçamento mensal é a sua meta. A cota semanal (orçamento ÷ semanas do mês) é o termômetro do dia a dia. Se uma semana extrapolar, você ainda tem as outras para compensar dentro do mês.' },
         ],
@@ -52,7 +52,7 @@ export const helpArticles: HelpArticle[] = [
         title: 'Criando sua conta',
         blocks: [
           { type: 'steps', items: [
-            { title: 'Acesse a plataforma', desc: 'Abra o 7Dias no navegador do celular ou do computador.' },
+            { title: 'Acesse a plataforma', desc: 'Abra o 30dias no navegador do celular ou do computador.' },
             { title: 'Escolha o método de login', desc: 'Entre com Google (mais rápido) ou crie uma conta com e-mail e senha.' },
             { title: 'Confirme o e-mail', desc: 'Se optar por e-mail e senha, verifique sua caixa de entrada para confirmar o cadastro.' },
             { title: 'Pronto!', desc: 'Você será redirecionado para o Dashboard, já com categorias padrão criadas automaticamente.' },
@@ -64,7 +64,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'configurando-orcamento',
         title: 'Configurando o orçamento mensal',
         blocks: [
-          { type: 'p', text: 'Antes de registrar gastos, defina quanto você pode gastar no mês. Esse número é o coração do 7Dias — a cota semanal é calculada automaticamente a partir dele.' },
+          { type: 'p', text: 'Antes de registrar gastos, defina quanto você pode gastar no mês. Esse número é o coração do 30dias — a cota semanal é calculada automaticamente a partir dele.' },
           { type: 'steps', items: [
             { title: 'Acesse Orçamento', desc: 'No menu lateral (computador) ou no menu inferior (celular), clique em "Orçamento".' },
             { title: 'Escolha o modo', desc: '"Valor fixo" cria um limite mensal único para todos os gastos. "Por categoria" permite limites mensais separados para Alimentação, Transporte, etc.' },
@@ -93,7 +93,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'entendendo-semanas',
         title: 'Entendendo os ciclos semanais',
         blocks: [
-          { type: 'p', text: 'O 7Dias organiza o acompanhamento em semanas de segunda a domingo. O orçamento é definido mensalmente; a cota de cada semana é calculada dividindo o orçamento pelo número de semanas do mês.' },
+          { type: 'p', text: 'O 30dias organiza o acompanhamento em semanas de segunda a domingo. O orçamento é definido mensalmente; a cota de cada semana é calculada dividindo o orçamento pelo número de semanas do mês.' },
           { type: 'list', items: [
             'O Dashboard sempre abre na semana atual',
             'Use as setas ← → para navegar entre semanas passadas e futuras',
@@ -108,7 +108,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'proximos-passos',
         title: 'Próximos passos sugeridos',
         blocks: [
-          { type: 'p', text: 'Com a conta criada e o orçamento configurado, explore os módulos nesta ordem para extrair o máximo do 7Dias:' },
+          { type: 'p', text: 'Com a conta criada e o orçamento configurado, explore os módulos nesta ordem para extrair o máximo do 30dias:' },
           { type: 'list', items: [
             '1. Cadastre suas despesas fixas mensais (aluguel, academia, streaming, internet)',
             '2. Registre suas fontes de renda em Receitas',
@@ -133,7 +133,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'visao-geral',
         title: 'Visão geral',
         blocks: [
-          { type: 'p', text: 'O Dashboard é a tela principal do 7Dias. Ele mostra um resumo completo da sua semana atual: quanto gastou, quanto ainda tem disponível, como os gastos se distribuem ao longo dos dias e por categoria.' },
+          { type: 'p', text: 'O Dashboard é a tela principal do 30dias. Ele mostra um resumo completo da sua semana atual: quanto gastou, quanto ainda tem disponível, como os gastos se distribuem ao longo dos dias e por categoria.' },
           { type: 'p', text: 'Toda vez que você lança uma despesa, o Dashboard atualiza imediatamente — sem precisar recarregar a página.' },
         ],
       },
@@ -374,9 +374,9 @@ export const helpArticles: HelpArticle[] = [
         id: 'o-que-sao',
         title: 'O que são despesas fixas',
         blocks: [
-          { type: 'p', text: 'Despesas fixas são gastos que se repetem todo mês: aluguel, academia, Netflix, plano de celular, internet. Em vez de lançar esses valores manualmente todo mês, você cria um template uma vez e o 7Dias cuida do resto.' },
+          { type: 'p', text: 'Despesas fixas são gastos que se repetem todo mês: aluguel, academia, Netflix, plano de celular, internet. Em vez de lançar esses valores manualmente todo mês, você cria um template uma vez e o 30dias cuida do resto.' },
           { type: 'p', text: 'O sistema funciona em dois níveis: o template (despesa fixa) define o padrão, e o registro mensal define o valor real daquele mês — que pode variar (conta de luz, por exemplo).' },
-          { type: 'callout', variant: 'info', title: 'Como funciona a sincronização', text: 'Quando você confirma o valor de uma despesa fixa para um mês, o 7Dias divide automaticamente por 4 e lança entradas semanais toda segunda-feira do mês. Assim o impacto no orçamento fica diluído ao longo das semanas.' },
+          { type: 'callout', variant: 'info', title: 'Como funciona a sincronização', text: 'Quando você confirma o valor de uma despesa fixa para um mês, o 30dias divide automaticamente por 4 e lança entradas semanais toda segunda-feira do mês. Assim o impacto no orçamento fica diluído ao longo das semanas.' },
         ],
       },
       {
@@ -564,7 +564,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'impacto-orcamento',
         title: 'Impacto no orçamento',
         blocks: [
-          { type: 'p', text: 'O 7Dias usa o "valor efetivo" em todos os cálculos de orçamento:' },
+          { type: 'p', text: 'O 30dias usa o "valor efetivo" em todos os cálculos de orçamento:' },
           { type: 'list', items: [
             'Valor efetivo = valor total − soma dos valores dos participantes',
             'A barra de orçamento do Dashboard usa o valor efetivo',
@@ -603,7 +603,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'logica',
         title: 'Mensal como fonte da verdade',
         blocks: [
-          { type: 'p', text: 'O orçamento do 7Dias é definido mensalmente — o mesmo horizonte temporal do seu salário, aluguel e demais compromissos fixos. A cota semanal de acompanhamento é sempre derivada: orçamento mensal ÷ semanas do mês.' },
+          { type: 'p', text: 'O orçamento do 30dias é definido mensalmente — o mesmo horizonte temporal do seu salário, aluguel e demais compromissos fixos. A cota semanal de acompanhamento é sempre derivada: orçamento mensal ÷ semanas do mês.' },
           { type: 'callout', variant: 'info', title: 'Por que mensal?', text: 'Definir orçamento em semanas criava desconexão com a realidade financeira — salário cai uma vez por mês, conta de luz vence uma vez por mês. Ao usar o mês como base, o número que você digita é comparável diretamente com sua renda.' },
         ],
       },
@@ -611,7 +611,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'modos',
         title: 'Dois modos de orçamento',
         blocks: [
-          { type: 'p', text: 'O 7Dias oferece dois modos de orçamento. Você pode trocar entre eles a qualquer momento:' },
+          { type: 'p', text: 'O 30dias oferece dois modos de orçamento. Você pode trocar entre eles a qualquer momento:' },
           { type: 'table', headers: ['Modo', 'Ideal para'], rows: [
             ['Valor fixo', 'Quem quer simplicidade: um único limite mensal para tudo'],
             ['Por categoria', 'Quem quer controle granular: limites mensais separados por Alimentação, Transporte, etc.'],
@@ -816,7 +816,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'visao-geral',
         title: 'Visão geral',
         blocks: [
-          { type: 'p', text: 'A página de Resumo é a ferramenta analítica do 7Dias. Enquanto o Dashboard mostra o presente, o Resumo mostra padrões ao longo do tempo: como você gastou em cada semana, onde vai o seu dinheiro e como está a evolução.' },
+          { type: 'p', text: 'A página de Resumo é a ferramenta analítica do 30dias. Enquanto o Dashboard mostra o presente, o Resumo mostra padrões ao longo do tempo: como você gastou em cada semana, onde vai o seu dinheiro e como está a evolução.' },
         ],
       },
       {
@@ -917,14 +917,14 @@ export const helpArticles: HelpArticle[] = [
         title: 'O que são categorias',
         blocks: [
           { type: 'p', text: 'Categorias são a forma de classificar seus gastos. Elas aparecem nos gráficos, filtros e no orçamento por categoria. Uma boa estrutura de categorias torna os relatórios muito mais úteis.' },
-          { type: 'callout', variant: 'info', text: 'O 7Dias tem categorias de despesa (usadas em gastos) e categorias de receita (usadas em fontes de renda). São independentes e gerenciadas na mesma página de Categorias, mas em abas separadas.' },
+          { type: 'callout', variant: 'info', text: 'O 30dias tem categorias de despesa (usadas em gastos) e categorias de receita (usadas em fontes de renda). São independentes e gerenciadas na mesma página de Categorias, mas em abas separadas.' },
         ],
       },
       {
         id: 'categorias-padrao',
         title: 'Categorias padrão',
         blocks: [
-          { type: 'p', text: 'Ao criar sua conta, o 7Dias cria automaticamente as seguintes categorias de despesa:' },
+          { type: 'p', text: 'Ao criar sua conta, o 30dias cria automaticamente as seguintes categorias de despesa:' },
           { type: 'table', headers: ['Categoria', 'Uso típico'], rows: [
             ['Alimentação', 'Mercado, restaurantes, delivery, cafés'],
             ['Transporte', 'Gasolina, Uber, ônibus, estacionamento'],
@@ -1084,7 +1084,7 @@ export const helpArticles: HelpArticle[] = [
         id: 'o-que-e',
         title: 'O que é a integração',
         blocks: [
-          { type: 'p', text: 'A integração com WhatsApp permite registrar despesas e consultar seu financeiro sem precisar abrir o app. Basta enviar uma mensagem de texto natural para o número do 7Dias.' },
+          { type: 'p', text: 'A integração com WhatsApp permite registrar despesas e consultar seu financeiro sem precisar abrir o app. Basta enviar uma mensagem de texto natural para o número do 30dias.' },
           { type: 'p', text: 'O sistema usa inteligência artificial para interpretar a mensagem, extrair o valor, a categoria provável e a data, e registrar automaticamente na plataforma.' },
           { type: 'callout', variant: 'info', title: 'Requisito', text: 'Você precisa ter um número de WhatsApp cadastrado nas Integrações e a plataforma precisa ter o webhook configurado. Se não receber resposta, verifique a configuração em Integrações.' },
         ],
@@ -1098,7 +1098,7 @@ export const helpArticles: HelpArticle[] = [
             { title: 'Localize o card WhatsApp', desc: 'O card mostra o status atual (Configurado / Pendente).' },
             { title: 'Informe seu número', desc: 'Digite no formato internacional sem espaços ou símbolos: 5511999999999 (55 = Brasil, 11 = DDD, número com 9 dígitos).' },
             { title: 'Clique em Salvar', desc: 'O número é validado e salvo. O status muda para "Configurado".' },
-            { title: 'Envie uma mensagem de teste', desc: 'Mande "ajuda" para o número do 7Dias e você deve receber a lista de comandos disponíveis.' },
+            { title: 'Envie uma mensagem de teste', desc: 'Mande "ajuda" para o número do 30dias e você deve receber a lista de comandos disponíveis.' },
           ]},
           { type: 'callout', variant: 'warning', text: 'Insira o número exatamente no formato 5511999999999. Não use +, parênteses, hífens ou espaços. Certifique-se de incluir o 9 após o DDD para celulares.' },
         ],

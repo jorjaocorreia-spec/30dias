@@ -223,7 +223,7 @@ export default function IntegrationsPage() {
               {
                 cmd: 'ajuda',
                 desc: 'Lista todos os comandos disponíveis',
-                resp: '🤖 7Dias — Comandos disponíveis...',
+                resp: '🤖 30dias — Comandos disponíveis...',
               },
             ].map(({ cmd, desc, resp }) => (
               <div key={cmd} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>

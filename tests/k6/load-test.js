@@ -4,7 +4,7 @@ import { Rate, Trend } from 'k6/metrics'
 
 // ── Configuração ──────────────────────────────────────────────────────────────
 
-const BASE_URL = 'https://jorge-7dias.27pl2o.easypanel.host'
+const BASE_URL = 'https://jorge-30dias.27pl2o.easypanel.host'
 const SUPABASE_URL = 'https://eivxsjloiducsorjhgqr.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnhzamxvaWR1Y3NvcmpoZ3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2OTQyNDMsImV4cCI6MjA2MzI3MDI0M30.r16JDRNbGVuCGbXHe-nqiGCNJTHjR6OFbFzJBw69G7c'
 
