@@ -72,6 +72,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Interactive cursors ── */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* ── Mesh Background Orbs (2 via pseudo-elements, extras via JSX) ── */
 body::before {
   content: '';
