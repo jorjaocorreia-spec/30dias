@@ -3,6 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp/sendMessage'
 import { getWelcomeMessage } from '@/lib/whatsapp/queryHandlers'
 
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.startsWith('55') && digits.length >= 12) return digits
+  if (digits.length === 10 || digits.length === 11) return '55' + digits
+  return digits
+}
+
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -25,6 +32,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'phone is required' }, { status: 400 })
   }
 
-  await sendWhatsAppMessage(phone, getWelcomeMessage())
+  await sendWhatsAppMessage(normalizePhone(phone), getWelcomeMessage())
   return NextResponse.json({ ok: true })
 }
