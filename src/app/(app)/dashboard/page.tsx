@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const fixedByCategory = getFixedCategoryContribution()
 
   const effectiveBudget = preferences.budgetMode === 'per_category'
-    ? Object.values(preferences.categoryBudgets ?? {}).reduce((a, b) => a + b, 0)
+    ? categories.reduce((sum, c) => sum + (preferences.categoryBudgets?.[c.id] ?? 0), 0)
       + Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
     : preferences.weeklyBudget + fixedWeekly
 
@@ -584,12 +584,12 @@ export default function DashboardPage() {
                     </div>
                     {pct >= 80 && isCurrentWeek && (
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        {pct >= 100
+                        {pct > 100
                           ? <XCircle size={11} style={{ color: '#ef4444', flexShrink: 0 }} />
                           : <AlertTriangle size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
                         }
-                        <p className="text-xs" style={{ color: pct >= 100 ? '#ef4444' : '#f59e0b' }}>
-                          {pct >= 100
+                        <p className="text-xs" style={{ color: pct > 100 ? '#ef4444' : '#f59e0b' }}>
+                          {pct > 100
                             ? `Limite ultrapassado`
                             : `${pct.toFixed(0)}% utilizado`
                           }

@@ -140,6 +140,7 @@ interface AppState {
   setWeeklyBudget: (budget: number) => void
   setBudgetMode: (mode: UserPreferences['budgetMode']) => void
   setCategoryBudget: (categoryId: string, amount: number) => void
+  setAllCategoryBudgets: (budgets: Record<string, number>) => void
   setWhatsappNumber: (number: string) => Promise<void>
 }
 
@@ -318,9 +319,18 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   deleteCategory: (id) => {
-    set(state => ({ categories: state.categories.filter(c => c.id !== id) }))
-    const { user } = get()
-    if (user) supabase.from('categories').delete().eq('id', id).then(({ error }) => { if (error) console.error(error) })
+    set(state => {
+      const { [id]: _removed, ...remainingBudgets } = state.preferences.categoryBudgets ?? {}
+      return {
+        categories: state.categories.filter(c => c.id !== id),
+        preferences: { ...state.preferences, categoryBudgets: remainingBudgets },
+      }
+    })
+    const { user, preferences } = get()
+    if (user) {
+      supabase.from('categories').delete().eq('id', id).then(({ error }) => { if (error) console.error(error) })
+      supabase.from('user_preferences').update({ category_budgets: preferences.categoryBudgets }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
+    }
   },
 
   // ── Establishments ──────────────────────────────────────────────────────────
@@ -690,6 +700,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
     }))
     const { user, preferences } = get()
     if (user) supabase.from('user_preferences').update({ category_budgets: preferences.categoryBudgets }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  setAllCategoryBudgets: (budgets) => {
+    set(state => ({ preferences: { ...state.preferences, categoryBudgets: budgets } }))
+    const { user } = get()
+    if (user) supabase.from('user_preferences').update({ category_budgets: budgets }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
   },
 
   setWhatsappNumber: async (number) => {

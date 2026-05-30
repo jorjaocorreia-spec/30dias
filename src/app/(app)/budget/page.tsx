@@ -8,7 +8,7 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { formatCurrency } from '@/lib/weekHelpers'
 
 export default function BudgetPage() {
-  const { preferences, categories, financialGoals, getGoalWeeklyTotal, getGoalProgress, setWeeklyBudget, setBudgetMode, setCategoryBudget, getFixedWeeklyContribution, getFixedCategoryContribution } = useAppStore()
+  const { preferences, categories, financialGoals, getGoalWeeklyTotal, getGoalProgress, setWeeklyBudget, setBudgetMode, setAllCategoryBudgets, getFixedWeeklyContribution, getFixedCategoryContribution } = useAppStore()
   const { budgetMode, weeklyBudget, categoryBudgets = {} } = preferences
   const fixedWeekly = getFixedWeeklyContribution()
   const fixedByCategory = getFixedCategoryContribution()
@@ -43,10 +43,13 @@ export default function BudgetPage() {
   }
 
   const handleSaveCat = () => {
-    categories.forEach((c) => {
-      const v = parseFloat(catValues[c.id] ?? '')
-      setCategoryBudget(c.id, isNaN(v) || v < 0 ? 0 : v)
-    })
+    const budgets = Object.fromEntries(
+      categories.map((c) => {
+        const v = parseFloat(catValues[c.id] ?? '')
+        return [c.id, isNaN(v) || v < 0 ? 0 : v]
+      })
+    )
+    setAllCategoryBudgets(budgets)
     setSavedCat(true)
     setTimeout(() => setSavedCat(false), 2000)
   }
