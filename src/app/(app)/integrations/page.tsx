@@ -19,23 +19,32 @@ export default function IntegrationsPage() {
       return
     }
     setError('')
-    const isFirstTime = !preferences.whatsappNumber
+
+    // Query fresh from DB — store may be stale if user deleted the number externally
+    const { data: { session } } = await supabase.auth.getSession()
+    let isFirstTime = false
+    if (session?.user) {
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('whatsapp_number')
+        .eq('user_id', session.user.id)
+        .single()
+      isFirstTime = !data?.whatsapp_number
+    }
+
     await setWhatsappNumber(cleaned)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
 
-    if (isFirstTime) {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
-        fetch('/api/whatsapp/welcome', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ phone: cleaned }),
-        }).catch(e => console.error('[welcome]', e))
-      }
+    if (isFirstTime && session?.access_token) {
+      fetch('/api/whatsapp/welcome', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ phone: cleaned }),
+      }).catch(e => console.error('[welcome]', e))
     }
   }
 
