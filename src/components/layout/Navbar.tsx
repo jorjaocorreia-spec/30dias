@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle, MoreHorizontal, X } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { getCurrentWeekKey } from '@/store/useAppStore'
-import { buildWeekSummary, getWeekDays, toLocalDateKey, getWeekOfMonth } from '@/lib/weekHelpers'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', section: 'main' },
@@ -32,65 +31,14 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + '/')
 }
 
-/* Week progress ring */
-function WeekRing({ percent }: { percent: number }) {
-  const r = 14
-  const circ = 2 * Math.PI * r
-  const offset = circ * (1 - Math.min(percent / 100, 1))
-  const color = percent > 90 ? '#f43f5e' : percent > 70 ? '#f59e0b' : '#10b981'
-  return (
-    <svg width="34" height="34" viewBox="0 0 34 34" style={{ flexShrink: 0 }}>
-      <circle cx="17" cy="17" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3"/>
-      <circle
-        cx="17" cy="17" r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        transform="rotate(-90 17 17)"
-        style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s' }}
-      />
-      <text x="17" y="21" textAnchor="middle" fontSize="8" fontFamily="var(--font-dm-mono)" fill={color} fontWeight="700">
-        {Math.round(percent)}%
-      </text>
-    </svg>
-  )
-}
 
 export function Navbar() {
   const pathname = usePathname()
-  const { expenses, preferences, categories, getFixedWeeklyContribution, getFixedCategoryContribution, logout } = useAppStore()
+  const { logout } = useAppStore()
   const [collapsed, setCollapsed] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
 
-  const fixedWeekly = getFixedWeeklyContribution()
-  const fixedByCategory = getFixedCategoryContribution()
   const weekKey = getCurrentWeekKey()
-  const weeksInCurrentMonth = getWeekOfMonth(weekKey).total
-
-  const effectiveBudget = preferences.budgetMode === 'per_category'
-    ? Object.values(preferences.categoryBudgets ?? {}).reduce((a, b) => a + b, 0) / weeksInCurrentMonth
-      + Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
-    : preferences.monthlyBudget / weeksInCurrentMonth + fixedWeekly
-
-  const summary = buildWeekSummary(weekKey, expenses, effectiveBudget)
-  const budgetPercent = effectiveBudget > 0
-    ? Math.min((summary.totalAmount / effectiveBudget) * 100, 100)
-    : 0
-
-  /* Week label */
-  const weekDays = getWeekDays(weekKey)
-  const weekStart = weekDays[0]
-  const weekEnd = weekDays[6]
-  const fmtDay = (d: Date) =>
-    d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')
-  const weekLabel = weekStart && weekEnd
-    ? `${fmtDay(weekStart)} → ${fmtDay(weekEnd)}`
-    : weekKey
-
-  /* W number */
   const wNum = weekKey.split('-W')[1] ?? ''
 
   useEffect(() => {
@@ -186,7 +134,7 @@ export function Navbar() {
               background: 'linear-gradient(135deg, #10b981, #8b5cf6)',
               boxShadow: '0 0 18px rgba(16,185,129,0.4)',
             }}>
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 16, fontFamily: 'var(--font-syne)' }}>7</span>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 12, fontFamily: 'var(--font-syne)' }}>30</span>
             </div>
             {!collapsed && (
               <div>
@@ -194,20 +142,11 @@ export function Navbar() {
                   fontFamily: 'var(--font-syne)',
                   fontWeight: 700,
                   fontSize: 16,
-                  color: '#F0EDF8',
                   letterSpacing: '-0.3px',
                   lineHeight: 1.1,
                 }}>
-                  Dias
-                </div>
-                <div style={{
-                  fontFamily: 'var(--font-dm-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.14em',
-                  color: 'rgba(240,237,248,0.3)',
-                  marginTop: 1,
-                }}>
-                  // semanal
+                  <span style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>30</span>
+                  <span style={{ color: '#F0EDF8' }}>dias</span>
                 </div>
               </div>
             )}
@@ -228,29 +167,6 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Week progress strip */}
-        {!collapsed && (
-          <div style={{
-            margin: '12px 14px',
-            padding: '10px 12px',
-            borderRadius: 10,
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.06))',
-            border: '1px solid rgba(16,185,129,0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-            <WeekRing percent={budgetPercent} />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--font-dm-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'rgba(240,237,248,0.4)', marginBottom: 2 }}>
-                AO VIVO · W{wNum}
-              </div>
-              <div style={{ fontFamily: 'var(--font-syne)', fontSize: 11, fontWeight: 600, color: '#10b981', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {weekLabel}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Nav links */}
         <nav style={{ flex: 1, padding: '4px 10px', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden' }}>
@@ -315,9 +231,12 @@ export function Navbar() {
             boxShadow: '0 0 14px rgba(16,185,129,0.35)',
             flexShrink: 0,
           }}>
-            <span style={{ color: '#fff', fontWeight: 800, fontSize: 13, fontFamily: 'var(--font-syne)' }}>7</span>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 11, fontFamily: 'var(--font-syne)' }}>30</span>
           </div>
-          <span style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 14, color: '#F0EDF8' }}>Dias</span>
+          <span style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: 14 }}>
+            <span style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>30</span>
+            <span style={{ color: '#F0EDF8' }}>dias</span>
+          </span>
           <span style={{
             fontFamily: 'var(--font-dm-mono)',
             fontSize: 9,
