@@ -332,9 +332,10 @@ export default function FixedExpensesPage() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setRegisterTarget(null)}
             />
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
             <motion.div
-              className="fixed z-50"
-              style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 2rem)', maxWidth: 400 }}
+              className="w-full"
+              style={{ maxWidth: 400, pointerEvents: 'auto' }}
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.15 }}
             >
@@ -400,6 +401,7 @@ export default function FixedExpensesPage() {
                 </div>
               </div>
             </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

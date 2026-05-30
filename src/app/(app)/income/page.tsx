@@ -699,9 +699,10 @@ export default function IncomePage() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setRegisterTarget(null)}
             />
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
             <motion.div
-              className="fixed z-50"
-              style={{ top: '50%', left: '50%', translate: '-50% -50%', width: 'min(400px, calc(100vw - 32px))' }}
+              className="w-full"
+              style={{ maxWidth: 400, pointerEvents: 'auto' }}
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.15 }}
             >
@@ -754,6 +755,7 @@ export default function IncomePage() {
                 </div>
               </div>
             </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
@@ -767,13 +769,10 @@ export default function IncomePage() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowEntryModal(false)}
             />
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 pointer-events-none">
             <motion.div
-              className="fixed z-50 overflow-y-auto"
-              style={{
-                top: '50%', left: '50%', translate: '-50% -50%',
-                width: 'min(440px, calc(100vw - 32px))',
-                maxHeight: 'calc(100vh - 48px)',
-              }}
+              className="w-full overflow-y-auto"
+              style={{ maxWidth: 440, maxHeight: 'calc(100vh - 48px)', pointerEvents: 'auto' }}
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.15 }}
             >
@@ -956,6 +955,7 @@ export default function IncomePage() {
                 </div>
               </div>
             </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
