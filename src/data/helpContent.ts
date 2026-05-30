@@ -42,9 +42,9 @@ export const helpArticles: HelpArticle[] = [
         id: 'o-que-e',
         title: 'O que é o 7Dias',
         blocks: [
-          { type: 'p', text: 'O 7Dias é uma plataforma de gestão financeira pessoal baseada em ciclos semanais. Em vez de pensar em meses — longos e abstratos —, você controla seus gastos semana a semana: um recorte de tempo natural e muito mais fácil de manter.' },
-          { type: 'p', text: 'A ideia central é simples: defina quanto pode gastar por semana e acompanhe em tempo real se está dentro do limite. Com o tempo, padrões emergem e fica mais fácil tomar decisões conscientes com seu dinheiro.' },
-          { type: 'callout', variant: 'info', title: 'Por que semanas?', text: 'Semanas são o ritmo natural do cotidiano — compras, saídas, academia. Meses são longos demais para ajustes rápidos. Com semanas, você corrige o rumo antes que o problema fique grande.' },
+          { type: 'p', text: 'O 7Dias é uma plataforma de gestão financeira pessoal com orçamento mensal e acompanhamento semanal. Você define quanto pode gastar no mês e a plataforma divide isso em cotas semanais — um recorte de tempo natural para acompanhar seu ritmo antes que o problema chegue ao fim do mês.' },
+          { type: 'p', text: 'A ideia central é simples: o mês é a unidade financeira real (salário, aluguel, contas). A semana é a unidade de acompanhamento — o ritmo certo para corrigir o curso antes que seja tarde demais.' },
+          { type: 'callout', variant: 'info', title: 'Mensal + Semanal', text: 'O orçamento mensal é a sua meta. A cota semanal (orçamento ÷ semanas do mês) é o termômetro do dia a dia. Se uma semana extrapolar, você ainda tem as outras para compensar dentro do mês.' },
         ],
       },
       {
@@ -62,16 +62,16 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         id: 'configurando-orcamento',
-        title: 'Configurando o orçamento semanal',
+        title: 'Configurando o orçamento mensal',
         blocks: [
-          { type: 'p', text: 'Antes de registrar gastos, defina quanto você pode gastar por semana. Esse número é o coração do 7Dias — tudo gira em torno dele.' },
+          { type: 'p', text: 'Antes de registrar gastos, defina quanto você pode gastar no mês. Esse número é o coração do 7Dias — a cota semanal é calculada automaticamente a partir dele.' },
           { type: 'steps', items: [
             { title: 'Acesse Orçamento', desc: 'No menu lateral (computador) ou no menu inferior (celular), clique em "Orçamento".' },
-            { title: 'Escolha o modo', desc: '"Valor fixo" cria um limite único para todos os gastos. "Por categoria" permite limites separados para Alimentação, Transporte, etc.' },
-            { title: 'Defina o valor', desc: 'Digite o valor em reais por semana. Uma boa referência: divida sua renda mensal disponível por 4.' },
-            { title: 'Salve', desc: 'Clique em "Salvar" e volte ao Dashboard — o orçamento já estará ativo.' },
+            { title: 'Escolha o modo', desc: '"Valor fixo" cria um limite mensal único para todos os gastos. "Por categoria" permite limites mensais separados para Alimentação, Transporte, etc.' },
+            { title: 'Defina o valor', desc: 'Digite o valor mensal em reais. Uma boa referência: sua renda disponível após as despesas fixas essenciais.' },
+            { title: 'Salve', desc: 'Clique em "Salvar" e volte ao Dashboard — o orçamento já estará ativo e as cotas semanais calculadas.' },
           ]},
-          { type: 'callout', variant: 'tip', title: 'Não sabe qual valor usar?', text: 'Comece com R$ 500/semana e ajuste após 2 a 3 semanas observando seus gastos reais. Mais importante do que acertar de primeira é ter um número de referência.' },
+          { type: 'callout', variant: 'tip', title: 'Não sabe qual valor usar?', text: 'Comece com R$ 2.000/mês e ajuste após 2 a 3 semanas observando seus gastos reais. A plataforma mostrará a cota semanal aproximada ao lado do valor para ajudar na visualização.' },
         ],
       },
       {
@@ -93,15 +93,15 @@ export const helpArticles: HelpArticle[] = [
         id: 'entendendo-semanas',
         title: 'Entendendo os ciclos semanais',
         blocks: [
-          { type: 'p', text: 'O 7Dias organiza finanças em semanas de segunda a domingo. Cada semana é um ciclo independente com seu próprio saldo de orçamento.' },
+          { type: 'p', text: 'O 7Dias organiza o acompanhamento em semanas de segunda a domingo. O orçamento é definido mensalmente; a cota de cada semana é calculada dividindo o orçamento pelo número de semanas do mês.' },
           { type: 'list', items: [
             'O Dashboard sempre abre na semana atual',
             'Use as setas ← → para navegar entre semanas passadas e futuras',
             'Despesas fixas são lançadas automaticamente toda segunda-feira',
-            'O orçamento recomeça do zero toda semana — gastos da semana passada não "acumulam"',
+            'A cota semanal = orçamento mensal ÷ semanas do mês (varia de 4 a 5 semanas)',
             'O balanço mensal (receitas - despesas) agrega todas as semanas do mês',
           ]},
-          { type: 'callout', variant: 'info', text: 'Se você gastou menos de R$ 300 numa semana mas o limite é R$ 500, os R$ 200 sobrando não passam para a próxima semana. Isso é intencional: ajuda a criar hábitos consistentes em vez de compensações.' },
+          { type: 'callout', variant: 'info', text: 'Meses com 5 semanas terão cotas semanais menores. Isso é correto — o total mensal planejado permanece o mesmo. O objetivo da cota semanal é ser um alerta precoce, não um limite rígido: extrapolou numa semana? Ainda dá para compensar nas próximas.' },
         ],
       },
       {
@@ -157,24 +157,25 @@ export const helpArticles: HelpArticle[] = [
           { type: 'p', text: 'Logo abaixo do seletor de semana ficam os cards com os indicadores principais (KPIs):' },
           { type: 'table', headers: ['Card', 'O que mostra'], rows: [
             ['Gasto', 'Total gasto na semana atual (usando o valor efetivo de despesas divididas)'],
-            ['Disponível', 'Orçamento restante. Verde = dentro do limite, vermelho = acima'],
+            ['Disponível', 'Cota semanal restante. Verde = dentro da cota, vermelho = acima'],
             ['Despesas', 'Quantidade de despesas registradas na semana'],
             ['A Receber', 'Aparece quando há valores pendentes de divisão de despesas no mês corrente'],
           ]},
-          { type: 'callout', variant: 'info', title: 'Valor efetivo', text: 'Se uma despesa foi dividida, apenas "sua parte" entra nos cálculos de gasto e disponível. O valor total pago aparece na lista de despesas, mas não afeta seu orçamento.' },
+          { type: 'callout', variant: 'info', title: 'Cota semanal', text: 'A cota da semana é calculada automaticamente: orçamento mensal ÷ número de semanas do mês. Isso garante que a soma das cotas sempre feche o orçamento do mês, independente de o mês ter 4 ou 5 semanas.' },
         ],
       },
       {
         id: 'barra-orcamento',
         title: 'Barra de orçamento',
         blocks: [
-          { type: 'p', text: 'Abaixo dos KPIs, uma barra de progresso mostra visualmente quanto do orçamento foi consumido:' },
+          { type: 'p', text: 'Abaixo dos KPIs, uma barra de progresso mostra visualmente quanto da cota semanal foi consumida:' },
           { type: 'list', items: [
-            'Verde: dentro do orçamento (0% a 79%)',
-            'Âmbar/laranja: atenção — acima de 80% do limite',
-            'Vermelho: orçamento estourado — 100% ou mais gasto',
+            'Verde: dentro da cota (0% a 79%)',
+            'Âmbar/laranja: atenção — acima de 80% da cota',
+            'Vermelho: cota estourada — 100% ou mais gasto',
           ]},
-          { type: 'p', text: 'A barra exibe o percentual exato (ex: "67% do orçamento usado") e os valores: gasto / limite total.' },
+          { type: 'p', text: 'A barra exibe o percentual exato (ex: "67% da cota usada") e os valores: gasto / cota da semana.' },
+          { type: 'callout', variant: 'info', text: 'Extrapolar a cota de uma semana não é catástrofe — a cota semanal é um alerta, não um limite absoluto. O que importa é fechar o mês dentro do orçamento mensal definido.' },
         ],
       },
       {
@@ -239,10 +240,10 @@ export const helpArticles: HelpArticle[] = [
         title: 'Boas práticas',
         blocks: [
           { type: 'list', items: [
-            'Abra o Dashboard toda manhã para saber quanto ainda tem disponível na semana',
+            'Abra o Dashboard toda manhã para saber quanto ainda tem disponível na cota da semana',
             'Use o filtro de dia antes de dormir para checar se não esqueceu nenhum gasto',
-            'Se a barra ficar âmbar antes de quarta-feira, revise seus gastos do restante da semana',
-            'O saldo mensal negativo é um sinal para ajustar o orçamento ou reduzir gastos variáveis',
+            'Se a barra ficar âmbar antes de quarta-feira, revise o ritmo — mas lembre que a meta final é o mês, não a semana',
+            'O saldo mensal negativo é o sinal mais importante: hora de ajustar o orçamento mensal ou reduzir gastos variáveis',
           ]},
         ],
       },
@@ -366,7 +367,7 @@ export const helpArticles: HelpArticle[] = [
     slug: 'despesas-fixas',
     title: 'Despesas Fixas',
     iconName: 'Repeat2',
-    description: 'Gerencie despesas recorrentes mensais e sincronize automaticamente com seu orçamento semanal.',
+    description: 'Gerencie despesas recorrentes mensais e veja o impacto automático no seu orçamento e acompanhamento semanal.',
     category: 'financas',
     sections: [
       {
@@ -595,17 +596,25 @@ export const helpArticles: HelpArticle[] = [
     slug: 'orcamento',
     title: 'Orçamento',
     iconName: 'Wallet',
-    description: 'Configure limites semanais por valor fixo ou por categoria e entenda como as fixas entram automaticamente.',
+    description: 'Configure o orçamento mensal por valor fixo ou por categoria e acompanhe sua cota semanal.',
     category: 'financas',
     sections: [
+      {
+        id: 'logica',
+        title: 'Mensal como fonte da verdade',
+        blocks: [
+          { type: 'p', text: 'O orçamento do 7Dias é definido mensalmente — o mesmo horizonte temporal do seu salário, aluguel e demais compromissos fixos. A cota semanal de acompanhamento é sempre derivada: orçamento mensal ÷ semanas do mês.' },
+          { type: 'callout', variant: 'info', title: 'Por que mensal?', text: 'Definir orçamento em semanas criava desconexão com a realidade financeira — salário cai uma vez por mês, conta de luz vence uma vez por mês. Ao usar o mês como base, o número que você digita é comparável diretamente com sua renda.' },
+        ],
+      },
       {
         id: 'modos',
         title: 'Dois modos de orçamento',
         blocks: [
           { type: 'p', text: 'O 7Dias oferece dois modos de orçamento. Você pode trocar entre eles a qualquer momento:' },
           { type: 'table', headers: ['Modo', 'Ideal para'], rows: [
-            ['Valor fixo', 'Quem quer simplicidade: um único limite semanal para tudo'],
-            ['Por categoria', 'Quem quer controle granular: limites separados por Alimentação, Transporte, etc.'],
+            ['Valor fixo', 'Quem quer simplicidade: um único limite mensal para tudo'],
+            ['Por categoria', 'Quem quer controle granular: limites mensais separados por Alimentação, Transporte, etc.'],
           ]},
           { type: 'callout', variant: 'warning', title: 'Atenção ao trocar de modo', text: 'Ao trocar de Valor fixo para Por categoria (ou vice-versa), os valores digitados no modo anterior são descartados. As despesas não são afetadas — apenas as configurações de limite.' },
         ],
@@ -614,27 +623,30 @@ export const helpArticles: HelpArticle[] = [
         id: 'modo-fixo',
         title: 'Modo: Valor fixo',
         blocks: [
-          { type: 'p', text: 'No modo Valor fixo há um único campo: o orçamento semanal discricionário em reais.' },
-          { type: 'p', text: 'O orçamento efetivo total é calculado automaticamente:' },
+          { type: 'p', text: 'No modo Valor fixo há um único campo: o orçamento mensal discricionário em reais.' },
+          { type: 'p', text: 'O orçamento efetivo total mensal é calculado automaticamente:' },
           { type: 'list', items: [
-            'Variáveis: valor que você digitou',
-            'Fixas (🔒 automático): soma semanal (÷4) das despesas fixas ativas no mês',
-            'Total efetivo = Variáveis + Fixas',
+            'Variáveis: valor mensal que você digitou',
+            'Fixas (🔒 automático): soma mensal real das despesas fixas confirmadas',
+            'Metas (🎯 automático): soma mensal das metas com "deduzir do orçamento" ativo',
+            'Total efetivo mensal = Variáveis + Fixas + Metas',
           ]},
-          { type: 'callout', variant: 'info', title: 'Exemplo', text: 'Você define R$ 500/semana. Suas fixas confirmadas somam R$ 200/mês → R$ 50/semana. Orçamento efetivo = R$ 550/semana. A barra de progresso usa R$ 550 como 100%.' },
+          { type: 'p', text: 'Abaixo do campo, uma dica mostra a cota semanal equivalente (≈ R$ X/sem · N semanas este mês) para ajudar a visualizar o impacto no dia a dia.' },
+          { type: 'callout', variant: 'info', title: 'Exemplo', text: 'Você define R$ 2.000/mês. Suas fixas confirmadas somam R$ 800/mês. Orçamento efetivo = R$ 2.800/mês. Em um mês com 4 semanas, a cota semanal = R$ 700/sem. A barra de progresso usa R$ 700 como 100%.' },
         ],
       },
       {
         id: 'modo-categoria',
         title: 'Modo: Por categoria',
         blocks: [
-          { type: 'p', text: 'No modo Por categoria, cada categoria de despesa tem seu próprio limite semanal. A tabela mostra:' },
+          { type: 'p', text: 'No modo Por categoria, cada categoria de despesa tem seu próprio limite mensal. A tabela mostra:' },
           { type: 'table', headers: ['Coluna', 'Descrição'], rows: [
             ['Categoria', 'Nome e ícone da categoria'],
-            ['Fixas (🔒)', 'Valor semanal automático de despesas fixas dessa categoria (somente leitura)'],
-            ['Variáveis', 'Limite que você define para gastos variáveis da categoria'],
-            ['Total efetivo', 'Fixas + Variáveis para essa categoria'],
+            ['Fixas (🔒)', 'Valor mensal automático de despesas fixas dessa categoria (somente leitura)'],
+            ['Variáveis', 'Limite mensal que você define para gastos variáveis da categoria'],
+            ['Total efetivo', 'Fixas + Variáveis para essa categoria (mensal)'],
           ]},
+          { type: 'p', text: 'Cada linha mostra também a cota semanal equivalente da categoria (total ÷ semanas do mês).' },
           { type: 'callout', variant: 'tip', text: 'A coluna "Fixas" só aparece quando você tem despesas fixas confirmadas com categoria correspondente. Se não houver fixas, a tabela fica mais simples.' },
         ],
       },
@@ -643,33 +655,21 @@ export const helpArticles: HelpArticle[] = [
         title: 'Como as despesas fixas entram no orçamento',
         blocks: [
           { type: 'p', text: 'As despesas fixas são adicionadas automaticamente ao orçamento assim que você confirma o valor de um mês. Você não precisa fazer nada manualmente.' },
-          { type: 'p', text: 'O cálculo: valor mensal confirmado ÷ 4 = contribuição semanal. Se você alterar o valor mensal da fixa, o orçamento recalcula na hora.' },
-          { type: 'callout', variant: 'info', text: 'O cadeado 🔒 ao lado das fixas no orçamento indica que esse valor é automático — não é editável diretamente. Para alterar, vá em Fixas e edite o valor mensal confirmado.' },
-        ],
-      },
-      {
-        id: 'estimativa-mensal',
-        title: 'Estimativa mensal',
-        blocks: [
-          { type: 'p', text: 'Em ambos os modos, o card "Estimativa mensal" mostra uma projeção de quanto você gastará no mês se mantiver o ritmo configurado:' },
-          { type: 'list', items: [
-            'Cálculo: (orçamento semanal + fixas semanais) × 4',
-            'É uma estimativa — o gasto real pode variar',
-            'Use como referência para saber se o orçamento cabe na sua renda',
-          ]},
+          { type: 'p', text: 'No orçamento, o valor das fixas aparece como total mensal real (não dividido por semanas). A divisão semanal acontece apenas no acompanhamento do Dashboard.' },
+          { type: 'callout', variant: 'info', text: 'O cadeado 🔒 ao lado das fixas indica que esse valor é automático — não é editável diretamente na página de Orçamento. Para alterar, vá em Fixas e edite o valor mensal confirmado.' },
         ],
       },
       {
         id: 'barra-progresso',
         title: 'Interpretando a barra de progresso',
         blocks: [
-          { type: 'p', text: 'A barra no Dashboard mostra quanto do orçamento semanal já foi usado:' },
+          { type: 'p', text: 'A barra no Dashboard mostra quanto da cota semanal já foi usada:' },
           { type: 'list', items: [
-            '0% a 79%: verde — dentro do planejado',
+            '0% a 79%: verde — dentro da cota',
             '80% a 99%: âmbar/laranja — atenção, fique de olho',
-            '100% ou mais: vermelho — orçamento estourado',
+            '100% ou mais: vermelho — cota estourada',
           ]},
-          { type: 'callout', variant: 'tip', text: 'Se a barra ficar laranja antes de quarta-feira, avalie os gastos pendentes da semana. Se ficar vermelha no início da semana, considere revisar o orçamento ou adiar compras não essenciais.' },
+          { type: 'callout', variant: 'tip', text: 'Se a barra ficar laranja antes de quarta-feira, avalie os gastos pendentes da semana. Lembre-se: extrapolar uma cota semanal não é o fim do mundo — o objetivo é fechar o mês dentro do orçamento mensal.' },
         ],
       },
       {
@@ -684,9 +684,9 @@ export const helpArticles: HelpArticle[] = [
           ]},
           { type: 'p', text: 'Use Por categoria se:' },
           { type: 'list', items: [
-            'Você quer controlar especificamente quanto gasta em Alimentação, Lazer, etc.',
+            'Você quer controlar especificamente quanto gasta em Alimentação, Lazer, etc. por mês',
             'Tem categorias onde costuma extrapolar (ex: Lazer sempre passa do esperado)',
-            'Quer alinhar o orçamento com metas por área de vida',
+            'Quer alinhar o orçamento mensal com metas por área de vida',
           ]},
         ],
       },
@@ -833,8 +833,8 @@ export const helpArticles: HelpArticle[] = [
         blocks: [
           { type: 'p', text: 'O card principal mostra o total gasto na semana com três informações de contexto:' },
           { type: 'list', items: [
-            'Limite: seu orçamento semanal configurado',
-            'Disponível (verde) ou Acima do limite (vermelho): diferença entre limite e gasto real',
+            'Limite: cota semanal (orçamento mensal ÷ semanas do mês)',
+            'Disponível (verde) ou Acima da cota (vermelho): diferença entre cota e gasto real',
             'Comparativo com semana anterior: seta verde ▼ se gastou menos, seta vermelha ▲ se gastou mais, com o percentual de variação',
           ]},
         ],
@@ -880,8 +880,8 @@ export const helpArticles: HelpArticle[] = [
           { type: 'table', headers: ['Coluna', 'O que mostra'], rows: [
             ['Período', 'Datas de início e fim da semana (ex: "1 jan – 7 jan")'],
             ['Total', 'Valor total gasto na semana'],
-            ['Barra', 'Progresso visual em relação ao orçamento (verde / laranja / vermelho)'],
-            ['% do orçamento', 'Percentual do limite semanal utilizado'],
+            ['Barra', 'Progresso visual em relação à cota semanal (verde / laranja / vermelho)'],
+            ['% da cota', 'Percentual da cota semanal utilizado naquela semana'],
             ['Despesas', 'Quantidade de despesas registradas'],
             ['→', 'Botão para ir direto ao Resumo daquela semana'],
           ]},
