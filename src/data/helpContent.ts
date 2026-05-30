@@ -617,9 +617,9 @@ export const helpArticles: HelpArticle[] = [
           { type: 'p', text: 'No modo Valor fixo há um único campo: o orçamento semanal discricionário em reais.' },
           { type: 'p', text: 'O orçamento efetivo total é calculado automaticamente:' },
           { type: 'list', items: [
-            'Discricionário: valor que você digitou',
+            'Variáveis: valor que você digitou',
             'Fixas (🔒 automático): soma semanal (÷4) das despesas fixas ativas no mês',
-            'Total efetivo = Discricionário + Fixas',
+            'Total efetivo = Variáveis + Fixas',
           ]},
           { type: 'callout', variant: 'info', title: 'Exemplo', text: 'Você define R$ 500/semana. Suas fixas confirmadas somam R$ 200/mês → R$ 50/semana. Orçamento efetivo = R$ 550/semana. A barra de progresso usa R$ 550 como 100%.' },
         ],
@@ -632,8 +632,8 @@ export const helpArticles: HelpArticle[] = [
           { type: 'table', headers: ['Coluna', 'Descrição'], rows: [
             ['Categoria', 'Nome e ícone da categoria'],
             ['Fixas (🔒)', 'Valor semanal automático de despesas fixas dessa categoria (somente leitura)'],
-            ['Discricionário', 'Limite que você define para gastos variáveis da categoria'],
-            ['Total efetivo', 'Fixas + Discricionário para essa categoria'],
+            ['Variáveis', 'Limite que você define para gastos variáveis da categoria'],
+            ['Total efetivo', 'Fixas + Variáveis para essa categoria'],
           ]},
           { type: 'callout', variant: 'tip', text: 'A coluna "Fixas" só aparece quando você tem despesas fixas confirmadas com categoria correspondente. Se não houver fixas, a tabela fica mais simples.' },
         ],

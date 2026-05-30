@@ -151,7 +151,7 @@ export default function BudgetPage() {
           {(hasFixedContribution || hasGoalDeduct) ? (
             <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
               <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)' }}>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Discricionário</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
                 <span className="text-sm font-medium">{formatCurrency(weeklyBudget)}</span>
               </div>
               {hasFixedContribution && (
@@ -221,7 +221,7 @@ export default function BudgetPage() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Discricionário</span>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {formatCurrency(weeklyBudget)}/sem × 4
@@ -332,7 +332,7 @@ export default function BudgetPage() {
                 <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)', width: 90, justifyContent: 'flex-end' }}>
                   <Lock size={10} /> Fixas
                 </span>
-                <span className="text-xs text-right" style={{ color: 'var(--text-muted)', width: 120 }}>Discricionário</span>
+                <span className="text-xs text-right" style={{ color: 'var(--text-muted)', width: 120 }}>Variáveis</span>
               </div>
             )}
             {categories.map((cat, i) => {
@@ -460,7 +460,7 @@ export default function BudgetPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Discricionário</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {formatCurrency(totalCat)}/sem × 4
