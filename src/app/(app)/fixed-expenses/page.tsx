@@ -333,14 +333,14 @@ export default function FixedExpensesPage() {
               onClick={() => setRegisterTarget(null)}
             />
             <motion.div
-              className="fixed z-50 left-4 right-4 lg:left-auto lg:right-auto lg:w-96"
-              style={{ top: '50%', transform: 'translateY(-50%)', margin: '0 auto', maxWidth: 400, left: '50%', translate: '-50% -50%' }}
+              className="fixed z-50"
+              style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'calc(100% - 2rem)', maxWidth: 400 }}
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.15 }}
             >
               <div
                 className="p-6 rounded-3xl space-y-4"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                style={{ background: 'var(--bg-modal)', border: '1px solid var(--border)' }}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -373,12 +373,6 @@ export default function FixedExpensesPage() {
                     className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
                     style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
                   />
-                  {registerAmount && parseFloat(registerAmount) > 0 && (
-                    <p className="text-xs mt-1.5 font-medium" style={{ color: 'var(--accent)' }}>
-                      = {formatCurrency(Math.round(parseFloat(registerAmount) / 4 * 100) / 100)}/semana
-                      {' '}— lançado nas segundas-feiras de {formatMonth(registerTarget.month)}
-                    </p>
-                  )}
                 </div>
 
                 {registerTarget.existingId && (
@@ -504,9 +498,6 @@ export default function FixedExpensesPage() {
                               </span>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-medium">{formatCurrency(fem.amount)}</span>
-                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                  ({formatCurrency(Math.round(fem.amount / 4 * 100) / 100)}/sem)
-                                </span>
                                 <button
                                   onClick={() => openRegister(fe, fem.month)}
                                   className="text-xs px-2 py-0.5 rounded-lg"
