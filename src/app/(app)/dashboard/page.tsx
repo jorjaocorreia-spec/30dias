@@ -12,7 +12,7 @@ import {
 import { useAppStore, getCurrentWeekKey } from '@/store/useAppStore'
 import {
   buildWeekSummary, formatCurrency, formatWeekLabel, getEffectiveAmount,
-  getPreviousWeekKey, getNextWeekKey, getWeekDays, formatDate, toLocalDateKey,
+  getPreviousWeekKey, getNextWeekKey, getWeekDays, formatDate, toLocalDateKey, getWeekOfMonth,
 } from '@/lib/weekHelpers'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 
@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const budgetPercent = Math.min((summary.totalAmount / summary.budget) * 100, 100)
   const remaining = summary.budget - summary.totalAmount
   const isCurrentWeek = weekKey === getCurrentWeekKey()
+  const weekOfMonth = getWeekOfMonth(weekKey)
 
   const currentMonthKey = (() => {
     const d = new Date()
@@ -160,6 +161,12 @@ export default function DashboardPage() {
           >
             <ChevronLeft size={15} />
           </button>
+          <span
+            className="px-2 py-1 rounded-xl border text-xs"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.05em' }}
+          >
+            {weekOfMonth.current}/{weekOfMonth.total}
+          </span>
           <button
             onClick={() => setWeekKey(getCurrentWeekKey())}
             disabled={isCurrentWeek}

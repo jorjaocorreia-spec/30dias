@@ -130,6 +130,18 @@ export function getNextWeekKey(weekKey: string): string {
 
 // Returns the number of full weeks from current week until the last week of deadline month (YYYY-MM).
 // Minimum 1 to avoid division by zero.
+export function getWeekOfMonth(weekKey: string): { current: number; total: number } {
+  const monday = getWeekStart(weekKey)
+  const year = monday.getFullYear()
+  const month = monday.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const mondays = getMondaysBetween(firstDay, lastDay)
+  const mondayKey = toLocalDateKey(monday)
+  const idx = mondays.findIndex(m => toLocalDateKey(m) === mondayKey)
+  return { current: idx >= 0 ? idx + 1 : 1, total: mondays.length }
+}
+
 export function getWeeksUntilDeadline(deadline: string): number {
   const [year, month] = deadline.split('-').map(Number)
   // Last day of deadline month
