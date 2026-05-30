@@ -258,6 +258,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 - Recharts Tooltip: `(v) => [formatCurrency(Number(v)), 'Label']`
 - `z.number()` + `register('amount', { valueAsNumber: true })` em campos monetários
 - `(app)` route group não adiciona segmento à URL
+- **Modais centrados com Framer Motion:** nunca usar `transform: translate(-50%, -50%)` ou `translate: '-50% -50%'` diretamente no `motion.div` com `scale` — o Framer Motion sobrescreve `transform`, quebrando o centramento. Padrão correto: wrapper estático com `fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none` + `motion.div` interno com `pointerEvents: 'auto'` e `maxWidth`. Backdrop separado em `z-40`. Fundo do modal: sempre `var(--bg-modal)` (sólido), nunca `var(--bg-card)` (semi-transparente).
 
 ## Backlog
 
