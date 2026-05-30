@@ -9,72 +9,92 @@ import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { useAppStore, getCurrentWeekKey } from '@/store/useAppStore'
+import { useAppStore } from '@/store/useAppStore'
 import {
-  buildWeekSummary, formatCurrency, formatWeekLabel, getEffectiveAmount,
-  getPreviousWeekKey, getNextWeekKey, getWeekDays, formatDate, toLocalDateKey, getWeekOfMonth,
+  formatCurrency, formatDate, getEffectiveAmount, getCurrentWeekKey,
+  getWeekKey, getWeekStart, getMondaysBetween,
 } from '@/lib/weekHelpers'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 
-const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-
 export default function DashboardPage() {
-  const { expenses, categories, preferences, financialGoals, goalContributions, getGoalProgress, getMonthlyBalance, getFixedWeeklyContribution, getFixedCategoryContribution, getSharedPendingTotal, markParticipantAsPaid } = useAppStore()
+  const {
+    expenses, categories, preferences, financialGoals, goalContributions,
+    getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
+    getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
+    getSharedPendingTotal, markParticipantAsPaid,
+  } = useAppStore()
   const router = useRouter()
-  const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
-  const today = toLocalDateKey(new Date())
-  const [selectedDay, setSelectedDay] = useState(today)
-
-  const fixedWeekly = getFixedWeeklyContribution()
-  const fixedByCategory = getFixedCategoryContribution()
-  const weekOfMonth = getWeekOfMonth(weekKey)
-
-  const effectiveBudget = preferences.budgetMode === 'per_category'
-    ? categories.reduce((sum, c) => sum + (preferences.categoryBudgets?.[c.id] ?? 0) / weekOfMonth.total, 0)
-      + Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
-    : preferences.monthlyBudget / weekOfMonth.total + fixedWeekly
-
-  const summary = useMemo(
-    () => buildWeekSummary(weekKey, expenses, effectiveBudget),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [weekKey, expenses, effectiveBudget]
-  )
-
-  const weekDays = getWeekDays(weekKey)
-
-  // Reset selectedDay when navigating weeks
-  useEffect(() => {
-    const days = weekDays.map((d) => toLocalDateKey(d))
-    setSelectedDay(days.includes(today) ? today : days[0])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekKey])
-
-  const dailyData = weekDays.map((d, i) => {
-    const key = toLocalDateKey(d)
-    return { day: DAYS_SHORT[i], amount: summary.byDay[key] || 0, date: key }
-  })
-
-  const categoryData = Object.entries(summary.byCategory)
-    .map(([id, amount]) => {
-      const cat = categories.find((c) => c.id === id)
-      return { name: cat?.name ?? id, amount, color: cat?.color ?? '#6b7280' }
-    })
-    .sort((a, b) => b.amount - a.amount)
-
-  const budgetPercent = Math.min((summary.totalAmount / summary.budget) * 100, 100)
-  const remaining = summary.budget - summary.totalAmount
-  const isCurrentWeek = weekKey === getCurrentWeekKey()
 
   const currentMonthKey = (() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })()
-  const monthBalance = getMonthlyBalance(currentMonthKey)
-  const sharedPending = getSharedPendingTotal(currentMonthKey)
-  const monthlyBudgetEst = effectiveBudget * weekOfMonth.total
-  const monthSpentPct = monthlyBudgetEst > 0
-    ? Math.min((monthBalance.expenses / monthlyBudgetEst) * 100, 100)
+
+  const [monthKey, setMonthKey] = useState(currentMonthKey)
+  const [selectedWeekKey, setSelectedWeekKey] = useState(getCurrentWeekKey())
+  const isCurrentMonth = monthKey === currentMonthKey
+
+  const prevMonth = () => {
+    const [year, month] = monthKey.split('-').map(Number)
+    const d = new Date(year, month - 2, 1)
+    setMonthKey(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+  }
+  const nextMonth = () => {
+    const [year, month] = monthKey.split('-').map(Number)
+    const d = new Date(year, month, 1)
+    const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (next <= currentMonthKey) setMonthKey(next)
+  }
+
+  const formatMonthLabel = (m: string) => {
+    const [year, month] = m.split('-')
+    const label = new Date(Number(year), Number(month) - 1, 1)
+      .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    return label.charAt(0).toUpperCase() + label.slice(1)
+  }
+
+  const weeksOfMonth = useMemo(() => {
+    const [year, month] = monthKey.split('-').map(Number)
+    const firstDay = new Date(year, month - 1, 1)
+    const lastDay = new Date(year, month, 0)
+    return getMondaysBetween(firstDay, lastDay).map(m => getWeekKey(m))
+  }, [monthKey])
+
+  useEffect(() => {
+    const currentWk = getCurrentWeekKey()
+    const [year, month] = monthKey.split('-').map(Number)
+    const firstDay = new Date(year, month - 1, 1)
+    const lastDay = new Date(year, month, 0)
+    const weeks = getMondaysBetween(firstDay, lastDay).map(m => getWeekKey(m))
+    setSelectedWeekKey(weeks.includes(currentWk) ? currentWk : (weeks[weeks.length - 1] ?? currentWk))
+  }, [monthKey])
+
+  const monthExpenses = useMemo(
+    () => expenses.filter(e => e.date.startsWith(monthKey)),
+    [expenses, monthKey]
+  )
+
+  const monthBalance = getMonthlyBalance(monthKey)
+  const fixedMonthly = getFixedMonthlyContribution(monthKey)
+  const fixedByCatMonthly = getFixedMonthlyCategoryContribution(monthKey)
+  const goalDeductMonthly = getGoalWeeklyTotal(true) * weeksOfMonth.length
+
+  const totalMonthlyBudget = preferences.budgetMode === 'per_category'
+    ? categories.reduce((sum, c) => sum + (preferences.categoryBudgets?.[c.id] ?? 0), 0)
+      + fixedMonthly + goalDeductMonthly
+    : preferences.monthlyBudget + fixedMonthly + goalDeductMonthly
+
+  const totalMonthlyExpenses = useMemo(
+    () => monthExpenses.reduce((sum, e) => sum + getEffectiveAmount(e), 0),
+    [monthExpenses]
+  )
+
+  const budgetPercent = totalMonthlyBudget > 0
+    ? Math.min((totalMonthlyExpenses / totalMonthlyBudget) * 100, 100)
     : 0
+  const remaining = totalMonthlyBudget - totalMonthlyExpenses
+
+  const sharedPending = getSharedPendingTotal(monthKey)
 
   const activeGoals = useMemo(
     () => financialGoals.filter(g => g.isActive && !g.completedAt),
@@ -88,17 +108,55 @@ export default function DashboardPage() {
   }, [activeGoals, goalContributions])
 
   const projection = useMemo(() => {
+    if (!isCurrentMonth || totalMonthlyExpenses === 0) return null
     const now = new Date()
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
     const daysElapsed = now.getDate()
-    const totalSpent = expenses
-      .filter(e => e.date.startsWith(currentMonthKey))
-      .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
-    if (totalSpent === 0) return null
-    const projected = (totalSpent / daysElapsed) * daysInMonth
+    const projected = (totalMonthlyExpenses / daysElapsed) * daysInMonth
     const delta = monthBalance.income > 0 ? projected - monthBalance.income : null
     return { projected, delta, daysElapsed }
-  }, [expenses, currentMonthKey, monthBalance.income])
+  }, [isCurrentMonth, totalMonthlyExpenses, monthBalance.income])
+
+  const weeklyData = useMemo(() =>
+    weeksOfMonth.map((wk) => {
+      const weekExpenses = monthExpenses.filter(e => e.weekKey === wk)
+      const amount = weekExpenses.reduce((sum, e) => sum + getEffectiveAmount(e), 0)
+      const monday = getWeekStart(wk)
+      const label = monday.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      return { weekKey: wk, label, amount }
+    }),
+    [weeksOfMonth, monthExpenses]
+  )
+
+  const categoryData = useMemo(() => {
+    const byCat = monthExpenses.reduce<Record<string, number>>((acc, e) => {
+      acc[e.categoryId] = (acc[e.categoryId] || 0) + getEffectiveAmount(e)
+      return acc
+    }, {})
+    return Object.entries(byCat)
+      .map(([id, amount]) => {
+        const cat = categories.find(c => c.id === id)
+        return { id, name: cat?.name ?? id, amount, color: cat?.color ?? '#6b7280' }
+      })
+      .sort((a, b) => b.amount - a.amount)
+  }, [monthExpenses, categories])
+
+  const selectedWeekExpenses = useMemo(
+    () => monthExpenses
+      .filter(e => e.weekKey === selectedWeekKey)
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    [monthExpenses, selectedWeekKey]
+  )
+
+  const selectedWeekLabel = useMemo(() => {
+    const monday = getWeekStart(selectedWeekKey)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    const fmt = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    return `${fmt(monday)} – ${fmt(sunday)}`
+  }, [selectedWeekKey])
+
+  const currentWeekKey = getCurrentWeekKey()
 
   const [sharedDrawerOpen, setSharedDrawerOpen] = useState(false)
   const [drawerMonth, setDrawerMonth] = useState(currentMonthKey)
@@ -112,39 +170,22 @@ export default function DashboardPage() {
 
   const drawerPendingTotal = useMemo(
     () => sharedExpenses.reduce((total, e) => {
-      const pending = (e.sharedWith ?? []).filter(p => !p.paid).reduce((s, p) => s + p.amount, 0)
-      return total + pending
+      return total + (e.sharedWith ?? []).filter(p => !p.paid).reduce((s, p) => s + p.amount, 0)
     }, 0),
     [sharedExpenses]
   )
-
-  const formatMonthLabel = (m: string) => {
-    const [year, month] = m.split('-')
-    return new Date(Number(year), Number(month) - 1, 1)
-      .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-  }
 
   const prevDrawerMonth = () => {
     const [year, month] = drawerMonth.split('-').map(Number)
     const d = new Date(year, month - 2, 1)
     setDrawerMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
   }
-
   const nextDrawerMonth = () => {
     const [year, month] = drawerMonth.split('-').map(Number)
     const d = new Date(year, month, 1)
     const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     if (next <= currentMonthKey) setDrawerMonth(next)
   }
-
-  const selectedDayExpenses = summary.expenses
-    .filter((e) => e.date === selectedDay)
-    .sort((a, b) => b.description.localeCompare(a.description))
-
-  const selectedDayLabel = (() => {
-    const d = new Date(selectedDay + 'T12:00:00')
-    return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
-  })()
 
   return (
     <div className="px-4 py-5 lg:px-8 lg:py-8 max-w-3xl mx-auto lg:max-w-5xl">
@@ -154,34 +195,28 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-syne)', letterSpacing: '-0.3px' }}>Dashboard</h1>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.05em' }}>
-            {formatWeekLabel(weekKey)}
+            {formatMonthLabel(monthKey)}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => setWeekKey(getPreviousWeekKey(weekKey))}
+            onClick={prevMonth}
             className="w-8 h-8 flex items-center justify-center rounded-xl border"
             style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
           >
             <ChevronLeft size={15} />
           </button>
-          <span
-            className="px-2 py-1 rounded-xl border text-xs"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg-card)', color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.05em' }}
-          >
-            {weekOfMonth.current}/{weekOfMonth.total}
-          </span>
           <button
-            onClick={() => setWeekKey(getCurrentWeekKey())}
-            disabled={isCurrentWeek}
+            onClick={() => setMonthKey(currentMonthKey)}
+            disabled={isCurrentMonth}
             className="px-2.5 py-1 rounded-xl text-xs font-medium border disabled:opacity-40"
             style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
           >
             Hoje
           </button>
           <button
-            onClick={() => setWeekKey(getNextWeekKey(weekKey))}
-            disabled={isCurrentWeek}
+            onClick={nextMonth}
+            disabled={isCurrentMonth}
             className="w-8 h-8 flex items-center justify-center rounded-xl border disabled:opacity-40"
             style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
           >
@@ -190,14 +225,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards — 2 cols mobile, 3 or 4 cols desktop */}
+      {/* KPI Cards */}
       <div className={`grid grid-cols-2 gap-3 mb-5 ${(sharedPending > 0 || activeGoals.length > 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         {[
           {
             icon: Wallet,
-            label: 'Gasto total',
-            value: formatCurrency(summary.totalAmount),
-            sub: `de ${formatCurrency(summary.budget)}`,
+            label: 'Gastos do mês',
+            value: formatCurrency(totalMonthlyExpenses),
+            sub: `de ${formatCurrency(totalMonthlyBudget)}`,
             color: '#10b981',
           },
           {
@@ -208,10 +243,10 @@ export default function DashboardPage() {
             color: remaining < 0 ? '#ef4444' : '#06b6d4',
           },
           {
-            icon: TrendingDown,
-            label: 'Despesas',
-            value: String(summary.expenses.length),
-            sub: 'esta semana',
+            icon: TrendingUp,
+            label: 'Receitas',
+            value: formatCurrency(monthBalance.income),
+            sub: 'este mês',
             color: '#8b5cf6',
             colSpanMobile: sharedPending === 0 && activeGoals.length === 0,
           },
@@ -222,7 +257,7 @@ export default function DashboardPage() {
             sub: 'de despesas divididas',
             color: '#f59e0b',
             colSpanMobile: false,
-            onClick: () => setSharedDrawerOpen(true),
+            onClick: () => { setDrawerMonth(monthKey); setSharedDrawerOpen(true) },
           }] : []),
           ...(activeGoals.length > 0 ? [{
             icon: Target,
@@ -245,7 +280,7 @@ export default function DashboardPage() {
             whileTap={onClick ? { scale: 0.97 } : undefined}
           >
             <div className="flex items-start justify-between mb-2">
-              <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 9 }}>{label}</p>
+              <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 9 }}>{label}</p>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: color + '20' }}>
                 <Icon size={14} style={{ color, filter: `drop-shadow(0 0 4px ${color}80)` }} />
               </div>
@@ -264,54 +299,28 @@ export default function DashboardPage() {
       >
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Saldo do mês</p>
-          <Link
-            href="/income"
-            className="text-xs px-2 py-1 rounded-lg"
-            style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}
-          >
+          <Link href="/income" className="text-xs px-2 py-1 rounded-lg" style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}>
             Ver receitas
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#10b98120' }}>
-                <TrendingUp size={11} style={{ color: '#10b981' }} />
+          {[
+            { label: 'Receitas', value: monthBalance.income, color: '#10b981', Icon: TrendingUp },
+            { label: 'Despesas', value: monthBalance.expenses, color: '#f43f5e', Icon: TrendingDown },
+            { label: 'Saldo', value: monthBalance.balance, color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', Icon: ArrowUpDown, sign: true },
+          ].map(({ label, value, color, Icon, sign }) => (
+            <div key={label}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: color + '20' }}>
+                  <Icon size={11} style={{ color }} />
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
               </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Receitas</p>
+              <p className="text-base font-bold" style={{ color, fontFamily: 'var(--font-dm-mono)' }}>
+                {sign && value >= 0 ? '+' : ''}{formatCurrency(value)}
+              </p>
             </div>
-            <p className="text-base font-bold" style={{ color: '#10b981', fontFamily: 'var(--font-dm-mono)' }}>
-              {formatCurrency(monthBalance.income)}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#f43f5e20' }}>
-                <TrendingDown size={11} style={{ color: '#f43f5e' }} />
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Despesas</p>
-            </div>
-            <p className="text-base font-bold" style={{ color: '#f43f5e', fontFamily: 'var(--font-dm-mono)' }}>
-              {formatCurrency(monthBalance.expenses)}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <div
-                className="w-5 h-5 rounded-md flex items-center justify-center"
-                style={{ background: monthBalance.balance >= 0 ? '#06b6d420' : '#f59e0b20' }}
-              >
-                <ArrowUpDown size={11} style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b' }} />
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Saldo</p>
-            </div>
-            <p
-              className="text-base font-bold"
-              style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', fontFamily: 'var(--font-dm-mono)' }}
-            >
-              {monthBalance.balance >= 0 ? '+' : ''}{formatCurrency(monthBalance.balance)}
-            </p>
-          </div>
+          ))}
         </div>
       </motion.div>
 
@@ -323,28 +332,18 @@ export default function DashboardPage() {
       >
         <div className="flex justify-between items-center mb-2.5">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Cota desta semana</p>
+            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Orçamento do mês</p>
             {preferences.budgetMode === 'per_category' && (
-              <span
-                className="text-xs px-2 py-0.5 rounded-lg font-medium"
-                style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
-              >
+              <span className="text-xs px-2 py-0.5 rounded-lg font-medium" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
                 Por categoria
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span
-              className="text-sm font-bold"
-              style={{ color: budgetPercent >= 90 ? '#f43f5e' : 'var(--accent)', fontFamily: 'var(--font-dm-mono)' }}
-            >
+            <span className="text-sm font-bold" style={{ color: budgetPercent >= 90 ? '#f43f5e' : 'var(--accent)', fontFamily: 'var(--font-dm-mono)' }}>
               {budgetPercent.toFixed(0)}%
             </span>
-            <Link
-              href="/budget"
-              className="text-xs px-2 py-1 rounded-lg"
-              style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}
-            >
+            <Link href="/budget" className="text-xs px-2 py-1 rounded-lg" style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}>
               Configurar
             </Link>
           </div>
@@ -356,22 +355,15 @@ export default function DashboardPage() {
             animate={{ width: `${budgetPercent}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             style={{
-              background: budgetPercent >= 90
-                ? 'linear-gradient(90deg, #f59e0b, #f43f5e)'
-                : 'linear-gradient(90deg, #10b981, #06b6d4)',
-              boxShadow: budgetPercent >= 90
-                ? '0 0 12px rgba(244,63,94,0.5), 0 0 24px rgba(245,158,11,0.3)'
-                : '0 0 12px rgba(16,185,129,0.5), 0 0 24px rgba(6,182,212,0.3)',
+              background: budgetPercent >= 90 ? 'linear-gradient(90deg, #f59e0b, #f43f5e)' : 'linear-gradient(90deg, #10b981, #06b6d4)',
+              boxShadow: budgetPercent >= 90 ? '0 0 12px rgba(244,63,94,0.5)' : '0 0 12px rgba(16,185,129,0.5)',
             }}
           />
         </div>
 
-        {/* Alert banner — 80–99% (amber) or 100%+ (red) */}
-        {budgetPercent >= 80 && isCurrentWeek && (
+        {budgetPercent >= 80 && isCurrentMonth && (
           <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
             className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
             style={{
               background: budgetPercent >= 100 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
@@ -385,51 +377,22 @@ export default function DashboardPage() {
             <div>
               <p className="text-xs font-semibold" style={{ color: budgetPercent >= 100 ? '#ef4444' : '#f59e0b' }}>
                 {budgetPercent >= 100
-                  ? `Orçamento ultrapassado em ${formatCurrency(summary.totalAmount - summary.budget)}`
-                  : `${budgetPercent.toFixed(0)}% do orçamento utilizado`
+                  ? `Orçamento ultrapassado em ${formatCurrency(totalMonthlyExpenses - totalMonthlyBudget)}`
+                  : `${budgetPercent.toFixed(0)}% do orçamento mensal utilizado`
                 }
               </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {budgetPercent >= 100
-                  ? 'Você já passou do limite semanal.'
-                  : `Faltam ${formatCurrency(remaining)} para o limite de ${formatCurrency(summary.budget)}.`
+                  ? 'Você já passou do limite mensal.'
+                  : `Faltam ${formatCurrency(remaining)} para o limite de ${formatCurrency(totalMonthlyBudget)}.`
                 }
               </p>
             </div>
           </motion.div>
         )}
-
-        {/* Monthly context footer */}
-        <div
-          className="flex items-center justify-between mt-3 pt-3 text-xs"
-          style={{ borderTop: '1px solid var(--border)' }}
-        >
-          <span style={{ color: 'var(--text-muted)' }}>
-            Semana {weekOfMonth.current}/{weekOfMonth.total} do mês
-          </span>
-          <div className="flex items-center gap-1.5">
-            <span style={{ color: monthSpentPct >= 90 ? '#f43f5e' : 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)' }}>
-              {formatCurrency(monthBalance.expenses)}
-            </span>
-            <span style={{ color: 'var(--text-dim)' }}>/</span>
-            <span style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-dm-mono)' }}>
-              ~{formatCurrency(monthlyBudgetEst)}
-            </span>
-            <span
-              className="px-1.5 py-0.5 rounded-lg font-medium"
-              style={{
-                background: monthSpentPct >= 90 ? '#f43f5e20' : 'var(--bg-input)',
-                color: monthSpentPct >= 90 ? '#f43f5e' : 'var(--text-muted)',
-                fontFamily: 'var(--font-dm-mono)',
-              }}
-            >
-              {monthSpentPct.toFixed(0)}%
-            </span>
-          </div>
-        </div>
       </motion.div>
 
-      {/* Monthly projection */}
+      {/* Projection */}
       {projection && (
         <motion.div
           className="p-4 rounded-2xl border mb-5"
@@ -443,13 +406,9 @@ export default function DashboardPage() {
               </div>
               <p className="text-sm font-semibold">Projeção do mês</p>
             </div>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {projection.daysElapsed}d de dados
-            </p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{projection.daysElapsed}d de dados</p>
           </div>
-
           <p className="text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-dm-mono)', letterSpacing: '-0.5px' }}>{formatCurrency(projection.projected)}</p>
-
           {projection.delta !== null ? (
             <div className="flex items-center gap-1.5">
               {projection.delta > 0
@@ -462,45 +421,35 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Sem renda registrada este mês
-            </p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Sem renda registrada este mês</p>
           )}
         </motion.div>
       )}
 
-      {/* Charts — stacked on mobile, side by side on desktop */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
 
-        {/* Bar chart */}
-        <div
-          className="lg:col-span-3 p-4 rounded-2xl border"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-        >
+        {/* Weekly bar chart */}
+        <div className="lg:col-span-3 p-4 rounded-2xl border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Gastos por dia</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Clique para filtrar</p>
+            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Gastos por semana</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Clique para ver despesas</p>
           </div>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart
-              data={dailyData}
-              barSize={24}
+              data={weeklyData}
+              barSize={40}
               margin={{ top: 0, right: 0, left: -24, bottom: 0 }}
               style={{ cursor: 'pointer' }}
             >
               <XAxis
-                dataKey="day"
+                dataKey="label"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
               />
               <Tooltip
-                contentStyle={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  fontSize: 12,
-                }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12 }}
                 formatter={(v) => [formatCurrency(Number(v)), 'Gasto']}
                 cursor={{ fill: 'rgba(255,255,255,0.04)' }}
               />
@@ -508,15 +457,15 @@ export default function DashboardPage() {
                 dataKey="amount"
                 radius={[5, 5, 0, 0]}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(data: any) => setSelectedDay(data.date)}
+                onClick={(data: any) => setSelectedWeekKey(data.weekKey)}
               >
-                {dailyData.map((d) => (
+                {weeklyData.map((d) => (
                   <Cell
-                    key={d.date}
+                    key={d.weekKey}
                     fill={
-                      d.date === selectedDay
+                      d.weekKey === selectedWeekKey
                         ? '#10b981'
-                        : d.date === today
+                        : d.weekKey === currentWeekKey
                         ? 'rgba(16,185,129,0.25)'
                         : 'var(--bg-input)'
                     }
@@ -528,10 +477,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Pie chart */}
-        <div
-          className="lg:col-span-2 p-4 rounded-2xl border"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-        >
+        <div className="lg:col-span-2 p-4 rounded-2xl border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           <p className="text-sm font-semibold mb-3" style={{ fontFamily: 'var(--font-syne)' }}>Por categoria</p>
           {categoryData.length > 0 ? (
             <div className="flex items-center gap-4">
@@ -541,12 +487,7 @@ export default function DashboardPage() {
                     {categoryData.map((d, i) => <Cell key={i} fill={d.color} />)}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 10,
-                      fontSize: 12,
-                    }}
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12 }}
                     formatter={(v) => [formatCurrency(Number(v))]}
                   />
                 </PieChart>
@@ -584,12 +525,11 @@ export default function DashboardPage() {
             {categories
               .filter((c) => (preferences.categoryBudgets?.[c.id] ?? 0) > 0)
               .map((cat) => {
-                const spent = summary.byCategory[cat.id] ?? 0
-                const budget = (preferences.categoryBudgets?.[cat.id] ?? 0) / weekOfMonth.total
-                const rawPct = (spent / budget) * 100
+                const spent = categoryData.find(d => d.id === cat.id)?.amount ?? 0
+                const budget = (preferences.categoryBudgets?.[cat.id] ?? 0) + (fixedByCatMonthly[cat.id] ?? 0)
+                const rawPct = budget > 0 ? (spent / budget) * 100 : 0
                 const barPct = Math.min(rawPct, 100)
                 const isOver = rawPct > 100
-                const overAmount = spent - budget
                 return (
                   <div
                     key={cat.id}
@@ -603,27 +543,17 @@ export default function DashboardPage() {
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <div
-                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ background: isOver ? 'rgba(244,63,94,0.15)' : cat.color + '20' }}
-                        >
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: isOver ? 'rgba(244,63,94,0.15)' : cat.color + '20' }}>
                           <CategoryIcon name={cat.icon} size={13} style={{ color: isOver ? '#f43f5e' : cat.color }} />
                         </div>
                         <span className="text-sm font-medium" style={isOver ? { color: '#f43f5e' } : undefined}>{cat.name}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs font-semibold" style={{ color: isOver ? '#f43f5e' : 'var(--text)' }}>
-                          {formatCurrency(spent)}
-                        </span>
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                          {' '}/ {formatCurrency(budget)}
-                        </span>
+                        <span className="text-xs font-semibold" style={{ color: isOver ? '#f43f5e' : 'var(--text)' }}>{formatCurrency(spent)}</span>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}> / {formatCurrency(budget)}</span>
                       </div>
                     </div>
-                    <div
-                      className="w-full h-1.5 rounded-full overflow-hidden"
-                      style={{ background: isOver ? 'rgba(244,63,94,0.15)' : 'var(--bg-input)' }}
-                    >
+                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: isOver ? 'rgba(244,63,94,0.15)' : 'var(--bg-input)' }}>
                       <motion.div
                         className="h-full rounded-full"
                         initial={{ width: 0 }}
@@ -638,20 +568,16 @@ export default function DashboardPage() {
                         }}
                       />
                     </div>
-                    {isOver && isCurrentWeek && (
+                    {isOver && isCurrentMonth && (
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <XCircle size={11} style={{ color: '#f43f5e', flexShrink: 0 }} />
-                        <p className="text-xs font-medium" style={{ color: '#f43f5e' }}>
-                          Limite ultrapassado em {formatCurrency(overAmount)}
-                        </p>
+                        <p className="text-xs font-medium" style={{ color: '#f43f5e' }}>Limite ultrapassado em {formatCurrency(spent - budget)}</p>
                       </div>
                     )}
-                    {!isOver && rawPct >= 80 && isCurrentWeek && (
+                    {!isOver && rawPct >= 80 && isCurrentMonth && (
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <AlertTriangle size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                        <p className="text-xs" style={{ color: '#f59e0b' }}>
-                          {rawPct.toFixed(0)}% utilizado
-                        </p>
+                        <p className="text-xs" style={{ color: '#f59e0b' }}>{rawPct.toFixed(0)}% utilizado</p>
                       </div>
                     )}
                   </div>
@@ -668,31 +594,18 @@ export default function DashboardPage() {
             <motion.div
               className="fixed inset-0 z-40"
               style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setSharedDrawerOpen(false)}
             />
             <motion.div
               className="fixed bottom-0 left-0 lg:left-56 right-0 z-50 flex flex-col"
-              style={{
-                background: '#1a1a24',
-                borderTop: '1px solid var(--border)',
-                borderTopLeftRadius: 24,
-                borderTopRightRadius: 24,
-                maxHeight: '85vh',
-              }}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              style={{ background: '#1a1a24', borderTop: '1px solid var(--border)', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85vh' }}
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
                 <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
               </div>
-
-              {/* Header */}
               <div className="flex items-center justify-between px-5 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#f59e0b20' }}>
@@ -701,42 +614,26 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-semibold">A Receber</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {drawerPendingTotal > 0
-                        ? `${formatCurrency(drawerPendingTotal)} pendente`
-                        : 'Tudo recebido!'}
+                      {drawerPendingTotal > 0 ? `${formatCurrency(drawerPendingTotal)} pendente` : 'Tudo recebido!'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={prevDrawerMonth}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg"
-                    style={{ background: 'var(--bg-input)' }}
-                  >
+                  <button onClick={prevDrawerMonth} className="w-7 h-7 flex items-center justify-center rounded-lg" style={{ background: 'var(--bg-input)' }}>
                     <ChevronLeft size={13} />
                   </button>
                   <span className="text-xs font-medium px-1" style={{ minWidth: 90, textAlign: 'center' }}>
                     {formatMonthLabel(drawerMonth)}
                   </span>
-                  <button
-                    onClick={nextDrawerMonth}
-                    disabled={drawerMonth >= currentMonthKey}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg disabled:opacity-30"
-                    style={{ background: 'var(--bg-input)' }}
-                  >
+                  <button onClick={nextDrawerMonth} disabled={drawerMonth >= currentMonthKey} className="w-7 h-7 flex items-center justify-center rounded-lg disabled:opacity-30" style={{ background: 'var(--bg-input)' }}>
                     <ChevronRight size={13} />
                   </button>
-                  <button
-                    onClick={() => setSharedDrawerOpen(false)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg ml-1"
-                    style={{ background: 'var(--bg-input)' }}
-                  >
+                  <button onClick={() => setSharedDrawerOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-lg ml-1" style={{ background: 'var(--bg-input)' }}>
                     <X size={14} />
                   </button>
                 </div>
               </div>
 
-              {/* Scrollable list */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                 {sharedExpenses.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-2" style={{ color: 'var(--text-muted)' }}>
@@ -749,20 +646,9 @@ export default function DashboardPage() {
                     const pendingCount = (expense.sharedWith ?? []).filter(p => !p.paid).length
                     const paidCount = (expense.sharedWith ?? []).filter(p => p.paid).length
                     return (
-                      <div
-                        key={expense.id}
-                        className="rounded-2xl overflow-hidden"
-                        style={{ border: '1px solid var(--border)' }}
-                      >
-                        {/* Expense header row */}
-                        <div
-                          className="flex items-center gap-3 p-3"
-                          style={{ background: 'var(--bg-input)' }}
-                        >
-                          <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{ background: (cat?.color ?? '#6b7280') + '25' }}
-                          >
+                      <div key={expense.id} className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+                        <div className="flex items-center gap-3 p-3" style={{ background: 'var(--bg-input)' }}>
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: (cat?.color ?? '#6b7280') + '25' }}>
                             <CategoryIcon name={cat?.icon ?? 'MoreHorizontal'} size={16} style={{ color: cat?.color ?? '#6b7280' }} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -776,66 +662,32 @@ export default function DashboardPage() {
                             <p className="text-sm font-bold">{formatCurrency(getEffectiveAmount(expense))}</p>
                           </div>
                         </div>
-
-                        {/* Status bar */}
                         <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-input)' }}>
-                          {pendingCount === 0 ? (
-                            <span className="text-xs font-medium" style={{ color: '#10b981' }}>
-                              ✓ Todos pagaram
-                            </span>
-                          ) : (
-                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              {paidCount}/{(expense.sharedWith ?? []).length} pagaram
-                            </span>
-                          )}
+                          {pendingCount === 0
+                            ? <span className="text-xs font-medium" style={{ color: '#10b981' }}>✓ Todos pagaram</span>
+                            : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{paidCount}/{(expense.sharedWith ?? []).length} pagaram</span>
+                          }
                         </div>
-
-                        {/* Participants */}
                         <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
                           {expense.sharedWith?.map(p => (
                             <div key={p.id} className="flex items-center gap-3 px-3 py-2.5">
-                              {/* Avatar inicial */}
-                              <div
-                                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                                style={{
-                                  background: p.paid ? '#10b98120' : 'var(--bg-input)',
-                                  color: p.paid ? '#10b981' : 'var(--text-muted)',
-                                }}
-                              >
+                              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: p.paid ? '#10b98120' : 'var(--bg-input)', color: p.paid ? '#10b981' : 'var(--text-muted)' }}>
                                 {p.name.charAt(0).toUpperCase()}
                               </div>
-
-                              {/* Nome + data */}
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{p.name}</p>
-                                {p.paid && p.paidAt ? (
-                                  <p className="text-xs" style={{ color: '#10b981' }}>
-                                    Pago em {formatDate(p.paidAt)}
-                                  </p>
-                                ) : (
-                                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pendente</p>
-                                )}
+                                {p.paid && p.paidAt
+                                  ? <p className="text-xs" style={{ color: '#10b981' }}>Pago em {formatDate(p.paidAt)}</p>
+                                  : <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pendente</p>
+                                }
                               </div>
-
-                              {/* Valor */}
-                              <p
-                                className="text-sm font-bold flex-shrink-0"
-                                style={{ color: p.paid ? '#10b981' : 'inherit' }}
-                              >
+                              <p className="text-sm font-bold flex-shrink-0" style={{ color: p.paid ? '#10b981' : 'inherit' }}>
                                 {formatCurrency(p.amount)}
                               </p>
-
-                              {/* Toggle button */}
                               <button
                                 onClick={() => markParticipantAsPaid(expense.id, p.id, !p.paid)}
                                 className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-xl flex-shrink-0"
-                                style={{
-                                  background: p.paid ? '#10b98120' : 'var(--bg-input)',
-                                  color: p.paid ? '#10b981' : 'var(--text-muted)',
-                                  border: `1px solid ${p.paid ? '#10b98140' : 'var(--border)'}`,
-                                  minWidth: 72,
-                                  justifyContent: 'center',
-                                }}
+                                style={{ background: p.paid ? '#10b98120' : 'var(--bg-input)', color: p.paid ? '#10b981' : 'var(--text-muted)', border: `1px solid ${p.paid ? '#10b98140' : 'var(--border)'}`, minWidth: 72, justifyContent: 'center' }}
                               >
                                 {p.paid ? <Check size={11} /> : null}
                                 {p.paid ? 'Pago' : 'Pendente'}
@@ -847,15 +699,8 @@ export default function DashboardPage() {
                     )
                   })
                 )}
-
-                {/* Footer link */}
                 <div className="pt-2 pb-4 text-center">
-                  <Link
-                    href="/expenses"
-                    onClick={() => setSharedDrawerOpen(false)}
-                    className="text-sm font-medium"
-                    style={{ color: 'var(--accent)' }}
-                  >
+                  <Link href="/expenses" onClick={() => setSharedDrawerOpen(false)} className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
                     Ver todas as despesas →
                   </Link>
                 </div>
@@ -865,35 +710,28 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* Recent expenses */}
-      <div
-        className="p-4 rounded-2xl border"
-        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-      >
+      {/* Week expenses list */}
+      <div className="p-4 rounded-2xl border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-sm font-semibold">Despesas</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{selectedDayLabel}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{selectedWeekLabel}</p>
           </div>
-          <Link
-            href="/expenses/new"
-            className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-xl"
-            style={{ color: 'var(--accent)', background: 'var(--accent-light)' }}
-          >
+          <Link href="/expenses/new" className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-xl" style={{ color: 'var(--accent)', background: 'var(--accent-light)' }}>
             <PlusCircle size={12} /> Nova
           </Link>
         </div>
 
-        {selectedDayExpenses.length === 0 ? (
+        {selectedWeekExpenses.length === 0 ? (
           <div className="text-center py-10" style={{ color: 'var(--text-muted)' }}>
-            <p className="text-sm">Nenhuma despesa em {selectedDayLabel}.</p>
+            <p className="text-sm">Nenhuma despesa nesta semana.</p>
             <Link href="/expenses/new" className="inline-block mt-2 text-sm font-medium" style={{ color: 'var(--accent)' }}>
               Adicionar agora →
             </Link>
           </div>
         ) : (
           <div className="space-y-2">
-            {selectedDayExpenses.map((expense) => {
+            {selectedWeekExpenses.map((expense) => {
               const cat = categories.find((c) => c.id === expense.categoryId)
               return (
                 <Link
@@ -902,24 +740,17 @@ export default function DashboardPage() {
                   className="flex items-center gap-3 p-3 rounded-xl active:opacity-70"
                   style={{ background: 'var(--bg-input)' }}
                 >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: (cat?.color ?? '#6b7280') + '20' }}
-                  >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: (cat?.color ?? '#6b7280') + '20' }}>
                     <CategoryIcon name={cat?.icon ?? 'MoreHorizontal'} size={16} style={{ color: cat?.color ?? '#6b7280' }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-medium truncate">{expense.description}</p>
                       {expense.fixedExpenseId && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0"
-                          style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', fontSize: 10 }}>
-                          🔁
-                        </span>
+                        <span className="text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0" style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', fontSize: 10 }}>🔁</span>
                       )}
                       {expense.sharedWith?.length ? (
-                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0"
-                          style={{ background: '#06b6d420', color: '#06b6d4', fontSize: 10 }}>
+                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0" style={{ background: '#06b6d420', color: '#06b6d4', fontSize: 10 }}>
                           <Users size={9} /> ÷
                         </span>
                       ) : null}
