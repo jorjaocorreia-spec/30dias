@@ -16,9 +16,9 @@ const navItems = [
   { href: '/goals', icon: Target, label: 'Metas', section: 'financial' },
   { href: '/income', icon: TrendingUp, label: 'Receitas', section: 'financial' },
   { href: '/budget', icon: Wallet, label: 'Orçamento', section: 'financial' },
+  { href: '/summary', icon: BarChart2, label: 'Resumo', section: 'financial' },
   { href: '/categories', icon: Tag, label: 'Categorias', section: 'config' },
   { href: '/establishments', icon: Store, label: 'Locais', section: 'config' },
-  { href: '/summary', icon: BarChart2, label: 'Resumo', section: 'config' },
   { href: '/integrations', icon: Plug, label: 'Integrações', section: 'config' },
   { href: '/help', icon: HelpCircle, label: 'Ajuda', section: 'config' },
 ]
