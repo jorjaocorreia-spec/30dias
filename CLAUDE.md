@@ -75,13 +75,13 @@ interface FinancialGoal {
   id: string; name: string; targetAmount: number; deadline: string  // YYYY-MM
   icon: string; color: string; notes?: string
   weeklyAmount?: number      // override manual; senão auto-calculado
-  deductFromBudget: boolean  // se true, subtrai do orçamento semanal
+  deductFromBudget: boolean  // se true, subtrai do orçamento mensal
   isActive: boolean; createdAt: string; completedAt?: string  // YYYY-MM-DD
 }
 interface GoalContribution { id: string; goalId: string; month: string; amount: number }
 interface UserPreferences {
-  theme: 'light' | 'dark' | 'system'; weeklyBudget: number
-  budgetMode: 'fixed' | 'per_category'; categoryBudgets: Record<string, number>
+  theme: 'light' | 'dark' | 'system'; monthlyBudget: number
+  budgetMode: 'fixed' | 'per_category'; categoryBudgets: Record<string, number>  // valores mensais
   currency: string; whatsappNumber?: string
 }
 interface IncomeSource {
@@ -130,9 +130,14 @@ interface IncomeEntry {
 - **Atenção:** para limpar `completedAt` ao reabrir uma meta, passar `null` (não `undefined`) em `updateFinancialGoal`. `dbUpdate` usa `Object.entries` que inclui `undefined`, mas o JSON.stringify o descarta → campo não vira NULL no banco. `null` é serializado corretamente.
 
 ### Budget automático de fixas
-- `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas
-- `getFixedCategoryContribution(month?)` → mesmo agrupado por `categoryId`
-- `effectiveBudget = weeklyBudget + fixedWeekly + goalDeductWeekly` (modo fixo) | `sum(categoryBudgets) + sum(fixedByCategory) + goalDeductWeekly` (por categoria)
+
+- `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas — usado no Dashboard para cota semanal
+- `getFixedMonthlyContribution(month?)` → soma mensal real das fixas ativas confirmadas — usado na página de Orçamento
+- `getFixedCategoryContribution(month?)` → `getFixedWeeklyContribution` agrupado por `categoryId`
+- `getFixedMonthlyCategoryContribution(month?)` → `getFixedMonthlyContribution` agrupado por `categoryId`
+- **Cota semanal efetiva** (Dashboard/Navbar) = `monthlyBudget / weeksInMonth + fixedWeekly + goalDeductWeekly` (modo fixo) | `sum(categoryBudgets) / weeksInMonth + sum(fixedByCategory) + goalDeductWeekly` (por categoria)
+- `weeksInMonth` = `getWeekOfMonth(weekKey).total`
+- **Orçamento mensal total** (página Orçamento) = `monthlyBudget + fixedMonthly + goalDeductMonthly`
 
 ## Design system — Bloom
 
@@ -213,7 +218,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 | `/fixed-expenses` | Templates + confirmação mensal, seção Pendentes (amber), histórico |
 | `/goals` | Metas financeiras: seção Pendentes (amber), cards com barra de progresso + sugestão semanal, modal de contribuição mensal, histórico expandível, concluir/pausar/excluir |
 | `/income` | Fontes recorrentes + entradas mensais, seção Pendentes (amber), saldo mensal |
-| `/budget` | Modo fixo: discricionário + fixas (🔒 auto) + metas (🎯 auto, se deductFromBudget) + total. Modo categoria: idem. Ambos os modos exibem card **Estimativa mensal** = `(semanal + fixas + metas) × 4` + bloco informativo para metas sem dedução |
+| `/budget` | Modo fixo: discricionário mensal + fixas (🔒 auto) + metas (🎯 auto, se deductFromBudget) + total mensal. Modo categoria: idem. Dica de cota semanal (≈ R$ X/sem · N semanas este mês) exibida abaixo de cada campo. Inputs são valores mensais diretamente. |
 | `/summary` | Total, AreaChart, donut, barras animadas por categoria, histórico semanal paginado |
 | `/integrations` | Card WhatsApp: salvar número, exemplos de mensagens para registro, lista de comandos de consulta |
 | `/help` | Central de ajuda: índice com busca e cards agrupados por categoria |
