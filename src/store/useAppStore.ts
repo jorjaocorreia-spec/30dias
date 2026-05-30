@@ -41,7 +41,7 @@ function dbUpdate(data: Record<string, any>): Record<string, any> {
 // ── Defaults ──────────────────────────────────────────────────────────────────
 const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'dark',
-  weeklyBudget: 1000,
+  monthlyBudget: 4000,
   budgetMode: 'fixed',
   categoryBudgets: {},
   currency: 'BRL',
@@ -132,12 +132,14 @@ interface AppState {
   getMonthlyBalance: (month: string) => { income: number; expenses: number; balance: number }
   getFixedWeeklyContribution: (month?: string) => number
   getFixedCategoryContribution: (month?: string) => Record<string, number>
+  getFixedMonthlyContribution: (month?: string) => number
+  getFixedMonthlyCategoryContribution: (month?: string) => Record<string, number>
   markParticipantAsPaid: (expenseId: string, participantId: string, paid: boolean) => void
   getSharedPendingTotal: (month?: string) => number
 
   // Preferences
   setTheme: (theme: UserPreferences['theme']) => void
-  setWeeklyBudget: (budget: number) => void
+  setMonthlyBudget: (budget: number) => void
   setBudgetMode: (mode: UserPreferences['budgetMode']) => void
   setCategoryBudget: (categoryId: string, amount: number) => void
   setAllCategoryBudgets: (budgets: Record<string, number>) => void
@@ -253,7 +255,16 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
     let preferences = DEFAULT_PREFERENCES
     if (prefRes.data) {
-      preferences = fromDB<UserPreferences>(prefRes.data)
+      const raw = fromDB<any>(prefRes.data)
+      preferences = {
+        theme: raw.theme ?? DEFAULT_PREFERENCES.theme,
+        // monthlyBudget: use monthly_budget column if available, else migrate from weekly_budget * 4
+        monthlyBudget: raw.monthlyBudget ?? (raw.weeklyBudget ? raw.weeklyBudget * 4 : DEFAULT_PREFERENCES.monthlyBudget),
+        budgetMode: raw.budgetMode ?? DEFAULT_PREFERENCES.budgetMode,
+        categoryBudgets: raw.categoryBudgets ?? {},
+        currency: raw.currency ?? DEFAULT_PREFERENCES.currency,
+        whatsappNumber: raw.whatsappNumber,
+      }
     } else {
       await supabase.from('user_preferences').insert(toDB(DEFAULT_PREFERENCES, user.id))
     }
@@ -651,6 +662,32 @@ export const useAppStore = create<AppState>()((set, get) => ({
     return result
   },
 
+  getFixedMonthlyContribution: (month) => {
+    const m = month ?? new Date().toISOString().slice(0, 7)
+    const { fixedExpenseMonths, fixedExpenses } = get()
+    return fixedExpenseMonths
+      .filter(fem => fem.month === m)
+      .reduce((sum, fem) => {
+        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
+        if (!fe?.isActive) return sum
+        return sum + fem.amount
+      }, 0)
+  },
+
+  getFixedMonthlyCategoryContribution: (month) => {
+    const m = month ?? new Date().toISOString().slice(0, 7)
+    const { fixedExpenseMonths, fixedExpenses } = get()
+    const result: Record<string, number> = {}
+    fixedExpenseMonths
+      .filter(fem => fem.month === m)
+      .forEach(fem => {
+        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
+        if (!fe?.isActive) return
+        result[fe.categoryId] = (result[fe.categoryId] ?? 0) + fem.amount
+      })
+    return result
+  },
+
   markParticipantAsPaid: (expenseId, participantId, paid) => {
     const expense = get().expenses.find(e => e.id === expenseId)
     if (!expense?.sharedWith) return
@@ -679,10 +716,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (user) supabase.from('user_preferences').update({ theme }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
   },
 
-  setWeeklyBudget: (weeklyBudget) => {
-    set(state => ({ preferences: { ...state.preferences, weeklyBudget } }))
+  setMonthlyBudget: (monthlyBudget) => {
+    set(state => ({ preferences: { ...state.preferences, monthlyBudget } }))
     const { user } = get()
-    if (user) supabase.from('user_preferences').update({ weekly_budget: weeklyBudget }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
+    if (user) supabase.from('user_preferences').update({ monthly_budget: monthlyBudget }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
   },
 
   setBudgetMode: (budgetMode) => {

@@ -10,7 +10,7 @@ import { useAppStore, getCurrentWeekKey } from '@/store/useAppStore'
 import {
   buildWeekSummary, formatCurrency, formatWeekLabel,
   getPreviousWeekKey, getNextWeekKey, getWeekDays, toLocalDateKey,
-  getEffectiveAmount,
+  getEffectiveAmount, getWeekOfMonth, getCurrentWeekKey as getWeekKeyNow,
 } from '@/lib/weekHelpers'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 
@@ -32,7 +32,8 @@ export default function SummaryPage() {
   const [monthKey, setMonthKey] = useState(currentMonthKey)
   const isCurrentMonth = monthKey === currentMonthKey
 
-  const effectiveBudget = preferences.weeklyBudget + getFixedWeeklyContribution() + getGoalWeeklyTotal(true)
+  const weeksInCurrentMonth = getWeekOfMonth(getWeekKeyNow()).total
+  const effectiveBudget = preferences.monthlyBudget / weeksInCurrentMonth + getFixedWeeklyContribution() + getGoalWeeklyTotal(true)
 
   // --- Week data ---
   const summary = useMemo(

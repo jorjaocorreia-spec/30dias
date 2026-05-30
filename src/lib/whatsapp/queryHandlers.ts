@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { getWeekKey } from '@/lib/weekHelpers'
+import { getWeekKey, getWeekOfMonth } from '@/lib/weekHelpers'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n)
@@ -39,13 +39,16 @@ export async function handleWeekQuery(userId: string, admin: SupabaseClient): Pr
       .eq('week_key', weekKey),
     admin
       .from('user_preferences')
-      .select('weekly_budget')
+      .select('monthly_budget, weekly_budget')
       .eq('user_id', userId)
       .single(),
   ])
 
   const spent = (expenses ?? []).reduce((s, e) => s + effectiveAmt(e), 0)
-  const budget: number = prefs?.weekly_budget ?? 0
+  // monthly_budget is the source of truth; fall back to weekly_budget * 4 for pre-migration rows
+  const monthlyBudget: number = prefs?.monthly_budget ?? (prefs?.weekly_budget ? prefs.weekly_budget * 4 : 0)
+  const weeksInMonth = getWeekOfMonth(weekKey).total
+  const budget = monthlyBudget > 0 ? Math.round((monthlyBudget / weeksInMonth) * 100) / 100 : 0
   const remaining = budget - spent
   const pct = budget > 0 ? Math.round((remaining / budget) * 100) : 0
   const emoji = pct >= 50 ? '✅' : pct >= 20 ? '⚠️' : '🚨'

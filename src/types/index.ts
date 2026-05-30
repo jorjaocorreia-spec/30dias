@@ -124,7 +124,7 @@ export interface WeekSummary {
 
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system'
-  weeklyBudget: number
+  monthlyBudget: number
   budgetMode: 'fixed' | 'per_category'
   categoryBudgets: Record<string, number>
   currency: string

@@ -2,24 +2,31 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, Target, Check, Lock, Calendar } from 'lucide-react'
+import { Wallet, Target, Check, Lock } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { formatCurrency, getWeekOfMonth, getCurrentWeekKey } from '@/lib/weekHelpers'
 
 export default function BudgetPage() {
-  const { preferences, categories, financialGoals, getGoalWeeklyTotal, getGoalProgress, setWeeklyBudget, setBudgetMode, setAllCategoryBudgets, getFixedWeeklyContribution, getFixedCategoryContribution } = useAppStore()
-  const { budgetMode, weeklyBudget, categoryBudgets = {} } = preferences
-  const fixedWeekly = getFixedWeeklyContribution()
-  const fixedByCategory = getFixedCategoryContribution()
-  const hasFixedContribution = fixedWeekly > 0
-  const goalDeductWeekly = getGoalWeeklyTotal(true)
-  const hasGoalDeduct = goalDeductWeekly > 0
-  const infoGoals = financialGoals.filter(g => g.isActive && !g.completedAt && !g.deductFromBudget)
+  const {
+    preferences, categories, financialGoals,
+    getGoalWeeklyTotal, getGoalProgress,
+    setMonthlyBudget, setBudgetMode, setAllCategoryBudgets,
+    getFixedMonthlyContribution, getFixedMonthlyCategoryContribution,
+  } = useAppStore()
+  const { budgetMode, monthlyBudget, categoryBudgets = {} } = preferences
 
+  const fixedMonthly = getFixedMonthlyContribution()
+  const fixedByCategory = getFixedMonthlyCategoryContribution()
+  const hasFixedContribution = fixedMonthly > 0
   const weeksInMonth = getWeekOfMonth(getCurrentWeekKey()).total
 
-  const [fixedValue, setFixedValue] = useState(String(weeklyBudget))
+  const goalDeductWeekly = getGoalWeeklyTotal(true)
+  const goalDeductMonthly = Math.round(goalDeductWeekly * weeksInMonth * 100) / 100
+  const hasGoalDeduct = goalDeductMonthly > 0
+  const infoGoals = financialGoals.filter(g => g.isActive && !g.completedAt && !g.deductFromBudget)
+
+  const [fixedValue, setFixedValue] = useState(String(monthlyBudget))
   const [catValues, setCatValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       categories.map((c) => [c.id, categoryBudgets[c.id] ? String(categoryBudgets[c.id]) : ''])
@@ -38,7 +45,7 @@ export default function BudgetPage() {
   const handleSaveFixed = () => {
     const v = parseFloat(fixedValue)
     if (!isNaN(v) && v > 0) {
-      setWeeklyBudget(v)
+      setMonthlyBudget(v)
       setSavedFixed(true)
       setTimeout(() => setSavedFixed(false), 2000)
     }
@@ -56,6 +63,11 @@ export default function BudgetPage() {
     setTimeout(() => setSavedCat(false), 2000)
   }
 
+  const weeklyHint = (monthly: number) =>
+    monthly > 0
+      ? `≈ ${formatCurrency(Math.round((monthly / weeksInMonth) * 100) / 100)}/sem`
+      : null
+
   return (
     <div className="px-4 py-5 lg:px-8 lg:py-8 max-w-2xl mx-auto">
 
@@ -63,7 +75,7 @@ export default function BudgetPage() {
       <div className="mb-6">
         <h1 className="text-xl font-bold">Orçamento</h1>
         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-          Defina quanto deseja gastar por semana
+          Defina quanto deseja gastar por mês
         </p>
       </div>
 
@@ -103,9 +115,9 @@ export default function BudgetPage() {
           className="p-5 rounded-2xl border"
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
         >
-          <p className="text-sm font-semibold mb-1">Orçamento semanal total</p>
+          <p className="text-sm font-semibold mb-1">Orçamento mensal total</p>
           <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>
-            Valor máximo disponível para gastar durante a semana
+            Valor máximo disponível para gastar durante o mês
           </p>
           <div className="flex gap-3">
             <div className="flex-1 relative">
@@ -118,7 +130,7 @@ export default function BudgetPage() {
               <input
                 type="number"
                 min="0"
-                step="50"
+                step="100"
                 value={fixedValue}
                 onChange={(e) => setFixedValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveFixed()}
@@ -149,12 +161,12 @@ export default function BudgetPage() {
             </button>
           </div>
 
-          {/* Preview */}
+          {/* Summary */}
           {(hasFixedContribution || hasGoalDeduct) ? (
             <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
               <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)' }}>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
-                <span className="text-sm font-medium">{formatCurrency(weeklyBudget)}</span>
+                <span className="text-sm font-medium">{formatCurrency(monthlyBudget)}</span>
               </div>
               {hasFixedContribution && (
                 <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)', borderTop: '1px solid var(--border)' }}>
@@ -162,7 +174,7 @@ export default function BudgetPage() {
                     <Lock size={11} /> Fixas (automático)
                   </span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(fixedWeekly)}
+                    {formatCurrency(fixedMonthly)}
                   </span>
                 </div>
               )}
@@ -172,105 +184,42 @@ export default function BudgetPage() {
                     <Target size={11} /> Metas (automático)
                   </span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(goalDeductWeekly)}
+                    {formatCurrency(goalDeductMonthly)}
                   </span>
                 </div>
               )}
               <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
-                <span className="text-xs font-semibold">Total efetivo</span>
-                <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
-                  {formatCurrency(weeklyBudget + fixedWeekly + goalDeductWeekly)}
+                <span className="text-xs font-semibold">Total mensal</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
+                    {formatCurrency(monthlyBudget + fixedMonthly + goalDeductMonthly)}
+                  </span>
+                </div>
+              </div>
+              {/* Weekly hint */}
+              <div className="flex items-center justify-end px-3 py-1.5" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
+                <span className="text-xs" style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-dm-mono)' }}>
+                  {weeklyHint(monthlyBudget + fixedMonthly + goalDeductMonthly)} · {weeksInMonth} semanas este mês
                 </span>
               </div>
             </div>
           ) : (
-            <div
-              className="mt-4 p-3 rounded-xl flex items-center justify-between"
-              style={{ background: 'var(--bg-input)' }}
-            >
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Orçamento atual</span>
-              <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
-                {formatCurrency(weeklyBudget)}
-              </span>
+            <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)' }}>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Orçamento mensal</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
+                  {formatCurrency(monthlyBudget)}
+                </span>
+              </div>
+              {monthlyBudget > 0 && (
+                <div className="flex items-center justify-end px-3 py-1.5" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
+                  <span className="text-xs" style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-dm-mono)' }}>
+                    {weeklyHint(monthlyBudget)} · {weeksInMonth} semanas este mês
+                  </span>
+                </div>
+              )}
             </div>
           )}
-        </motion.div>
-      )}
-
-      {/* Monthly estimate — fixed mode */}
-      {budgetMode === 'fixed' && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mt-4 p-5 rounded-2xl border"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #10b98120, #06b6d420)' }}
-            >
-              <Calendar size={15} style={{ color: 'var(--accent)' }} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Estimativa mensal</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Com base em {weeksInMonth} semanas neste mês
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {formatCurrency(weeklyBudget)}/sem × {weeksInMonth}
-                </span>
-                <span className="text-sm font-medium">{formatCurrency(weeklyBudget * weeksInMonth)}</span>
-              </div>
-            </div>
-            {hasFixedContribution && (
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <Lock size={10} /> Fixas (mensal)
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(fixedWeekly)}/sem × {weeksInMonth}
-                  </span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(fixedWeekly * weeksInMonth)}
-                  </span>
-                </div>
-              </div>
-            )}
-            {hasGoalDeduct && (
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <Target size={10} /> Metas (reserva)
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(goalDeductWeekly)}/sem × {weeksInMonth}
-                  </span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(goalDeductWeekly * weeksInMonth)}
-                  </span>
-                </div>
-              </div>
-            )}
-            <div
-              className="flex items-center justify-between pt-2 mt-2"
-              style={{ borderTop: '1px solid var(--border)' }}
-            >
-              <span className="text-sm font-semibold">Total estimado / mês</span>
-              <span className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                {formatCurrency((weeklyBudget + fixedWeekly + goalDeductWeekly) * weeksInMonth)}
-              </span>
-            </div>
-          </div>
         </motion.div>
       )}
 
@@ -279,7 +228,7 @@ export default function BudgetPage() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0.1 }}
           className="mt-4 p-5 rounded-2xl border"
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
         >
@@ -293,6 +242,7 @@ export default function BudgetPage() {
           <div className="space-y-2">
             {infoGoals.map(g => {
               const { effectiveWeekly, percentage } = getGoalProgress(g.id)
+              const monthlyNeeded = Math.round(effectiveWeekly * weeksInMonth * 100) / 100
               return (
                 <div key={g.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -301,7 +251,7 @@ export default function BudgetPage() {
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{percentage}%</span>
                   </div>
                   <span className="text-sm font-medium" style={{ color: g.color }}>
-                    {formatCurrency(effectiveWeekly)}/sem
+                    {formatCurrency(monthlyNeeded)}/mês
                   </span>
                 </div>
               )
@@ -321,7 +271,7 @@ export default function BudgetPage() {
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
           >
             <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-              <p className="text-sm font-semibold">Orçamento por categoria</p>
+              <p className="text-sm font-semibold">Orçamento mensal por categoria</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 Deixe em branco as categorias sem limite definido
               </p>
@@ -334,7 +284,7 @@ export default function BudgetPage() {
                 <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)', width: 90, justifyContent: 'flex-end' }}>
                   <Lock size={10} /> Fixas
                 </span>
-                <span className="text-xs text-right" style={{ color: 'var(--text-muted)', width: 120 }}>Variáveis</span>
+                <span className="text-xs text-right" style={{ color: 'var(--text-muted)', width: 120 }}>Variáveis/mês</span>
               </div>
             )}
             {categories.map((cat, i) => {
@@ -375,7 +325,7 @@ export default function BudgetPage() {
                     <input
                       type="number"
                       min="0"
-                      step="10"
+                      step="50"
                       placeholder="—"
                       value={catValues[cat.id] ?? ''}
                       onChange={(e) =>
@@ -403,121 +353,55 @@ export default function BudgetPage() {
 
           {/* Footer: total + save */}
           <div
-            className="flex items-center justify-between p-4 rounded-2xl border"
+            className="rounded-2xl border overflow-hidden mb-4"
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
           >
-            <div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {(hasAnyCatFixed || hasGoalDeduct) ? 'Total efetivo semanal' : 'Total semanal'}
-              </p>
-              <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                {formatCurrency(totalCat + totalCatFixed + goalDeductWeekly)}
-              </p>
-              {(hasAnyCatFixed || hasGoalDeduct) && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {formatCurrency(totalCat)} disc.
-                  {hasAnyCatFixed && ` + ${formatCurrency(totalCatFixed)} fixas`}
-                  {hasGoalDeduct && ` + ${formatCurrency(goalDeductWeekly)} metas`}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={handleSaveCat}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2"
-              style={{
-                background: savedCat ? '#10b981' : 'linear-gradient(135deg, #10b981, #06b6d4)',
-                color: '#fff',
-                cursor: 'pointer',
-                border: 'none',
-                transition: 'background 0.3s',
-                minWidth: 120,
-                justifyContent: 'center',
-              }}
-            >
-              {savedCat ? <><Check size={15} /> Salvo!</> : 'Salvar tudo'}
-            </button>
-          </div>
-          {/* Monthly estimate — per category mode */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="mt-4 p-5 rounded-2xl border"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #10b98120, #06b6d420)' }}
-              >
-                <Calendar size={15} style={{ color: 'var(--accent)' }} />
-              </div>
+            <div className="flex items-center justify-between p-4">
               <div>
-                <p className="text-sm font-semibold">Estimativa mensal</p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Com base em {weeksInMonth} semanas neste mês
+                  {(hasAnyCatFixed || hasGoalDeduct) ? 'Total mensal efetivo' : 'Total mensal'}
                 </p>
+                <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
+                  {formatCurrency(totalCat + totalCatFixed + goalDeductMonthly)}
+                </p>
+                {(hasAnyCatFixed || hasGoalDeduct) && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    {formatCurrency(totalCat)} variáveis
+                    {hasAnyCatFixed && ` + ${formatCurrency(totalCatFixed)} fixas`}
+                    {hasGoalDeduct && ` + ${formatCurrency(goalDeductMonthly)} metas`}
+                  </p>
+                )}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(totalCat)}/sem × {weeksInMonth}
-                  </span>
-                  <span className="text-sm font-medium">{formatCurrency(totalCat * weeksInMonth)}</span>
-                </div>
-              </div>
-              {hasAnyCatFixed && (
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <Lock size={10} /> Fixas (mensal)
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(totalCatFixed)}/sem × {weeksInMonth}
-                    </span>
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(totalCatFixed * weeksInMonth)}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {hasGoalDeduct && (
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <Target size={10} /> Metas (reserva)
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(goalDeductWeekly)}/sem × {weeksInMonth}
-                    </span>
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(goalDeductWeekly * weeksInMonth)}
-                    </span>
-                  </div>
-                </div>
-              )}
-              <div
-                className="flex items-center justify-between pt-2 mt-2"
-                style={{ borderTop: '1px solid var(--border)' }}
+              <button
+                onClick={handleSaveCat}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2"
+                style={{
+                  background: savedCat ? '#10b981' : 'linear-gradient(135deg, #10b981, #06b6d4)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.3s',
+                  minWidth: 120,
+                  justifyContent: 'center',
+                }}
               >
-                <span className="text-sm font-semibold">Total estimado / mês</span>
-                <span className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                  {formatCurrency((totalCat + totalCatFixed + goalDeductWeekly) * weeksInMonth)}
-                </span>
-              </div>
+                {savedCat ? <><Check size={15} /> Salvo!</> : 'Salvar tudo'}
+              </button>
             </div>
-          </motion.div>
+            {/* Weekly hint */}
+            <div className="px-4 py-2" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-input)' }}>
+              <span className="text-xs" style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-dm-mono)' }}>
+                {weeklyHint(totalCat + totalCatFixed + goalDeductMonthly)} · {weeksInMonth} semanas este mês
+              </span>
+            </div>
+          </div>
 
           {/* Informational goals — per category mode */}
           {infoGoals.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1 }}
               className="mt-4 p-5 rounded-2xl border"
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
             >
@@ -531,6 +415,7 @@ export default function BudgetPage() {
               <div className="space-y-2">
                 {infoGoals.map(g => {
                   const { effectiveWeekly, percentage } = getGoalProgress(g.id)
+                  const monthlyNeeded = Math.round(effectiveWeekly * weeksInMonth * 100) / 100
                   return (
                     <div key={g.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -539,7 +424,7 @@ export default function BudgetPage() {
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{percentage}%</span>
                       </div>
                       <span className="text-sm font-medium" style={{ color: g.color }}>
-                        {formatCurrency(effectiveWeekly)}/sem
+                        {formatCurrency(monthlyNeeded)}/mês
                       </span>
                     </div>
                   )

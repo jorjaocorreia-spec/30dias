@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle, MoreHorizontal, X } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { getCurrentWeekKey } from '@/store/useAppStore'
-import { buildWeekSummary, getWeekDays, toLocalDateKey } from '@/lib/weekHelpers'
+import { buildWeekSummary, getWeekDays, toLocalDateKey, getWeekOfMonth } from '@/lib/weekHelpers'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', section: 'main' },
@@ -68,11 +68,12 @@ export function Navbar() {
   const fixedWeekly = getFixedWeeklyContribution()
   const fixedByCategory = getFixedCategoryContribution()
   const weekKey = getCurrentWeekKey()
+  const weeksInCurrentMonth = getWeekOfMonth(weekKey).total
 
   const effectiveBudget = preferences.budgetMode === 'per_category'
-    ? Object.values(preferences.categoryBudgets ?? {}).reduce((a, b) => a + b, 0)
+    ? Object.values(preferences.categoryBudgets ?? {}).reduce((a, b) => a + b, 0) / weeksInCurrentMonth
       + Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
-    : preferences.weeklyBudget + fixedWeekly
+    : preferences.monthlyBudget / weeksInCurrentMonth + fixedWeekly
 
   const summary = buildWeekSummary(weekKey, expenses, effectiveBudget)
   const budgetPercent = effectiveBudget > 0

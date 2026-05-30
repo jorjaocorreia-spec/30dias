@@ -27,11 +27,12 @@ export default function DashboardPage() {
 
   const fixedWeekly = getFixedWeeklyContribution()
   const fixedByCategory = getFixedCategoryContribution()
+  const weekOfMonth = getWeekOfMonth(weekKey)
 
   const effectiveBudget = preferences.budgetMode === 'per_category'
-    ? categories.reduce((sum, c) => sum + (preferences.categoryBudgets?.[c.id] ?? 0), 0)
+    ? categories.reduce((sum, c) => sum + (preferences.categoryBudgets?.[c.id] ?? 0) / weekOfMonth.total, 0)
       + Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
-    : preferences.weeklyBudget + fixedWeekly
+    : preferences.monthlyBudget / weekOfMonth.total + fixedWeekly
 
   const summary = useMemo(
     () => buildWeekSummary(weekKey, expenses, effectiveBudget),
@@ -63,7 +64,6 @@ export default function DashboardPage() {
   const budgetPercent = Math.min((summary.totalAmount / summary.budget) * 100, 100)
   const remaining = summary.budget - summary.totalAmount
   const isCurrentWeek = weekKey === getCurrentWeekKey()
-  const weekOfMonth = getWeekOfMonth(weekKey)
 
   const currentMonthKey = (() => {
     const d = new Date()
@@ -323,7 +323,7 @@ export default function DashboardPage() {
       >
         <div className="flex justify-between items-center mb-2.5">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Orçamento da semana</p>
+            <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Cota desta semana</p>
             {preferences.budgetMode === 'per_category' && (
               <span
                 className="text-xs px-2 py-0.5 rounded-lg font-medium"
@@ -585,7 +585,7 @@ export default function DashboardPage() {
               .filter((c) => (preferences.categoryBudgets?.[c.id] ?? 0) > 0)
               .map((cat) => {
                 const spent = summary.byCategory[cat.id] ?? 0
-                const budget = preferences.categoryBudgets?.[cat.id] ?? 0
+                const budget = (preferences.categoryBudgets?.[cat.id] ?? 0) / weekOfMonth.total
                 const rawPct = (spent / budget) * 100
                 const barPct = Math.min(rawPct, 100)
                 const isOver = rawPct > 100
