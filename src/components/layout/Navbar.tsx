@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle, MoreHorizontal, X } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
-import { getCurrentWeekKey } from '@/store/useAppStore'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', section: 'main' },
@@ -38,8 +37,6 @@ export function Navbar() {
   const [collapsed, setCollapsed] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
 
-  const weekKey = getCurrentWeekKey()
-  const wNum = weekKey.split('-W')[1] ?? ''
 
   useEffect(() => {
     document.body.classList.toggle('sidebar-collapsed', collapsed)
@@ -237,19 +234,10 @@ export function Navbar() {
             <span style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>30</span>
             <span style={{ color: '#F0EDF8' }}>dias</span>
           </span>
-          <span style={{
-            fontFamily: 'var(--font-dm-mono)',
-            fontSize: 9,
-            padding: '2px 8px',
-            borderRadius: 100,
-            background: 'rgba(16,185,129,0.12)',
-            border: '1px solid rgba(16,185,129,0.2)',
-            color: '#10b981',
-            letterSpacing: '0.08em',
-          }}>W{wNum}</span>
         </div>
         <button
           onClick={logout}
+          title="Sair"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 36, height: 36, borderRadius: 10,
@@ -339,6 +327,7 @@ export function Navbar() {
             {/* Close button */}
             <button
               onClick={() => setMoreOpen(false)}
+              title="Fechar"
               style={{
                 position: 'absolute', top: 12, right: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
