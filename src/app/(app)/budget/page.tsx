@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Wallet, Target, Check, Lock, Calendar } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
-import { formatCurrency } from '@/lib/weekHelpers'
+import { formatCurrency, getWeekOfMonth, getCurrentWeekKey } from '@/lib/weekHelpers'
 
 export default function BudgetPage() {
   const { preferences, categories, financialGoals, getGoalWeeklyTotal, getGoalProgress, setWeeklyBudget, setBudgetMode, setAllCategoryBudgets, getFixedWeeklyContribution, getFixedCategoryContribution } = useAppStore()
@@ -16,6 +16,8 @@ export default function BudgetPage() {
   const goalDeductWeekly = getGoalWeeklyTotal(true)
   const hasGoalDeduct = goalDeductWeekly > 0
   const infoGoals = financialGoals.filter(g => g.isActive && !g.completedAt && !g.deductFromBudget)
+
+  const weeksInMonth = getWeekOfMonth(getCurrentWeekKey()).total
 
   const [fixedValue, setFixedValue] = useState(String(weeklyBudget))
   const [catValues, setCatValues] = useState<Record<string, string>>(() =>
@@ -214,7 +216,7 @@ export default function BudgetPage() {
             <div>
               <p className="text-sm font-semibold">Estimativa mensal</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Com base em 4 semanas por mês
+                Com base em {weeksInMonth} semanas neste mês
               </p>
             </div>
           </div>
@@ -224,9 +226,9 @@ export default function BudgetPage() {
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {formatCurrency(weeklyBudget)}/sem × 4
+                  {formatCurrency(weeklyBudget)}/sem × {weeksInMonth}
                 </span>
-                <span className="text-sm font-medium">{formatCurrency(weeklyBudget * 4)}</span>
+                <span className="text-sm font-medium">{formatCurrency(weeklyBudget * weeksInMonth)}</span>
               </div>
             </div>
             {hasFixedContribution && (
@@ -236,10 +238,10 @@ export default function BudgetPage() {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(fixedWeekly)}/sem × 4
+                    {formatCurrency(fixedWeekly)}/sem × {weeksInMonth}
                   </span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(fixedWeekly * 4)}
+                    {formatCurrency(fixedWeekly * weeksInMonth)}
                   </span>
                 </div>
               </div>
@@ -251,10 +253,10 @@ export default function BudgetPage() {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(goalDeductWeekly)}/sem × 4
+                    {formatCurrency(goalDeductWeekly)}/sem × {weeksInMonth}
                   </span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(goalDeductWeekly * 4)}
+                    {formatCurrency(goalDeductWeekly * weeksInMonth)}
                   </span>
                 </div>
               </div>
@@ -265,7 +267,7 @@ export default function BudgetPage() {
             >
               <span className="text-sm font-semibold">Total estimado / mês</span>
               <span className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                {formatCurrency((weeklyBudget + fixedWeekly + goalDeductWeekly) * 4)}
+                {formatCurrency((weeklyBudget + fixedWeekly + goalDeductWeekly) * weeksInMonth)}
               </span>
             </div>
           </div>
@@ -453,7 +455,7 @@ export default function BudgetPage() {
               <div>
                 <p className="text-sm font-semibold">Estimativa mensal</p>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Com base em 4 semanas por mês
+                  Com base em {weeksInMonth} semanas neste mês
                 </p>
               </div>
             </div>
@@ -463,9 +465,9 @@ export default function BudgetPage() {
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(totalCat)}/sem × 4
+                    {formatCurrency(totalCat)}/sem × {weeksInMonth}
                   </span>
-                  <span className="text-sm font-medium">{formatCurrency(totalCat * 4)}</span>
+                  <span className="text-sm font-medium">{formatCurrency(totalCat * weeksInMonth)}</span>
                 </div>
               </div>
               {hasAnyCatFixed && (
@@ -475,10 +477,10 @@ export default function BudgetPage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(totalCatFixed)}/sem × 4
+                      {formatCurrency(totalCatFixed)}/sem × {weeksInMonth}
                     </span>
                     <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(totalCatFixed * 4)}
+                      {formatCurrency(totalCatFixed * weeksInMonth)}
                     </span>
                   </div>
                 </div>
@@ -490,10 +492,10 @@ export default function BudgetPage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(goalDeductWeekly)}/sem × 4
+                      {formatCurrency(goalDeductWeekly)}/sem × {weeksInMonth}
                     </span>
                     <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                      {formatCurrency(goalDeductWeekly * 4)}
+                      {formatCurrency(goalDeductWeekly * weeksInMonth)}
                     </span>
                   </div>
                 </div>
@@ -504,7 +506,7 @@ export default function BudgetPage() {
               >
                 <span className="text-sm font-semibold">Total estimado / mês</span>
                 <span className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                  {formatCurrency((totalCat + totalCatFixed + goalDeductWeekly) * 4)}
+                  {formatCurrency((totalCat + totalCatFixed + goalDeductWeekly) * weeksInMonth)}
                 </span>
               </div>
             </div>

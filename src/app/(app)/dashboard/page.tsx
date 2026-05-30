@@ -71,6 +71,10 @@ export default function DashboardPage() {
   })()
   const monthBalance = getMonthlyBalance(currentMonthKey)
   const sharedPending = getSharedPendingTotal(currentMonthKey)
+  const monthlyBudgetEst = effectiveBudget * weekOfMonth.total
+  const monthSpentPct = monthlyBudgetEst > 0
+    ? Math.min((monthBalance.expenses / monthlyBudgetEst) * 100, 100)
+    : 0
 
   const activeGoals = useMemo(
     () => financialGoals.filter(g => g.isActive && !g.completedAt),
@@ -252,11 +256,70 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Budget bar */}
+      {/* Monthly balance */}
       <motion.div
         className="p-4 rounded-2xl border mb-5"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Saldo do mês</p>
+          <Link
+            href="/income"
+            className="text-xs px-2 py-1 rounded-lg"
+            style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}
+          >
+            Ver receitas
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#10b98120' }}>
+                <TrendingUp size={11} style={{ color: '#10b981' }} />
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Receitas</p>
+            </div>
+            <p className="text-base font-bold" style={{ color: '#10b981', fontFamily: 'var(--font-dm-mono)' }}>
+              {formatCurrency(monthBalance.income)}
+            </p>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#f43f5e20' }}>
+                <TrendingDown size={11} style={{ color: '#f43f5e' }} />
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Despesas</p>
+            </div>
+            <p className="text-base font-bold" style={{ color: '#f43f5e', fontFamily: 'var(--font-dm-mono)' }}>
+              {formatCurrency(monthBalance.expenses)}
+            </p>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <div
+                className="w-5 h-5 rounded-md flex items-center justify-center"
+                style={{ background: monthBalance.balance >= 0 ? '#06b6d420' : '#f59e0b20' }}
+              >
+                <ArrowUpDown size={11} style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b' }} />
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Saldo</p>
+            </div>
+            <p
+              className="text-base font-bold"
+              style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', fontFamily: 'var(--font-dm-mono)' }}
+            >
+              {monthBalance.balance >= 0 ? '+' : ''}{formatCurrency(monthBalance.balance)}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Budget bar */}
+      <motion.div
+        className="p-4 rounded-2xl border mb-5"
+        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
       >
         <div className="flex justify-between items-center mb-2.5">
           <div className="flex items-center gap-2">
@@ -335,63 +398,33 @@ export default function DashboardPage() {
             </div>
           </motion.div>
         )}
-      </motion.div>
 
-      {/* Monthly balance */}
-      <motion.div
-        className="p-4 rounded-2xl border mb-5"
-        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Saldo do mês</p>
-          <Link
-            href="/income"
-            className="text-xs px-2 py-1 rounded-lg"
-            style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}
-          >
-            Ver receitas
-          </Link>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#10b98120' }}>
-                <TrendingUp size={11} style={{ color: '#10b981' }} />
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Receitas</p>
-            </div>
-            <p className="text-base font-bold" style={{ color: '#10b981', fontFamily: 'var(--font-dm-mono)' }}>
-              {formatCurrency(monthBalance.income)}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#f43f5e20' }}>
-                <TrendingDown size={11} style={{ color: '#f43f5e' }} />
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Despesas</p>
-            </div>
-            <p className="text-base font-bold" style={{ color: '#f43f5e', fontFamily: 'var(--font-dm-mono)' }}>
+        {/* Monthly context footer */}
+        <div
+          className="flex items-center justify-between mt-3 pt-3 text-xs"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <span style={{ color: 'var(--text-muted)' }}>
+            Semana {weekOfMonth.current}/{weekOfMonth.total} do mês
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span style={{ color: monthSpentPct >= 90 ? '#f43f5e' : 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)' }}>
               {formatCurrency(monthBalance.expenses)}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <div
-                className="w-5 h-5 rounded-md flex items-center justify-center"
-                style={{ background: monthBalance.balance >= 0 ? '#06b6d420' : '#f59e0b20' }}
-              >
-                <ArrowUpDown size={11} style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b' }} />
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Saldo</p>
-            </div>
-            <p
-              className="text-base font-bold"
-              style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', fontFamily: 'var(--font-dm-mono)' }}
+            </span>
+            <span style={{ color: 'var(--text-dim)' }}>/</span>
+            <span style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-dm-mono)' }}>
+              ~{formatCurrency(monthlyBudgetEst)}
+            </span>
+            <span
+              className="px-1.5 py-0.5 rounded-lg font-medium"
+              style={{
+                background: monthSpentPct >= 90 ? '#f43f5e20' : 'var(--bg-input)',
+                color: monthSpentPct >= 90 ? '#f43f5e' : 'var(--text-muted)',
+                fontFamily: 'var(--font-dm-mono)',
+              }}
             >
-              {monthBalance.balance >= 0 ? '+' : ''}{formatCurrency(monthBalance.balance)}
-            </p>
+              {monthSpentPct.toFixed(0)}%
+            </span>
           </div>
         </div>
       </motion.div>
