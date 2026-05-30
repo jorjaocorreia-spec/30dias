@@ -203,3 +203,29 @@ export function handleHelp(): string {
     '• "ajuda" → esta mensagem',
   ].join('\n')
 }
+
+// ── Welcome ───────────────────────────────────────────────────────────────────
+
+export function getWelcomeMessage(): string {
+  return [
+    '👋 *Bem-vindo ao 7Dias!*',
+    '',
+    'Sou seu assistente financeiro. Por aqui você registra despesas, receitas e consulta seu financeiro sem precisar abrir o app.',
+    '',
+    '*📤 Registrar despesa — mande algo como:*',
+    '_"gastei 50 no mercado no pix"_',
+    '_"paguei 30 de Uber no cartão"_',
+    '_"farmácia 25 reais"_',
+    '',
+    '*📥 Registrar receita — use_ recebi, ganhei _ou_ entrou:*',
+    '_"recebi 150 do IRPF"_',
+    '_"ganhei 500 de freela no pix"_',
+    '',
+    '*🔍 Consultas disponíveis:*',
+    '• "semana" → saldo da semana atual',
+    '• "mês" → balanço mensal',
+    '• "receber" → valores a receber de participantes',
+    '• "resumo" → visão compacta semana + mês',
+    '• "ajuda" → ver esta mensagem novamente',
+  ].join('\n')
+}

@@ -255,6 +255,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 
 - [ ] Exportar dados como CSV
 - [ ] Gráfico de evolução mensal (receitas vs despesas)
+- [ ] Mensagem de boas-vindas via WhatsApp ao cadastrar número: quando o usuário salva o número pela primeira vez na página `/integrations`, o bot deve enviar automaticamente uma mensagem se apresentando e listando todos os comandos disponíveis (mesma estrutura do intent `help`)
 
 ## Lembretes de vencimento (despesas fixas)
 

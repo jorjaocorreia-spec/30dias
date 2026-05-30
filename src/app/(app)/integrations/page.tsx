@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MessageCircle, Check, Info, Smartphone } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
+import { supabase } from '@/lib/supabase'
 
 export default function IntegrationsPage() {
   const { preferences, setWhatsappNumber } = useAppStore()
@@ -18,9 +19,24 @@ export default function IntegrationsPage() {
       return
     }
     setError('')
+    const isFirstTime = !preferences.whatsappNumber
     await setWhatsappNumber(cleaned)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+
+    if (isFirstTime) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        fetch('/api/whatsapp/welcome', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ phone: cleaned }),
+        }).catch(e => console.error('[welcome]', e))
+      }
+    }
   }
 
   return (
