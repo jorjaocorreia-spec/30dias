@@ -28,6 +28,19 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: '30dias — Controle financeiro mensal',
   description: 'Seu dinheiro. A cada 30 dias.',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '30dias',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'msapplication-TileColor': '#0F0F14',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
