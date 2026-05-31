@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Plus, Check, Users, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { Expense, ExpenseParticipant, PaymentMethod } from '@/types'
-import { formatCurrency, getTodayKey } from '@/lib/weekHelpers'
+import { formatCurrency, getTodayKey, toLocalDateKey } from '@/lib/weekHelpers'
 import { CategoryIcon } from './CategoryIcon'
 import { nanoid } from 'nanoid'
 
@@ -25,7 +25,7 @@ const schema = z.object({
   amount: z.number().positive('Valor deve ser maior que zero'),
   categoryId: z.string().min(1, 'Selecione uma categoria'),
   description: z.string().min(1, 'Descrição obrigatória').max(100),
-  date: z.string().min(1, 'Data obrigatória'),
+  date: z.string().min(1, 'Data obrigatória'), // armazena YYYY-MM-DDTHH:mm no form
   notes: z.string().optional(),
   paymentMethod: z.enum(['credit_card', 'pix', 'ted', 'cash']),
   establishmentId: z.string().optional(),
@@ -38,6 +38,12 @@ interface Props {
   onSuccess: (description: string) => void
 }
 
+function getNowDatetime() {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${toLocalDateKey(now)}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
 export function ExpenseForm({ initialData, onSuccess }: Props) {
   const { categories, establishments, addExpense, updateExpense, addCategory, addEstablishment, addFixedExpense } = useAppStore()
   const isEdit = !!initialData
@@ -48,7 +54,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       amount: initialData?.amount ?? ('' as unknown as number),
       categoryId: initialData?.categoryId ?? '',
       description: initialData?.description ?? '',
-      date: initialData?.date ?? getTodayKey(),
+      date: initialData ? `${initialData.date}T${initialData.time ?? '12:00'}` : getNowDatetime(),
       notes: initialData?.notes ?? '',
       paymentMethod: initialData?.paymentMethod ?? 'pix',
       establishmentId: initialData?.establishmentId ?? undefined,
@@ -172,17 +178,19 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
     amount: '' as unknown as number,
     categoryId: '',
     description: '',
-    date: getTodayKey(),
+    date: getNowDatetime(),
     notes: '',
     paymentMethod: 'pix' as const,
     establishmentId: undefined,
   }
 
   const onSubmit = (data: FormData) => {
+    const [dateOnly, timeOnly] = data.date.includes('T') ? data.date.split('T') : [data.date, undefined]
+    const expenseData = { ...data, date: dateOnly, time: timeOnly }
     const sharedWith = isShared && participants.length > 0 ? participants : undefined
     const savedUserShares = isShared && userShares > 1 ? userShares : undefined
     if (isEdit && initialData) {
-      updateExpense(initialData.id, { ...data, sharedWith, userShares: savedUserShares })
+      updateExpense(initialData.id, { ...expenseData, sharedWith, userShares: savedUserShares })
       onSuccess(data.description)
     } else if (isFixed) {
       addFixedExpense({
@@ -199,7 +207,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       setIsFixed(false)
       onSuccess(data.description)
     } else {
-      addExpense({ ...data, sharedWith, userShares: savedUserShares })
+      addExpense({ ...expenseData, sharedWith, userShares: savedUserShares })
       reset(newExpenseDefaults)
       setEstSearch(''); setEstSelected(false)
       setParticipants([])
@@ -636,11 +644,11 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
         {errors.description && <p className="text-xs mt-1.5 text-red-400">{errors.description.message}</p>}
       </div>
 
-      {/* Date */}
+      {/* Date + Time */}
       {!isFixed && (
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Data</label>
-          <input type="date" {...register('date')} className={fieldClass} style={fieldStyle} />
+          <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Data e hora</label>
+          <input type="datetime-local" {...register('date')} className={fieldClass} style={fieldStyle} />
           {errors.date && <p className="text-xs mt-1.5 text-red-400">{errors.date.message}</p>}
         </div>
       )}

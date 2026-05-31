@@ -94,7 +94,7 @@ interface AppState {
 
   // Fixed Expense Months
   addFixedExpenseMonth: (data: Omit<FixedExpenseMonth, 'id'>) => void
-  updateFixedExpenseMonth: (id: string, amount: number) => Promise<void>
+  updateFixedExpenseMonth: (id: string, amount: number, date?: string) => Promise<void>
   deleteFixedExpenseMonth: (id: string) => void
   syncFixedExpenses: () => void
 
@@ -421,15 +421,19 @@ export const useAppStore = create<AppState>()((set, get) => ({
     get().syncFixedExpenses()
   },
 
-  updateFixedExpenseMonth: async (id, amount) => {
+  updateFixedExpenseMonth: async (id, amount, date?) => {
+    const update: Partial<FixedExpenseMonth> = { amount }
+    if (date !== undefined) update.date = date
     set(state => ({
-      fixedExpenseMonths: state.fixedExpenseMonths.map(fem => fem.id === id ? { ...fem, amount } : fem),
+      fixedExpenseMonths: state.fixedExpenseMonths.map(fem => fem.id === id ? { ...fem, ...update } : fem),
       expenses: state.expenses.filter(e => e.fixedExpenseMonthId !== id),
     }))
     const { user } = get()
     if (user) {
+      const dbFields: Record<string, unknown> = { amount }
+      if (date !== undefined) dbFields.date = date
       const results = await Promise.all([
-        supabase.from('fixed_expense_months').update({ amount }).eq('id', id),
+        supabase.from('fixed_expense_months').update(dbFields).eq('id', id),
         supabase.from('expenses').delete().eq('fixed_expense_month_id', id),
       ])
       results.forEach(({ error }) => { if (error) console.error(error) })
@@ -459,32 +463,36 @@ export const useAppStore = create<AppState>()((set, get) => ({
       const fe = fixedExpenses.find(fe => fe.id === fem.fixedExpenseId)
       if (!fe || !fe.isActive) continue
 
-      const [year, month] = fem.month.split('-').map(Number)
-      const monthStart = new Date(year, month - 1, 1)
-      const monthEnd = new Date(year, month, 0)
-      const mondays = getMondaysBetween(monthStart, monthEnd)
-      const weeklyAmount = Math.round((fem.amount / 4) * 100) / 100
+      const alreadyExists = expenses.some(e => e.fixedExpenseMonthId === fem.id)
+      if (alreadyExists) continue
 
-      for (const monday of mondays) {
-        const dateStr = toLocalDateKey(monday)
-        const weekKey = getWeekKey(monday)
-        const exists = expenses.some(e => e.fixedExpenseMonthId === fem.id && e.weekKey === weekKey)
-        if (!exists) {
-          newEntries.push({
-            id: nanoid(),
-            amount: weeklyAmount,
-            categoryId: fe.categoryId,
-            description: fe.description,
-            date: dateStr,
-            weekKey,
-            paymentMethod: fe.paymentMethod,
-            establishmentId: fe.establishmentId,
-            notes: fe.notes,
-            fixedExpenseId: fe.id,
-            fixedExpenseMonthId: fem.id,
-          })
-        }
+      // Data do lançamento: fem.date > dueDateDay do template > 1º do mês
+      let dateStr: string
+      if (fem.date) {
+        dateStr = fem.date
+      } else if (fe.dueDateDay) {
+        const [year, month] = fem.month.split('-').map(Number)
+        const lastDay = new Date(year, month, 0).getDate()
+        const day = Math.min(fe.dueDateDay, lastDay)
+        dateStr = `${fem.month}-${String(day).padStart(2, '0')}`
+      } else {
+        dateStr = `${fem.month}-01`
       }
+
+      const weekKey = getWeekKey(dateStr)
+      newEntries.push({
+        id: nanoid(),
+        amount: fem.amount,
+        categoryId: fe.categoryId,
+        description: fe.description,
+        date: dateStr,
+        weekKey,
+        paymentMethod: fe.paymentMethod,
+        establishmentId: fe.establishmentId,
+        notes: fe.notes,
+        fixedExpenseId: fe.id,
+        fixedExpenseMonthId: fem.id,
+      })
     }
 
     if (newEntries.length > 0) {
@@ -655,28 +663,21 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   getFixedWeeklyContribution: (month) => {
     const m = month ?? new Date().toISOString().slice(0, 7)
-    const { fixedExpenseMonths, fixedExpenses } = get()
-    return fixedExpenseMonths
-      .filter(fem => fem.month === m)
-      .reduce((sum, fem) => {
-        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
-        if (!fe?.isActive) return sum
-        return sum + Math.round((fem.amount / 4) * 100) / 100
-      }, 0)
+    const [year, mon] = m.split('-').map(Number)
+    const weeks = getMondaysBetween(new Date(year, mon - 1, 1), new Date(year, mon, 0)).length || 1
+    const monthly = get().getFixedMonthlyContribution(m)
+    return Math.round((monthly / weeks) * 100) / 100
   },
 
   getFixedCategoryContribution: (month) => {
     const m = month ?? new Date().toISOString().slice(0, 7)
-    const { fixedExpenseMonths, fixedExpenses } = get()
+    const [year, mon] = m.split('-').map(Number)
+    const weeks = getMondaysBetween(new Date(year, mon - 1, 1), new Date(year, mon, 0)).length || 1
+    const byCategory = get().getFixedMonthlyCategoryContribution(m)
     const result: Record<string, number> = {}
-    fixedExpenseMonths
-      .filter(fem => fem.month === m)
-      .forEach(fem => {
-        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
-        if (!fe?.isActive) return
-        const weekly = Math.round((fem.amount / 4) * 100) / 100
-        result[fe.categoryId] = (result[fe.categoryId] ?? 0) + weekly
-      })
+    for (const [catId, monthly] of Object.entries(byCategory)) {
+      result[catId] = Math.round((monthly / weeks) * 100) / 100
+    }
     return result
   },
 

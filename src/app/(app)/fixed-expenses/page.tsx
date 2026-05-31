@@ -2,7 +2,7 @@
 
 import { useState, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { formatCurrency } from '@/lib/weekHelpers'
@@ -29,6 +29,13 @@ function currentMonthKey(): string {
 function formatMonth(month: string): string {
   const [y, m] = month.split('-').map(Number)
   return new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+}
+
+function prevMonth(month: string): string {
+  const [y, m] = month.split('-').map(Number)
+  return m === 1
+    ? `${y - 1}-12`
+    : `${y}-${String(m - 1).padStart(2, '0')}`
 }
 
 function nextMonth(month: string): string {
@@ -86,6 +93,8 @@ export default function FixedExpensesPage() {
     addCategory, addEstablishment,
   } = useAppStore()
 
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthKey())
+
   // template form state
   const [showTemplateForm, setShowTemplateForm] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<FixedExpense | null>(null)
@@ -96,6 +105,7 @@ export default function FixedExpensesPage() {
   // monthly register state
   const [registerTarget, setRegisterTarget] = useState<{ fe: FixedExpense; month: string; existingId?: string; existingAmount?: number } | null>(null)
   const [registerAmount, setRegisterAmount] = useState('')
+  const [registerDate, setRegisterDate] = useState('')
 
   // expanded template history
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -122,15 +132,20 @@ export default function FixedExpensesPage() {
   const pending = useMemo(() => {
     const result: { fe: FixedExpense; month: string }[] = []
     for (const fe of fixedExpenses.filter((fe) => fe.isActive)) {
-      for (const month of monthsSince(fe.createdAt)) {
-        const registered = fixedExpenseMonths.some(
-          (fem) => fem.fixedExpenseId === fe.id && fem.month === month
-        )
-        if (!registered) result.push({ fe, month })
-      }
+      const registered = fixedExpenseMonths.some(
+        (fem) => fem.fixedExpenseId === fe.id && fem.month === selectedMonth
+      )
+      if (!registered) result.push({ fe, month: selectedMonth })
     }
     return result
-  }, [fixedExpenses, fixedExpenseMonths])
+  }, [fixedExpenses, fixedExpenseMonths, selectedMonth])
+
+  const monthTotal = useMemo(
+    () => fixedExpenseMonths
+      .filter((fem) => fem.month === selectedMonth)
+      .reduce((sum, fem) => sum + fem.amount, 0),
+    [fixedExpenseMonths, selectedMonth]
+  )
 
   // ── template form handlers ──────────────────────────────────────────────────
 
@@ -198,12 +213,23 @@ export default function FixedExpensesPage() {
 
   // ── monthly register handlers ───────────────────────────────────────────────
 
+  const defaultDateForMonth = (fe: FixedExpense, month: string): string => {
+    if (fe.dueDateDay) {
+      const [y, m] = month.split('-').map(Number)
+      const lastDay = new Date(y, m, 0).getDate()
+      const day = Math.min(fe.dueDateDay, lastDay)
+      return `${month}-${String(day).padStart(2, '0')}`
+    }
+    return `${month}-01`
+  }
+
   const openRegister = (fe: FixedExpense, month: string) => {
     const existing = fixedExpenseMonths.find(
       (fem) => fem.fixedExpenseId === fe.id && fem.month === month
     )
     setRegisterTarget({ fe, month, existingId: existing?.id, existingAmount: existing?.amount })
     setRegisterAmount(existing ? String(existing.amount) : String(fe.suggestedAmount || ''))
+    setRegisterDate(existing?.date ?? defaultDateForMonth(fe, month))
     setTimeout(() => registerInputRef.current?.focus(), 80)
   }
 
@@ -213,12 +239,13 @@ export default function FixedExpensesPage() {
     if (isNaN(amount) || amount <= 0) return
 
     if (registerTarget.existingId) {
-      updateFixedExpenseMonth(registerTarget.existingId, amount)
+      updateFixedExpenseMonth(registerTarget.existingId, amount, registerDate || undefined)
     } else {
       addFixedExpenseMonth({
         fixedExpenseId: registerTarget.fe.id,
         month: registerTarget.month,
         amount,
+        date: registerDate || undefined,
       })
     }
     setRegisterTarget(null)
@@ -276,11 +303,42 @@ export default function FixedExpensesPage() {
         </button>
       </div>
 
+      {/* Month selector */}
+      <div
+        className="flex items-center justify-between p-4 rounded-2xl mb-4"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+      >
+        <button
+          onClick={() => setSelectedMonth(prevMonth(selectedMonth))}
+          title="Mês anterior"
+          className="w-8 h-8 rounded-xl flex items-center justify-center"
+          style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <div className="text-center">
+          <p className="font-semibold text-sm capitalize">{formatMonth(selectedMonth)}</p>
+          {monthTotal > 0 && (
+            <p className="text-xs mt-0.5 font-bold" style={{ color: 'var(--accent)', fontFamily: 'var(--font-dm-mono)' }}>
+              {formatCurrency(monthTotal)}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => setSelectedMonth(nextMonth(selectedMonth))}
+          title="Próximo mês"
+          className="w-8 h-8 rounded-xl flex items-center justify-center"
+          style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
       {/* ── Pending section ── */}
       {pending.length > 0 && (
         <div className="mb-5">
           <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-            Pendentes de registro
+            Pendentes neste mês
           </p>
           <div className="space-y-2">
             {pending.map(({ fe, month }) => {
@@ -373,6 +431,19 @@ export default function FixedExpensesPage() {
                     onKeyDown={(e) => { if (e.key === 'Enter') confirmRegister() }}
                     className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
                     style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Data do lançamento
+                  </label>
+                  <input
+                    type="date"
+                    value={registerDate}
+                    onChange={(e) => setRegisterDate(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
+                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)', colorScheme: 'dark' }}
                   />
                 </div>
 

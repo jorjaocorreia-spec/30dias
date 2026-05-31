@@ -29,6 +29,7 @@ export interface Expense {
   categoryId: string
   description: string
   date: string // ISO date string YYYY-MM-DD
+  time?: string // HH:mm (hora local do lançamento)
   notes?: string
   weekKey: string // YYYY-WNN format
   paymentMethod: PaymentMethod
@@ -58,6 +59,7 @@ export interface FixedExpenseMonth {
   fixedExpenseId: string
   month: string   // YYYY-MM
   amount: number  // actual amount confirmed for this month
+  date?: string   // YYYY-MM-DD — data real do lançamento no mês
 }
 
 export interface IncomeCategory {
