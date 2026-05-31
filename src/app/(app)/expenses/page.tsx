@@ -49,7 +49,7 @@ export default function ExpensesListPage() {
       .sort((a, b) => {
         const dateDiff = b.date.localeCompare(a.date)
         if (dateDiff !== 0) return dateDiff
-        return (indexMap.get(b.id) ?? 0) - (indexMap.get(a.id) ?? 0)
+        return (indexMap.get(a.id) ?? 0) - (indexMap.get(b.id) ?? 0)
       })
   }, [expenses, filterCategory, filterFrom, filterTo, filterType])
 

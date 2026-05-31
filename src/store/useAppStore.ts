@@ -229,7 +229,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('establishments').select('*'),
-        supabase.from('expenses').select('*'),
+        supabase.from('expenses').select('*').order('created_at', { ascending: false }),
         supabase.from('fixed_expenses').select('*'),
         supabase.from('fixed_expense_months').select('*'),
         supabase.from('income_categories').select('*'),
@@ -290,7 +290,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   // ── Expenses ────────────────────────────────────────────────────────────────
   addExpense: (data) => {
     const expense: Expense = { ...data, id: nanoid(), weekKey: getWeekKey(data.date) }
-    set(state => ({ expenses: [...state.expenses, expense] }))
+    set(state => ({ expenses: [expense, ...state.expenses] }))
     const { user } = get()
     if (user) supabase.from('expenses').insert(toDB(expense, user.id)).then(({ error }) => { if (error) console.error(error) })
   },
