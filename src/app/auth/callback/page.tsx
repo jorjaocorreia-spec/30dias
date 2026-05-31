@@ -32,13 +32,13 @@ export default function AuthCallbackPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 10,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-        }}>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>7</span>
-        </div>
+        <img
+          src="/pwa-192.png"
+          alt="30dias"
+          width={48}
+          height={48}
+          style={{ borderRadius: 12, boxShadow: '0 0 24px rgba(16,185,129,0.4)' }}
+        />
         <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Autenticando...</p>
       </div>
     </div>

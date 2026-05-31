@@ -19,14 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return (
         <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'linear-gradient(135deg, #10b981, #8b5cf6)',
-              boxShadow: '0 0 24px rgba(16,185,129,0.4)',
-            }}>
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 18, fontFamily: 'var(--font-syne)' }}>7</span>
-            </div>
+            <img
+              src="/pwa-192.png"
+              alt="30dias"
+              width={48}
+              height={48}
+              style={{ borderRadius: 12, boxShadow: '0 0 24px rgba(16,185,129,0.4)' }}
+            />
             <p style={{ color: 'var(--text-muted)', fontSize: 14, fontFamily: 'var(--font-dm-mono)' }}>carregando...</p>
           </div>
         </div>
