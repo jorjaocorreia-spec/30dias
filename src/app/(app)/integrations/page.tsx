@@ -189,6 +189,33 @@ export default function IntegrationsPage() {
           </div>
         </div>
 
+        {/* Registro por áudio */}
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={14} style={{ color: 'var(--text-muted)' }} />
+            <p className="text-sm font-medium">Registro por áudio 🎙️</p>
+          </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+            Não precisa digitar — mande um <span style={{ color: 'var(--text)' }}>áudio no WhatsApp</span> descrevendo o gasto ou receita. O bot transcreve e registra automaticamente. Funciona exatamente igual às mensagens de texto.
+          </p>
+          <div className="space-y-2">
+            {[
+              { msg: '🎙️ [áudio] "gastei oitenta reais no supermercado no pix"', resp: '✅ R$ 80,00 · Alimentação · 31/05' },
+              { msg: '🎙️ [áudio] "paguei a conta de luz cento e cinquenta reais"', resp: '✅ R$ 150,00 · Contas · 31/05' },
+              { msg: '🎙️ [áudio] "recebi dois mil de salário via ted"', resp: '✅ +R$ 2.000,00 · Salário · 31/05' },
+            ].map(({ msg, resp }) => (
+              <div key={msg} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+                <div className="px-3 py-2 text-xs" style={{ background: 'rgba(139,92,246,0.06)', color: 'var(--text-muted)' }}>
+                  <span style={{ color: 'var(--text)' }}>{msg}</span>
+                </div>
+                <div className="px-3 py-2 text-xs" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+                  🤖 {resp}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Consultas disponíveis */}
         <div className="px-5 py-4">
           <div className="flex items-center gap-2 mb-3">
