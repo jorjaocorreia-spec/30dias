@@ -13,8 +13,13 @@ import {
 } from '@/lib/whatsapp/queryHandlers'
 import { getWeekKey } from '@/lib/weekHelpers'
 import { nanoid } from 'nanoid'
+import { getTranscriptionFromAudioMessage } from '@/lib/whatsapp/transcribeAudio'
 
-function extractTextMessage(body: any): { phone: string; text: string } | null {
+type ExtractedMessage =
+  | { phone: string; text: string; isAudio: false }
+  | { phone: string; text: null; isAudio: true; messageData: any }
+
+function extractMessage(body: any): ExtractedMessage | null {
   const key = body?.data?.key
   console.log('[WA] key:', JSON.stringify(key))
 
@@ -43,6 +48,14 @@ function extractTextMessage(body: any): { phone: string; text: string } | null {
   }
 
   const message = body?.data?.message
+  const messageType: string = body?.data?.messageType ?? ''
+
+  // Audio (voice note / PTT)
+  if (messageType === 'audioMessage' && message?.audioMessage) {
+    console.log('[WA] phone:', phone, '| type: audioMessage')
+    return { phone, text: null, isAudio: true, messageData: body.data }
+  }
+
   const text: string =
     message?.conversation ??
     message?.extendedTextMessage?.text ??
@@ -51,11 +64,11 @@ function extractTextMessage(body: any): { phone: string; text: string } | null {
   console.log('[WA] phone:', phone, '| text:', text)
 
   if (!text.trim()) {
-    console.log('[WA] skip: no text — messageType:', body?.data?.messageType, '| messageKeys:', Object.keys(message ?? {}))
+    console.log('[WA] skip: no text — messageType:', messageType, '| messageKeys:', Object.keys(message ?? {}))
     return null
   }
 
-  return { phone, text: text.trim() }
+  return { phone, text: text.trim(), isAudio: false }
 }
 
 export async function GET(): Promise<NextResponse> {
@@ -88,10 +101,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true, skipped: true, event })
   }
 
-  const msg = extractTextMessage(body)
-  if (!msg) return NextResponse.json({ ok: true, skipped: true, reason: 'extractTextMessage returned null' })
+  const msg = extractMessage(body)
+  if (!msg) return NextResponse.json({ ok: true, skipped: true, reason: 'extractMessage returned null' })
 
-  const { phone, text } = msg
+  const { phone } = msg
+
+  // Transcribe audio or use text directly
+  let text: string
+  if (msg.isAudio) {
+    try {
+      text = await getTranscriptionFromAudioMessage(msg.messageData)
+      console.log('[WA] audio transcription:', text)
+    } catch (err) {
+      console.error('[WA] transcription failed:', err)
+      await sendWhatsAppMessage(phone, '❌ Não consegui processar seu áudio. Tente enviar como mensagem de texto.')
+      return NextResponse.json({ ok: true, skipped: true, reason: 'transcription failed' })
+    }
+    if (!text) {
+      await sendWhatsAppMessage(phone, '❌ Não entendi o áudio. Tente falar mais claramente ou enviar como texto.')
+      return NextResponse.json({ ok: true, skipped: true, reason: 'empty transcription' })
+    }
+  } else {
+    text = msg.text
+  }
+
+  const isAudio = msg.isAudio
 
   // Remove country code 55 to get local number
   const phoneAlt = phone.startsWith('55') && phone.length >= 12 ? phone.slice(2) : null
@@ -171,7 +205,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const incomeDateFmt = new Date(income.receivedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     const incomeCategoryName = (incomeCategories ?? []).find(c => c.id === income.categoryId)?.name ?? income.categoryId
 
-    await sendWhatsAppMessage(phone, `✅ *+${incomeAmount}* · ${incomeCategoryName} · ${incomeDateFmt}\n_${income.description}_`)
+    const incomeConfirm = isAudio
+      ? `✅ *+${incomeAmount}* · ${incomeCategoryName} · ${incomeDateFmt}\n_${income.description}_\n🎤 _"${text}"_`
+      : `✅ *+${incomeAmount}* · ${incomeCategoryName} · ${incomeDateFmt}\n_${income.description}_`
+    await sendWhatsAppMessage(phone, incomeConfirm)
     console.log('[WA] income saved:', incomeId)
     return NextResponse.json({ ok: true, incomeEntryId: incomeId })
   }
@@ -238,7 +275,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const dateFormatted = new Date(expense.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
   const categoryName = categories?.find(c => c.id === expense.categoryId)?.name ?? expense.categoryId
 
-  await sendWhatsAppMessage(phone, `✅ *${amount}* · ${categoryName} · ${dateFormatted}\n_${expense.description}_`)
+  const confirm = isAudio
+    ? `✅ *${amount}* · ${categoryName} · ${dateFormatted}\n_${expense.description}_\n🎤 _"${text}"_`
+    : `✅ *${amount}* · ${categoryName} · ${dateFormatted}\n_${expense.description}_`
+  await sendWhatsAppMessage(phone, confirm)
 
   console.log('[WA] expense saved:', id)
   return NextResponse.json({ ok: true, expenseId: id })
