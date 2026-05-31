@@ -328,9 +328,19 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   deleteExpense: (id) => {
-    set(state => ({ expenses: state.expenses.filter(e => e.id !== id) }))
+    const expense = get().expenses.find(e => e.id === id)
+    const femId = expense?.fixedExpenseMonthId
+    set(state => ({
+      expenses: state.expenses.filter(e => e.id !== id),
+      fixedExpenseMonths: femId
+        ? state.fixedExpenseMonths.filter(fem => fem.id !== femId)
+        : state.fixedExpenseMonths,
+    }))
     const { user } = get()
-    if (user) supabase.from('expenses').delete().eq('id', id).then(({ error }) => { if (error) console.error(error) })
+    if (user) {
+      supabase.from('expenses').delete().eq('id', id).then(({ error }) => { if (error) console.error(error) })
+      if (femId) supabase.from('fixed_expense_months').delete().eq('id', femId).then(({ error }) => { if (error) console.error(error) })
+    }
   },
 
   // ── Categories ──────────────────────────────────────────────────────────────
