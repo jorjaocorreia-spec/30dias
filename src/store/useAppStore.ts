@@ -229,7 +229,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('establishments').select('*'),
-        supabase.from('expenses').select('*').order('created_at', { ascending: false }),
+        supabase.from('expenses').select('*'),
         supabase.from('fixed_expenses').select('*'),
         supabase.from('fixed_expense_months').select('*'),
         supabase.from('income_categories').select('*'),
