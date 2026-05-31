@@ -269,10 +269,28 @@ export const useAppStore = create<AppState>()((set, get) => ({
       await supabase.from('user_preferences').insert(toDB(DEFAULT_PREFERENCES, user.id))
     }
 
+    // Deduplicate fixed expenses: keep one entry per (fixedExpenseMonthId, weekKey)
+    const rawExpenses: Expense[] = expRes.data?.map(r => fromDB<Expense>(r)) ?? []
+    const seenFixed = new Set<string>()
+    const duplicateIds: string[] = []
+    const expenses = rawExpenses.filter(e => {
+      if (!e.fixedExpenseMonthId) return true
+      const key = `${e.fixedExpenseMonthId}|${e.weekKey}`
+      if (seenFixed.has(key)) { duplicateIds.push(e.id); return false }
+      seenFixed.add(key)
+      return true
+    })
+    if (duplicateIds.length > 0) {
+      supabase.from('expenses').delete().in('id', duplicateIds).then(({ error }) => {
+        if (error) console.error('dedup error', error)
+        else console.log(`Removed ${duplicateIds.length} duplicate fixed expenses`)
+      })
+    }
+
     set({
       categories,
       establishments: estRes.data?.map(r => fromDB<Establishment>(r)) ?? [],
-      expenses: expRes.data?.map(r => fromDB<Expense>(r)) ?? [],
+      expenses,
       fixedExpenses: feRes.data?.map(r => fromDB<FixedExpense>(r)) ?? [],
       fixedExpenseMonths: femRes.data?.map(r => fromDB<FixedExpenseMonth>(r)) ?? [],
       incomeCategories,
