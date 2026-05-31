@@ -440,9 +440,10 @@ export default function FixedExpensesPage() {
                   </label>
                   <input
                     type="date"
+                    title="Data do lançamento"
                     value={registerDate}
                     onChange={(e) => setRegisterDate(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
+                    className="w-full px-4 py-3 rounded-2xl border outline-none text-sm date-input-dark"
                     style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)', colorScheme: 'dark' }}
                   />
                 </div>
