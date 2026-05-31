@@ -89,6 +89,12 @@ export default function DashboardPage() {
     [monthExpenses]
   )
 
+  const fixedMonthExpenses = useMemo(
+    () => monthExpenses.filter(e => !!e.fixedExpenseId).reduce((sum, e) => sum + getEffectiveAmount(e), 0),
+    [monthExpenses]
+  )
+  const variableMonthExpenses = monthBalance.expenses - fixedMonthExpenses
+
   const budgetPercent = totalMonthlyBudget > 0
     ? Math.min((totalMonthlyExpenses / totalMonthlyBudget) * 100, 100)
     : 0
@@ -306,9 +312,15 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: 'Receitas', value: monthBalance.income, color: '#10b981', Icon: TrendingUp },
-            { label: 'Despesas', value: monthBalance.expenses, color: '#f43f5e', Icon: TrendingDown },
+            {
+              label: 'Despesas', value: monthBalance.expenses, color: '#f43f5e', Icon: TrendingDown,
+              subLines: [
+                { label: 'Fixa', value: fixedMonthExpenses, color: '#8b5cf6' },
+                { label: 'Variável', value: variableMonthExpenses, color: '#f43f5e' },
+              ],
+            },
             { label: 'Saldo', value: monthBalance.balance, color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', Icon: ArrowUpDown, sign: true },
-          ].map(({ label, value, color, Icon, sign }) => (
+          ].map(({ label, value, color, Icon, sign, subLines }) => (
             <div key={label}>
               <div className="flex items-center gap-1.5 mb-1">
                 <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: color + '20' }}>
@@ -319,6 +331,12 @@ export default function DashboardPage() {
               <p className="text-base font-bold" style={{ color, fontFamily: 'var(--font-dm-mono)' }}>
                 {sign && value >= 0 ? '+' : ''}{formatCurrency(value)}
               </p>
+              {subLines && subLines.map(sl => (
+                <div key={sl.label} className="flex items-center justify-between mt-1 gap-1">
+                  <span style={{ color: 'var(--text-dim)', fontSize: 10, whiteSpace: 'nowrap' }}>↳ {sl.label}</span>
+                  <span style={{ color: sl.color, fontFamily: 'var(--font-dm-mono)', fontSize: 10, fontWeight: 600 }}>{formatCurrency(sl.value)}</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>
