@@ -45,7 +45,7 @@ export default function ExpensesListPage() {
         if (filterType === 'shared' && !e.sharedWith?.length) return false
         return true
       })
-      .sort((a, b) => b.date < a.date ? -1 : b.date > a.date ? 1 : 0)
+      .sort((a, b) => b.date.localeCompare(a.date))
   }, [expenses, filterCategory, filterFrom, filterTo, filterType])
 
   const hasFilters = !!(filterCategory || filterFrom || filterTo || filterType !== 'all')

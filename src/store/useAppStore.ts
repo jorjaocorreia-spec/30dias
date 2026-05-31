@@ -290,7 +290,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   // ── Expenses ────────────────────────────────────────────────────────────────
   addExpense: (data) => {
     const expense: Expense = { ...data, id: nanoid(), weekKey: getWeekKey(data.date) }
-    set(state => ({ expenses: [expense, ...state.expenses] }))
+    set(state => ({ expenses: [...state.expenses, expense] }))
     const { user } = get()
     if (user) supabase.from('expenses').insert(toDB(expense, user.id)).then(({ error }) => { if (error) console.error(error) })
   },
