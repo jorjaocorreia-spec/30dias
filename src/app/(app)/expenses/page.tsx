@@ -35,6 +35,7 @@ export default function ExpensesListPage() {
   }
 
   const filtered = useMemo(() => {
+    const indexMap = new Map(expenses.map((e, i) => [e.id, i]))
     return expenses
       .filter((e) => {
         if (filterCategory && e.categoryId !== filterCategory) return false
@@ -45,7 +46,11 @@ export default function ExpensesListPage() {
         if (filterType === 'shared' && !e.sharedWith?.length) return false
         return true
       })
-      .sort((a, b) => b.date.localeCompare(a.date))
+      .sort((a, b) => {
+        const dateDiff = b.date.localeCompare(a.date)
+        if (dateDiff !== 0) return dateDiff
+        return (indexMap.get(b.id) ?? 0) - (indexMap.get(a.id) ?? 0)
+      })
   }, [expenses, filterCategory, filterFrom, filterTo, filterType])
 
   const hasFilters = !!(filterCategory || filterFrom || filterTo || filterType !== 'all')
