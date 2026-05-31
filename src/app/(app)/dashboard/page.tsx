@@ -332,7 +332,7 @@ export default function DashboardPage() {
                 {sign && value >= 0 ? '+' : ''}{formatCurrency(value)}
               </p>
               {subLines && subLines.map(sl => (
-                <div key={sl.label} className="flex items-center justify-between mt-1 gap-1">
+                <div key={sl.label} className="flex items-center gap-1.5 mt-1">
                   <span style={{ color: 'var(--text-dim)', fontSize: 10, whiteSpace: 'nowrap' }}>↳ {sl.label}</span>
                   <span style={{ color: sl.color, fontFamily: 'var(--font-dm-mono)', fontSize: 10, fontWeight: 600 }}>{formatCurrency(sl.value)}</span>
                 </div>
