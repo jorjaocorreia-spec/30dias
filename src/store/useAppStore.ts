@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { Category, Establishment, Expense, ExpenseParticipant, FinancialGoal, FixedExpense, FixedExpenseMonth, GoalContribution, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry } from '@/types'
+import { Category, Establishment, Expense, ExpenseParticipant, FinancialGoal, FixedExpense, FixedExpenseMonth, GoalContribution, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry, MonthlyBudget } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/categories'
 import { DEFAULT_INCOME_CATEGORIES } from '@/data/incomeCategories'
 import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey, getEffectiveAmount, getWeeksUntilDeadline } from '@/lib/weekHelpers'
@@ -63,6 +63,7 @@ interface AppState {
   financialGoals: FinancialGoal[]
   goalContributions: GoalContribution[]
   preferences: UserPreferences
+  monthlyBudgets: MonthlyBudget[]
 
   // Auth
   initAuth: () => Promise<void>
@@ -144,6 +145,8 @@ interface AppState {
   setCategoryBudget: (categoryId: string, amount: number) => void
   setAllCategoryBudgets: (budgets: Record<string, number>) => void
   setWhatsappNumber: (number: string) => Promise<void>
+  getBudgetForMonth: (month: string) => { monthlyBudget: number; categoryBudgets: Record<string, number> }
+  saveBudgetForMonth: (month: string, data: { monthlyBudget?: number; categoryBudgets?: Record<string, number> }) => Promise<void>
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -162,6 +165,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   financialGoals: [],
   goalContributions: [],
   preferences: DEFAULT_PREFERENCES,
+  monthlyBudgets: [],
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   initAuth: async () => {
@@ -225,7 +229,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (!user) return
     set({ isLoading: true })
 
-    const [catRes, estRes, expRes, feRes, femRes, icatRes, isrcRes, ieRes, prefRes, goalsRes, contribRes] =
+    const [catRes, estRes, expRes, feRes, femRes, icatRes, isrcRes, ieRes, prefRes, goalsRes, contribRes, mbRes] =
       await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('establishments').select('*'),
@@ -238,6 +242,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
         supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('financial_goals').select('*'),
         supabase.from('goal_contributions').select('*'),
+        supabase.from('monthly_budgets').select('*'),
       ])
 
     let categories = catRes.data?.map(r => fromDB<Category>(r)) ?? []
@@ -299,6 +304,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       financialGoals: goalsRes.data?.map(r => fromDB<FinancialGoal>(r)) ?? [],
       goalContributions: contribRes.data?.map(r => fromDB<GoalContribution>(r)) ?? [],
       preferences,
+      monthlyBudgets: mbRes.data?.map(r => fromDB<MonthlyBudget>(r)) ?? [],
       isLoading: false,
     })
 
@@ -745,10 +751,64 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (user) supabase.from('user_preferences').update({ theme }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
   },
 
+  getBudgetForMonth: (month) => {
+    const { monthlyBudgets, preferences } = get()
+    const entry = monthlyBudgets.find(b => b.month === month)
+    if (entry) return { monthlyBudget: entry.monthlyBudget, categoryBudgets: entry.categoryBudgets }
+    const sorted = monthlyBudgets
+      .filter(b => b.month < month)
+      .sort((a, b) => b.month.localeCompare(a.month))
+    if (sorted[0]) return { monthlyBudget: sorted[0].monthlyBudget, categoryBudgets: sorted[0].categoryBudgets }
+    return { monthlyBudget: preferences.monthlyBudget, categoryBudgets: preferences.categoryBudgets }
+  },
+
+  saveBudgetForMonth: async (month, data) => {
+    const { user, preferences } = get()
+    if (!user) return
+    const monthlyBudgets = get().monthlyBudgets
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(month + '-01T12:00:00')
+      d.setMonth(d.getMonth() + i)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    })
+    const rows = months.map(m => {
+      const existing = monthlyBudgets.find(b => b.month === m)
+      return {
+        id: existing?.id ?? nanoid(),
+        month: m,
+        monthly_budget: data.monthlyBudget ?? existing?.monthlyBudget ?? preferences.monthlyBudget,
+        category_budgets: data.categoryBudgets ?? existing?.categoryBudgets ?? preferences.categoryBudgets,
+        user_id: user.id,
+      }
+    })
+    const { error } = await supabase.from('monthly_budgets').upsert(rows, { onConflict: 'user_id,month' })
+    if (error) { console.error(error); return }
+    set(state => {
+      const updated = [...state.monthlyBudgets]
+      rows.forEach(r => {
+        const entry: MonthlyBudget = { id: r.id, month: r.month, monthlyBudget: r.monthly_budget, categoryBudgets: r.category_budgets }
+        const idx = updated.findIndex(b => b.month === r.month)
+        if (idx >= 0) updated[idx] = entry
+        else updated.push(entry)
+      })
+      return { monthlyBudgets: updated }
+    })
+    const todayMonth = new Date().toISOString().slice(0, 7)
+    if (month === todayMonth) {
+      if (data.monthlyBudget !== undefined) {
+        set(s => ({ preferences: { ...s.preferences, monthlyBudget: data.monthlyBudget! } }))
+        supabase.from('user_preferences').update({ monthly_budget: data.monthlyBudget }).eq('user_id', user.id)
+      }
+      if (data.categoryBudgets !== undefined) {
+        set(s => ({ preferences: { ...s.preferences, categoryBudgets: data.categoryBudgets! } }))
+        supabase.from('user_preferences').update({ category_budgets: data.categoryBudgets }).eq('user_id', user.id)
+      }
+    }
+  },
+
   setMonthlyBudget: (monthlyBudget) => {
-    set(state => ({ preferences: { ...state.preferences, monthlyBudget } }))
-    const { user } = get()
-    if (user) supabase.from('user_preferences').update({ monthly_budget: monthlyBudget }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
+    const month = new Date().toISOString().slice(0, 7)
+    get().saveBudgetForMonth(month, { monthlyBudget })
   },
 
   setBudgetMode: (budgetMode) => {
@@ -769,9 +829,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   setAllCategoryBudgets: (budgets) => {
-    set(state => ({ preferences: { ...state.preferences, categoryBudgets: budgets } }))
-    const { user } = get()
-    if (user) supabase.from('user_preferences').update({ category_budgets: budgets }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
+    const month = new Date().toISOString().slice(0, 7)
+    get().saveBudgetForMonth(month, { categoryBudgets: budgets })
   },
 
   setWhatsappNumber: async (number) => {

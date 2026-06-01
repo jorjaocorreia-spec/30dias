@@ -18,7 +18,7 @@ const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const HISTORY_PAGE = 6
 
 export default function SummaryPage() {
-  const { expenses, categories, preferences, getFixedWeeklyContribution, getGoalWeeklyTotal, getMonthlyBalance } = useAppStore()
+  const { expenses, categories, preferences, getFixedWeeklyContribution, getGoalWeeklyTotal, getMonthlyBalance, getBudgetForMonth } = useAppStore()
 
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks')
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
@@ -33,7 +33,8 @@ export default function SummaryPage() {
   const isCurrentMonth = monthKey === currentMonthKey
 
   const weeksInCurrentMonth = getWeekOfMonth(getWeekKeyNow()).total
-  const effectiveBudget = preferences.monthlyBudget / weeksInCurrentMonth + getFixedWeeklyContribution() + getGoalWeeklyTotal(true)
+  const { monthlyBudget: currentMonthBudget } = getBudgetForMonth(currentMonthKey)
+  const effectiveBudget = currentMonthBudget / weeksInCurrentMonth + getFixedWeeklyContribution() + getGoalWeeklyTotal(true)
 
   // --- Week data ---
   const summary = useMemo(

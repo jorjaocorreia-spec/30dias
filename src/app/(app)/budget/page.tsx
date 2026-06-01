@@ -1,20 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, Target, Check, Lock } from 'lucide-react'
+import { Wallet, Target, Check, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { formatCurrency, getWeekOfMonth, getCurrentWeekKey } from '@/lib/weekHelpers'
+
+const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+
+function formatMonthLabel(month: string) {
+  const [y, m] = month.split('-')
+  return `${MONTH_NAMES[parseInt(m) - 1]} ${y}`
+}
+
+function addMonths(month: string, delta: number) {
+  const d = new Date(month + '-01T12:00:00')
+  d.setMonth(d.getMonth() + delta)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
 
 export default function BudgetPage() {
   const {
     preferences, categories, financialGoals,
     getGoalWeeklyTotal, getGoalProgress,
-    setMonthlyBudget, setBudgetMode, setAllCategoryBudgets,
+    setBudgetMode,
     getFixedMonthlyContribution, getFixedMonthlyCategoryContribution,
+    getBudgetForMonth, saveBudgetForMonth,
   } = useAppStore()
-  const { budgetMode, monthlyBudget, categoryBudgets = {} } = preferences
+  const { budgetMode } = preferences
+
+  const todayMonth = new Date().toISOString().slice(0, 7)
+  const [monthKey, setMonthKey] = useState(todayMonth)
+  const isPast = monthKey < todayMonth
+
+  const { monthlyBudget, categoryBudgets = {} } = getBudgetForMonth(monthKey)
 
   const fixedMonthly = getFixedMonthlyContribution()
   const fixedByCategory = getFixedMonthlyCategoryContribution()
@@ -35,6 +55,17 @@ export default function BudgetPage() {
   const [savedFixed, setSavedFixed] = useState(false)
   const [savedCat, setSavedCat] = useState(false)
 
+  // Reset form when month changes
+  useEffect(() => {
+    const { monthlyBudget: mb, categoryBudgets: cb = {} } = getBudgetForMonth(monthKey)
+    setFixedValue(String(mb))
+    setCatValues(Object.fromEntries(
+      categories.map((c) => [c.id, cb[c.id] ? String(cb[c.id]) : ''])
+    ))
+    setSavedFixed(false)
+    setSavedCat(false)
+  }, [monthKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const totalCat = categories.reduce((sum, c) => {
     const v = parseFloat(catValues[c.id] ?? '')
     return sum + (isNaN(v) || v < 0 ? 0 : v)
@@ -42,23 +73,25 @@ export default function BudgetPage() {
   const totalCatFixed = Object.values(fixedByCategory).reduce((a, b) => a + b, 0)
   const hasAnyCatFixed = Object.values(fixedByCategory).some(v => v > 0)
 
-  const handleSaveFixed = () => {
+  const handleSaveFixed = async () => {
+    if (isPast) return
     const v = parseFloat(fixedValue)
     if (!isNaN(v) && v > 0) {
-      setMonthlyBudget(v)
+      await saveBudgetForMonth(monthKey, { monthlyBudget: v })
       setSavedFixed(true)
       setTimeout(() => setSavedFixed(false), 2000)
     }
   }
 
-  const handleSaveCat = () => {
+  const handleSaveCat = async () => {
+    if (isPast) return
     const budgets = Object.fromEntries(
       categories.map((c) => {
         const v = parseFloat(catValues[c.id] ?? '')
         return [c.id, isNaN(v) || v < 0 ? 0 : v]
       })
     )
-    setAllCategoryBudgets(budgets)
+    await saveBudgetForMonth(monthKey, { categoryBudgets: budgets })
     setSavedCat(true)
     setTimeout(() => setSavedCat(false), 2000)
   }
@@ -72,12 +105,60 @@ export default function BudgetPage() {
     <div className="px-4 py-5 lg:px-8 lg:py-8 max-w-2xl mx-auto">
 
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-xl font-bold">Orçamento</h1>
         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
           Defina quanto deseja gastar por mês
         </p>
       </div>
+
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-5 rounded-2xl px-4 py-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <button
+          onClick={() => setMonthKey(addMonths(monthKey, -1))}
+          className="flex items-center justify-center w-8 h-8 rounded-xl"
+          style={{ background: 'var(--bg-input)', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">{formatMonthLabel(monthKey)}</span>
+          {isPast && (
+            <span
+              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: 'var(--amber-light)', color: 'var(--amber)' }}
+            >
+              <Lock size={10} /> Bloqueado
+            </span>
+          )}
+          {monthKey === todayMonth && (
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+            >
+              Atual
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => setMonthKey(addMonths(monthKey, 1))}
+          className="flex items-center justify-center w-8 h-8 rounded-xl"
+          style={{ background: 'var(--bg-input)', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+
+      {/* Past month notice */}
+      {isPast && (
+        <div
+          className="flex items-center gap-2 px-4 py-3 rounded-xl mb-5 text-sm"
+          style={{ background: 'var(--amber-light)', color: 'var(--amber)', border: '1px solid var(--amber)' + '33' }}
+        >
+          <Lock size={14} />
+          Mês encerrado — valores históricos preservados
+        </div>
+      )}
 
       {/* Mode toggle */}
       <div
@@ -90,15 +171,16 @@ export default function BudgetPage() {
         ] as const).map(([mode, label, Icon]) => (
           <button
             key={mode}
-            onClick={() => setBudgetMode(mode)}
+            onClick={() => !isPast && setBudgetMode(mode)}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium"
             style={{
               background: budgetMode === mode ? 'var(--bg-card)' : 'transparent',
               color: budgetMode === mode ? 'var(--accent)' : 'var(--text-muted)',
               boxShadow: budgetMode === mode ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
               transition: 'all 0.2s',
-              cursor: 'pointer',
+              cursor: isPast ? 'not-allowed' : 'pointer',
               border: 'none',
+              opacity: isPast ? 0.6 : 1,
             }}
           >
             <Icon size={15} />
@@ -132,33 +214,38 @@ export default function BudgetPage() {
                 min="0"
                 step="100"
                 value={fixedValue}
-                onChange={(e) => setFixedValue(e.target.value)}
+                onChange={(e) => !isPast && setFixedValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveFixed()}
+                disabled={isPast}
                 className="w-full rounded-xl text-sm font-medium"
                 style={{
                   padding: '11px 12px 11px 38px',
                   background: 'var(--bg-input)',
                   border: '1px solid var(--border)',
-                  color: 'var(--text)',
+                  color: isPast ? 'var(--text-muted)' : 'var(--text)',
                   outline: 'none',
+                  cursor: isPast ? 'not-allowed' : 'text',
+                  opacity: isPast ? 0.7 : 1,
                 }}
               />
             </div>
-            <button
-              onClick={handleSaveFixed}
-              className="px-5 rounded-xl text-sm font-semibold flex items-center gap-2"
-              style={{
-                background: savedFixed ? '#10b981' : 'linear-gradient(135deg, #10b981, #06b6d4)',
-                color: '#fff',
-                cursor: 'pointer',
-                border: 'none',
-                transition: 'background 0.3s',
-                minWidth: 88,
-                justifyContent: 'center',
-              }}
-            >
-              {savedFixed ? <><Check size={15} /> Salvo!</> : 'Salvar'}
-            </button>
+            {!isPast && (
+              <button
+                onClick={handleSaveFixed}
+                className="px-5 rounded-xl text-sm font-semibold flex items-center gap-2"
+                style={{
+                  background: savedFixed ? '#10b981' : 'linear-gradient(135deg, #10b981, #06b6d4)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  border: 'none',
+                  transition: 'background 0.3s',
+                  minWidth: 88,
+                  justifyContent: 'center',
+                }}
+              >
+                {savedFixed ? <><Check size={15} /> Salvo!</> : 'Salvar'}
+              </button>
+            )}
           </div>
 
           {/* Summary */}
@@ -196,7 +283,6 @@ export default function BudgetPage() {
                   </span>
                 </div>
               </div>
-              {/* Weekly hint */}
               <div className="flex items-center justify-end px-3 py-1.5" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
                 <span className="text-xs" style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-dm-mono)' }}>
                   {weeklyHint(monthlyBudget + fixedMonthly + goalDeductMonthly)} · {weeksInMonth} semanas este mês
@@ -328,16 +414,19 @@ export default function BudgetPage() {
                       step="50"
                       placeholder="—"
                       value={catValues[cat.id] ?? ''}
+                      disabled={isPast}
                       onChange={(e) =>
-                        setCatValues((prev) => ({ ...prev, [cat.id]: e.target.value }))
+                        !isPast && setCatValues((prev) => ({ ...prev, [cat.id]: e.target.value }))
                       }
                       className="w-full rounded-xl text-sm text-right"
                       style={{
                         padding: '8px 10px 8px 28px',
                         background: 'var(--bg-input)',
                         border: '1px solid var(--border)',
-                        color: 'var(--text)',
+                        color: isPast ? 'var(--text-muted)' : 'var(--text)',
                         outline: 'none',
+                        cursor: isPast ? 'not-allowed' : 'text',
+                        opacity: isPast ? 0.7 : 1,
                       }}
                     />
                   </div>
@@ -372,21 +461,23 @@ export default function BudgetPage() {
                   </p>
                 )}
               </div>
-              <button
-                onClick={handleSaveCat}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2"
-                style={{
-                  background: savedCat ? '#10b981' : 'linear-gradient(135deg, #10b981, #06b6d4)',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  border: 'none',
-                  transition: 'background 0.3s',
-                  minWidth: 120,
-                  justifyContent: 'center',
-                }}
-              >
-                {savedCat ? <><Check size={15} /> Salvo!</> : 'Salvar tudo'}
-              </button>
+              {!isPast && (
+                <button
+                  onClick={handleSaveCat}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2"
+                  style={{
+                    background: savedCat ? '#10b981' : 'linear-gradient(135deg, #10b981, #06b6d4)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    border: 'none',
+                    transition: 'background 0.3s',
+                    minWidth: 120,
+                    justifyContent: 'center',
+                  }}
+                >
+                  {savedCat ? <><Check size={15} /> Salvo!</> : 'Salvar tudo'}
+                </button>
+              )}
             </div>
             {/* Weekly hint */}
             <div className="px-4 py-2" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-input)' }}>

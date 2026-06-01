@@ -132,3 +132,10 @@ export interface UserPreferences {
   currency: string
   whatsappNumber?: string  // número pessoal do usuário para integração WhatsApp
 }
+
+export interface MonthlyBudget {
+  id: string
+  month: string  // YYYY-MM
+  monthlyBudget: number
+  categoryBudgets: Record<string, number>
+}

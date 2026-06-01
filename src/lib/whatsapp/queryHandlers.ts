@@ -31,7 +31,8 @@ export async function handleWeekQuery(userId: string, admin: SupabaseClient): Pr
   const todayStr = getBRTDateStr()
   const weekKey = getWeekKey(todayStr)
 
-  const [{ data: expenses }, { data: prefs }] = await Promise.all([
+  const todayMonth = getBRTMonthStr()
+  const [{ data: expenses }, { data: prefs }, { data: mbRow }] = await Promise.all([
     admin
       .from('expenses')
       .select('amount, shared_with')
@@ -42,11 +43,17 @@ export async function handleWeekQuery(userId: string, admin: SupabaseClient): Pr
       .select('monthly_budget, weekly_budget')
       .eq('user_id', userId)
       .single(),
+    admin
+      .from('monthly_budgets')
+      .select('monthly_budget')
+      .eq('user_id', userId)
+      .eq('month', todayMonth)
+      .maybeSingle(),
   ])
 
   const spent = (expenses ?? []).reduce((s, e) => s + effectiveAmt(e), 0)
-  // monthly_budget is the source of truth; fall back to weekly_budget * 4 for pre-migration rows
-  const monthlyBudget: number = prefs?.monthly_budget ?? (prefs?.weekly_budget ? prefs.weekly_budget * 4 : 0)
+  // prefer monthly_budgets entry for current month; fall back to user_preferences
+  const monthlyBudget: number = mbRow?.monthly_budget ?? prefs?.monthly_budget ?? (prefs?.weekly_budget ? prefs.weekly_budget * 4 : 0)
   const weeksInMonth = getWeekOfMonth(weekKey).total
   const budget = monthlyBudget > 0 ? Math.round((monthlyBudget / weeksInMonth) * 100) / 100 : 0
   const remaining = budget - spent

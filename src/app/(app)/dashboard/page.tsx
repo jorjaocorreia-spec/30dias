@@ -21,7 +21,7 @@ export default function DashboardPage() {
     expenses, categories, preferences, financialGoals, goalContributions,
     getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
     getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
-    getSharedPendingTotal, markParticipantAsPaid,
+    getSharedPendingTotal, markParticipantAsPaid, getBudgetForMonth,
   } = useAppStore()
   const router = useRouter()
 
@@ -79,10 +79,11 @@ export default function DashboardPage() {
   const fixedByCatMonthly = getFixedMonthlyCategoryContribution(monthKey)
   const goalDeductMonthly = getGoalWeeklyTotal(true) * weeksOfMonth.length
 
+  const { monthlyBudget: mBudget, categoryBudgets: mCatBudgets } = getBudgetForMonth(monthKey)
   const totalMonthlyBudget = preferences.budgetMode === 'per_category'
-    ? categories.reduce((sum, c) => sum + (preferences.categoryBudgets?.[c.id] ?? 0), 0)
+    ? categories.reduce((sum, c) => sum + (mCatBudgets?.[c.id] ?? 0), 0)
       + fixedMonthly + goalDeductMonthly
-    : preferences.monthlyBudget + fixedMonthly + goalDeductMonthly
+    : mBudget + fixedMonthly + goalDeductMonthly
 
   const totalMonthlyExpenses = useMemo(
     () => monthExpenses.reduce((sum, e) => sum + getEffectiveAmount(e), 0),
@@ -532,7 +533,7 @@ export default function DashboardPage() {
 
       {/* Per-category budget breakdown */}
       {preferences.budgetMode === 'per_category' &&
-        categories.some((c) => (preferences.categoryBudgets?.[c.id] ?? 0) > 0) && (
+        categories.some((c) => (mCatBudgets?.[c.id] ?? 0) > 0) && (
         <motion.div
           className="p-4 rounded-2xl border mb-5"
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
@@ -541,10 +542,10 @@ export default function DashboardPage() {
           <p className="text-sm font-semibold mb-4">Orçamento por categoria</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {categories
-              .filter((c) => (preferences.categoryBudgets?.[c.id] ?? 0) > 0)
+              .filter((c) => (mCatBudgets?.[c.id] ?? 0) > 0)
               .map((cat) => {
                 const spent = categoryData.find(d => d.id === cat.id)?.amount ?? 0
-                const budget = (preferences.categoryBudgets?.[cat.id] ?? 0) + (fixedByCatMonthly[cat.id] ?? 0)
+                const budget = (mCatBudgets?.[cat.id] ?? 0) + (fixedByCatMonthly[cat.id] ?? 0)
                 const rawPct = budget > 0 ? (spent / budget) * 100 : 0
                 const barPct = Math.min(rawPct, 100)
                 const isOver = rawPct > 100
