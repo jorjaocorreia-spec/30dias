@@ -533,7 +533,7 @@ export default function DashboardPage() {
 
       {/* Per-category budget breakdown */}
       {preferences.budgetMode === 'per_category' &&
-        categories.some((c) => (mCatBudgets?.[c.id] ?? 0) > 0) && (
+        categories.some((c) => (mCatBudgets?.[c.id] ?? 0) + (fixedByCatMonthly[c.id] ?? 0) > 0) && (
         <motion.div
           className="p-4 rounded-2xl border mb-5"
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
@@ -542,7 +542,7 @@ export default function DashboardPage() {
           <p className="text-sm font-semibold mb-4">Orçamento por categoria</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {categories
-              .filter((c) => (mCatBudgets?.[c.id] ?? 0) > 0)
+              .filter((c) => (mCatBudgets?.[c.id] ?? 0) + (fixedByCatMonthly[c.id] ?? 0) > 0)
               .map((cat) => {
                 const spent = categoryData.find(d => d.id === cat.id)?.amount ?? 0
                 const budget = (mCatBudgets?.[cat.id] ?? 0) + (fixedByCatMonthly[cat.id] ?? 0)
