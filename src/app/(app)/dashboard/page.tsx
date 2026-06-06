@@ -533,7 +533,7 @@ export default function DashboardPage() {
 
       {/* Per-category budget breakdown */}
       {preferences.budgetMode === 'per_category' &&
-        categories.some((c) => (mCatBudgets?.[c.id] ?? 0) + (fixedByCatMonthly[c.id] ?? 0) > 0) && (
+        categories.some((c) => (mCatBudgets?.[c.id] ?? 0) + (fixedByCatMonthly[c.id] ?? 0) > 0 || (categoryData.find(d => d.id === c.id)?.amount ?? 0) > 0) && (
         <motion.div
           className="p-4 rounded-2xl border mb-5"
           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
@@ -542,7 +542,7 @@ export default function DashboardPage() {
           <p className="text-sm font-semibold mb-4">Orçamento por categoria</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {categories
-              .filter((c) => (mCatBudgets?.[c.id] ?? 0) + (fixedByCatMonthly[c.id] ?? 0) > 0)
+              .filter((c) => (mCatBudgets?.[c.id] ?? 0) + (fixedByCatMonthly[c.id] ?? 0) > 0 || (categoryData.find(d => d.id === c.id)?.amount ?? 0) > 0)
               .map((cat) => {
                 const spent = categoryData.find(d => d.id === cat.id)?.amount ?? 0
                 const budget = (mCatBudgets?.[cat.id] ?? 0) + (fixedByCatMonthly[cat.id] ?? 0)
@@ -569,7 +569,8 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-right">
                         <span className="text-xs font-semibold" style={{ color: isOver ? '#f43f5e' : 'var(--text)' }}>{formatCurrency(spent)}</span>
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}> / {formatCurrency(budget)}</span>
+                        {budget > 0 && <span className="text-xs" style={{ color: 'var(--text-muted)' }}> / {formatCurrency(budget)}</span>}
+                        {budget === 0 && <span className="text-xs" style={{ color: 'var(--text-muted)' }}> sem limite</span>}
                       </div>
                     </div>
                     <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: isOver ? 'rgba(244,63,94,0.15)' : 'var(--bg-input)' }}>
