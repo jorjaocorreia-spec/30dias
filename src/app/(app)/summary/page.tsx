@@ -24,6 +24,8 @@ export default function SummaryPage() {
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
   const [historyExpanded, setHistoryExpanded] = useState(false)
   const [monthHistoryExpanded, setMonthHistoryExpanded] = useState(false)
+  const [expandedWeekCatId, setExpandedWeekCatId] = useState<string | null>(null)
+  const [expandedMonthCatId, setExpandedMonthCatId] = useState<string | null>(null)
   const topRef = useRef<HTMLDivElement>(null)
   const isCurrentWeek = weekKey === getCurrentWeekKey()
 
@@ -359,25 +361,67 @@ export default function SummaryPage() {
                 </div>
               </div>
               <div className="space-y-2.5">
-                {categoryData.map((d) => (
-                  <div key={d.id}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: d.color + '20' }}>
-                        <CategoryIcon name={d.icon} size={12} style={{ color: d.color }} />
+                {categoryData.map((d) => {
+                  const isExpanded = expandedWeekCatId === d.id
+                  const catExpenses = summary.expenses
+                    .filter(e => e.categoryId === d.id)
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  return (
+                    <div key={d.id}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <button
+                          type="button"
+                          aria-label={isExpanded ? `Fechar despesas de ${d.name}` : `Ver despesas de ${d.name}`}
+                          onClick={() => setExpandedWeekCatId(v => v === d.id ? null : d.id)}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{
+                            background: d.color + '20',
+                            outline: isExpanded ? `1.5px solid ${d.color}` : 'none',
+                            cursor: 'pointer',
+                            border: 'none',
+                          }}
+                        >
+                          <CategoryIcon name={d.icon} size={12} style={{ color: d.color }} />
+                        </button>
+                        <span className="text-xs flex-1 truncate">{d.name}</span>
+                        <span className="text-xs font-bold">{formatCurrency(d.amount)}</span>
                       </div>
-                      <span className="text-xs flex-1 truncate">{d.name}</span>
-                      <span className="text-xs font-bold">{formatCurrency(d.amount)}</span>
+                      <div className="ml-8 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-input)' }}>
+                        <motion.div
+                          className="h-full rounded-full"
+                          initial={{ width: 0 }} animate={{ width: `${d.percent}%` }} transition={{ duration: 0.6 }}
+                          style={{ background: d.color }}
+                        />
+                      </div>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.22 }}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <div className="ml-8 mt-2 space-y-1.5 pb-1">
+                              {catExpenses.map(e => (
+                                <div key={e.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                                  style={{ background: 'var(--bg-input)' }}>
+                                  <p className="text-xs truncate flex-1">{e.description}</p>
+                                  <p className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                                    {new Date(e.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                  </p>
+                                  <p className="text-xs font-bold flex-shrink-0" style={{ fontFamily: 'var(--font-dm-mono)' }}>
+                                    {formatCurrency(getEffectiveAmount(e))}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <div className="ml-8 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-input)' }}>
-                      <motion.div
-                        className="h-full rounded-full"
-                        initial={{ width: 0 }} animate={{ width: `${d.percent}%` }} transition={{ duration: 0.6 }}
-                        style={{ background: d.color }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -616,25 +660,67 @@ export default function SummaryPage() {
                 </div>
               </div>
               <div className="space-y-2.5">
-                {monthCategoryData.map((d) => (
-                  <div key={d.id}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: d.color + '20' }}>
-                        <CategoryIcon name={d.icon} size={12} style={{ color: d.color }} />
+                {monthCategoryData.map((d) => {
+                  const isExpanded = expandedMonthCatId === d.id
+                  const catExpenses = monthExpenses
+                    .filter(e => e.categoryId === d.id)
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  return (
+                    <div key={d.id}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <button
+                          type="button"
+                          aria-label={isExpanded ? `Fechar despesas de ${d.name}` : `Ver despesas de ${d.name}`}
+                          onClick={() => setExpandedMonthCatId(v => v === d.id ? null : d.id)}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{
+                            background: d.color + '20',
+                            outline: isExpanded ? `1.5px solid ${d.color}` : 'none',
+                            cursor: 'pointer',
+                            border: 'none',
+                          }}
+                        >
+                          <CategoryIcon name={d.icon} size={12} style={{ color: d.color }} />
+                        </button>
+                        <span className="text-xs flex-1 truncate">{d.name}</span>
+                        <span className="text-xs font-bold">{formatCurrency(d.amount)}</span>
                       </div>
-                      <span className="text-xs flex-1 truncate">{d.name}</span>
-                      <span className="text-xs font-bold">{formatCurrency(d.amount)}</span>
+                      <div className="ml-8 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-input)' }}>
+                        <motion.div
+                          className="h-full rounded-full"
+                          initial={{ width: 0 }} animate={{ width: `${d.percent}%` }} transition={{ duration: 0.6 }}
+                          style={{ background: d.color }}
+                        />
+                      </div>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.22 }}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <div className="ml-8 mt-2 space-y-1.5 pb-1">
+                              {catExpenses.map(e => (
+                                <div key={e.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                                  style={{ background: 'var(--bg-input)' }}>
+                                  <p className="text-xs truncate flex-1">{e.description}</p>
+                                  <p className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                                    {new Date(e.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                  </p>
+                                  <p className="text-xs font-bold flex-shrink-0" style={{ fontFamily: 'var(--font-dm-mono)' }}>
+                                    {formatCurrency(getEffectiveAmount(e))}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <div className="ml-8 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-input)' }}>
-                      <motion.div
-                        className="h-full rounded-full"
-                        initial={{ width: 0 }} animate={{ width: `${d.percent}%` }} transition={{ duration: 0.6 }}
-                        style={{ background: d.color }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
