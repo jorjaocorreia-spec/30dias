@@ -243,7 +243,9 @@ export default function DashboardPage() {
             icon: Wallet,
             label: 'Gastos do mês',
             value: formatCurrency(totalMonthlyExpenses),
-            sub: `de ${formatCurrency(totalMonthlyBudget)}`,
+            sub: availableMode === 'income'
+              ? (monthBalance.income > 0 ? `de ${formatCurrency(monthBalance.income)}` : 'sem renda registrada')
+              : `de ${formatCurrency(totalMonthlyBudget)}`,
             color: '#10b981',
           },
           {
