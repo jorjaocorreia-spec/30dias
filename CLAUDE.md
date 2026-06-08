@@ -83,6 +83,7 @@ interface UserPreferences {
   theme: 'light' | 'dark' | 'system'; monthlyBudget: number
   budgetMode: 'fixed' | 'per_category'; categoryBudgets: Record<string, number>  // valores mensais
   currency: string; whatsappNumber?: string
+  availableMode?: 'budget' | 'income'   // modo do card "Disponível" no dashboard; padrão 'budget'
 }
 interface IncomeSource {
   id: string; description: string; expectedAmount: number; categoryId: string
@@ -232,6 +233,8 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 **Dashboard — KPI grid:** passa de `lg:grid-cols-3` para `lg:grid-cols-4` quando há card "A Receber" ou card "Metas" (mobile sempre 2 cols).
 
 **Dashboard — card "Projeção do mês":** aparece apenas no mês atual quando `totalMonthlyExpenses > 0`. Calcula `(totalMonthlyExpenses / daysElapsed) × daysInMonth` e exibe delta vs renda. Mostra "Nd de dados" para transparência. Posicionado entre "Saldo do mês" e os gráficos.
+
+**Dashboard — card "Disponível":** toggle **ORÇ / RENDA** persiste em `preferences.availableMode` via `setAvailableMode`. `availableBase = availableMode === 'income' ? monthBalance.income : totalMonthlyBudget`; `remaining = availableBase - totalMonthlyExpenses`. Sub-texto muda entre `"do orçamento"` / `"da renda"` / `"acima do limite"` / `"acima da renda"`. Quando `income === 0` e modo RENDA: exibe `"—"` + `"sem renda registrada"`.
 
 **Dashboard — filtro semana:** `selectedWeekKey` inicia na semana atual. Barras do chart semanal: selecionada=`#10b981`, semana atual=`rgba(16,185,129,0.25)`, outras=`var(--bg-input)`. Clicar uma barra muda `selectedWeekKey` e exibe as despesas daquela semana na lista abaixo.
 
