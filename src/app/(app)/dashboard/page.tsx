@@ -22,6 +22,7 @@ export default function DashboardPage() {
     getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
     getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
     getSharedPendingTotal, markParticipantAsPaid, getBudgetForMonth,
+    setAvailableMode,
   } = useAppStore()
   const router = useRouter()
 
@@ -96,10 +97,13 @@ export default function DashboardPage() {
   )
   const variableMonthExpenses = monthBalance.expenses - fixedMonthExpenses
 
+  const availableMode = preferences.availableMode ?? 'budget'
+  const availableBase = availableMode === 'income' ? monthBalance.income : totalMonthlyBudget
+  const remaining = availableBase - totalMonthlyExpenses
+
   const budgetPercent = totalMonthlyBudget > 0
     ? Math.min((totalMonthlyExpenses / totalMonthlyBudget) * 100, 100)
     : 0
-  const remaining = totalMonthlyBudget - totalMonthlyExpenses
 
   const sharedPending = getSharedPendingTotal(monthKey)
 
@@ -245,9 +249,18 @@ export default function DashboardPage() {
           {
             icon: TrendingDown,
             label: 'Disponível',
-            value: formatCurrency(Math.abs(remaining)),
-            sub: remaining < 0 ? 'acima do limite' : 'restante',
-            color: remaining < 0 ? '#ef4444' : '#06b6d4',
+            value: availableMode === 'income' && monthBalance.income === 0
+              ? '—'
+              : formatCurrency(Math.abs(remaining)),
+            sub: availableMode === 'income' && monthBalance.income === 0
+              ? 'sem renda registrada'
+              : remaining < 0
+                ? availableMode === 'income' ? 'acima da renda' : 'acima do limite'
+                : availableMode === 'income' ? 'da renda' : 'do orçamento',
+            color: availableMode === 'income' && monthBalance.income === 0
+              ? 'var(--text-muted)'
+              : remaining < 0 ? '#ef4444' : '#06b6d4',
+            isAvailable: true,
           },
           {
             icon: TrendingUp,
@@ -275,7 +288,8 @@ export default function DashboardPage() {
             colSpanMobile: false,
             onClick: () => router.push('/goals'),
           }] : []),
-        ].map(({ icon: Icon, label, value, sub, color, colSpanMobile, onClick }, i) => (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ].map(({ icon: Icon, label, value, sub, color, colSpanMobile, onClick, isAvailable }: any, i: number) => (
           <motion.div
             key={label}
             className={`p-4 rounded-2xl border ${colSpanMobile ? 'col-span-2 lg:col-span-1' : ''} ${onClick ? 'cursor-pointer' : ''}`}
@@ -288,9 +302,36 @@ export default function DashboardPage() {
           >
             <div className="flex items-start justify-between mb-2">
               <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 9 }}>{label}</p>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: color + '20' }}>
-                <Icon size={14} style={{ color, filter: `drop-shadow(0 0 4px ${color}80)` }} />
-              </div>
+              {isAvailable ? (
+                <div
+                  className="flex items-center rounded-lg overflow-hidden"
+                  style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', gap: 0 }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  {(['budget', 'income'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setAvailableMode(mode)}
+                      className="text-xs font-medium px-2 py-1 transition-all"
+                      style={{
+                        fontFamily: 'var(--font-dm-mono)',
+                        fontSize: 9,
+                        letterSpacing: '0.05em',
+                        background: availableMode === mode ? 'rgba(6,182,212,0.18)' : 'transparent',
+                        color: availableMode === mode ? '#06b6d4' : 'var(--text-muted)',
+                        borderRight: mode === 'budget' ? '1px solid var(--border)' : undefined,
+                      }}
+                    >
+                      {mode === 'budget' ? 'ORÇ' : 'RENDA'}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: color + '20' }}>
+                  <Icon size={14} style={{ color, filter: `drop-shadow(0 0 4px ${color}80)` }} />
+                </div>
+              )}
             </div>
             <p className="text-xl font-bold leading-none mb-1" style={{ fontFamily: 'var(--font-dm-mono)', letterSpacing: '-0.5px' }}>{value}</p>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{sub}</p>

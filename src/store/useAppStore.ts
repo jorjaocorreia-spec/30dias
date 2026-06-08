@@ -145,6 +145,7 @@ interface AppState {
   setCategoryBudget: (categoryId: string, amount: number) => void
   setAllCategoryBudgets: (budgets: Record<string, number>) => void
   setWhatsappNumber: (number: string) => Promise<void>
+  setAvailableMode: (mode: NonNullable<UserPreferences['availableMode']>) => void
   getBudgetForMonth: (month: string) => { monthlyBudget: number; categoryBudgets: Record<string, number> }
   saveBudgetForMonth: (month: string, data: { monthlyBudget?: number; categoryBudgets?: Record<string, number> }) => Promise<void>
 }
@@ -815,6 +816,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ preferences: { ...state.preferences, budgetMode } }))
     const { user } = get()
     if (user) supabase.from('user_preferences').update({ budget_mode: budgetMode }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  setAvailableMode: (availableMode) => {
+    set(state => ({ preferences: { ...state.preferences, availableMode } }))
   },
 
   setCategoryBudget: (categoryId, amount) => {
