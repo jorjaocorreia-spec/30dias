@@ -80,7 +80,7 @@ const defaultTemplateForm: TemplateForm = {
   notes: '',
   isActive: true,
   dueDateDay: '',
-  reminderEnabled: false,
+  reminderEnabled: true,
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ export default function FixedExpensesPage() {
       notes: fe.notes ?? '',
       isActive: fe.isActive,
       dueDateDay: fe.dueDateDay ? String(fe.dueDateDay) : '',
-      reminderEnabled: fe.reminderEnabled ?? false,
+      reminderEnabled: fe.reminderEnabled !== false,
     })
     setTemplateSuccess('')
     setShowTemplateForm(true)
@@ -759,17 +759,20 @@ export default function FixedExpensesPage() {
                     <p className="text-sm font-medium">Lembrete via WhatsApp</p>
                     {preferences.whatsappNumber ? (
                       <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        Aviso 1 dia antes e no dia do vencimento
+                        {templateForm.reminderEnabled
+                          ? 'Aviso automático 1 dia antes e no dia do vencimento'
+                          : 'Lembrete desativado para esta conta'}
                       </p>
                     ) : (
                       <p className="text-xs mt-0.5" style={{ color: '#f59e0b' }}>
-                        Configure seu número em Preferências para ativar
+                        Configure seu número em Integrações para receber lembretes
                       </p>
                     )}
                   </div>
                   {preferences.whatsappNumber ? (
                     <button
                       type="button"
+                      aria-label={templateForm.reminderEnabled ? 'Desativar lembrete WhatsApp' : 'Ativar lembrete WhatsApp'}
                       onClick={() => setTemplateForm({ ...templateForm, reminderEnabled: !templateForm.reminderEnabled })}
                       style={{
                         width: 44, height: 24, borderRadius: 12, flexShrink: 0,
@@ -800,6 +803,7 @@ export default function FixedExpensesPage() {
                   </button>
                 </div>
                 <select
+                  aria-label="Categoria"
                   value={templateForm.categoryId}
                   onChange={(e) => setTemplateForm({ ...templateForm, categoryId: e.target.value })}
                   className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
@@ -854,6 +858,7 @@ export default function FixedExpensesPage() {
                   </button>
                 </div>
                 <select
+                  aria-label="Estabelecimento"
                   value={templateForm.establishmentId}
                   onChange={(e) => setTemplateForm({ ...templateForm, establishmentId: e.target.value })}
                   className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
@@ -876,6 +881,7 @@ export default function FixedExpensesPage() {
                           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)' }}
                         />
                         <select
+                          aria-label="Categoria do estabelecimento"
                           value={quickEstCategoryId}
                           onChange={(e) => setQuickEstCategoryId(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
@@ -933,6 +939,7 @@ export default function FixedExpensesPage() {
                     </p>
                   </div>
                   <button type="button"
+                    aria-label={templateForm.isActive ? 'Pausar despesa fixa' : 'Ativar despesa fixa'}
                     onClick={() => setTemplateForm({ ...templateForm, isActive: !templateForm.isActive })}
                     style={{
                       width: 44, height: 24, borderRadius: 12, flexShrink: 0,
