@@ -100,6 +100,7 @@ export default function FixedExpensesPage() {
   const [editingTemplate, setEditingTemplate] = useState<FixedExpense | null>(null)
   const [templateForm, setTemplateForm] = useState<TemplateForm>(defaultTemplateForm)
   const [templateSuccess, setTemplateSuccess] = useState('')
+  const [amountError, setAmountError] = useState(false)
   const templateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // monthly register state
@@ -160,6 +161,7 @@ export default function FixedExpensesPage() {
     setEditingTemplate(null)
     setTemplateForm(defaultTemplateForm)
     setTemplateSuccess('')
+    setAmountError(false)
     setShowTemplateForm(true)
     focusTemplateForm()
   }
@@ -178,13 +180,16 @@ export default function FixedExpensesPage() {
       reminderEnabled: fe.reminderEnabled !== false,
     })
     setTemplateSuccess('')
+    setAmountError(false)
     setShowTemplateForm(true)
     focusTemplateForm()
   }
 
   const saveTemplate = () => {
     if (!templateForm.description.trim() || !templateForm.categoryId) return
-    const suggestedAmount = parseFloat(templateForm.suggestedAmount) || 0
+    const suggestedAmount = parseFloat(templateForm.suggestedAmount)
+    if (!suggestedAmount || suggestedAmount <= 0) { setAmountError(true); return }
+    setAmountError(false)
     const dueDateDay = templateForm.dueDateDay ? parseInt(templateForm.dueDateDay) : undefined
     const data = {
       description: templateForm.description.trim(),
@@ -719,18 +724,18 @@ export default function FixedExpensesPage() {
               {/* Suggested amount */}
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Valor sugerido por mês (R$) — opcional
+                  Valor sugerido por mês (R$)
                 </label>
                 <input
                   type="number" step="0.01" min="0"
                   value={templateForm.suggestedAmount}
-                  onChange={(e) => setTemplateForm({ ...templateForm, suggestedAmount: e.target.value })}
+                  onChange={(e) => { setAmountError(false); setTemplateForm({ ...templateForm, suggestedAmount: e.target.value }) }}
                   placeholder="0,00"
                   className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
-                  style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                  style={{ background: 'var(--bg-input)', borderColor: amountError ? 'var(--red)' : 'var(--border)', color: 'var(--text)' }}
                 />
-                <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Pré-preenchido ao registrar cada mês. Pode ser alterado.
+                <p className="text-xs mt-1.5" style={{ color: amountError ? 'var(--red)' : 'var(--text-muted)' }}>
+                  {amountError ? 'Informe o valor mensal esperado' : 'Pré-preenchido ao registrar cada mês. Pode ser alterado.'}
                 </p>
               </div>
 
