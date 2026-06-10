@@ -701,12 +701,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
   getFixedMonthlyContribution: (month) => {
     const m = month ?? new Date().toISOString().slice(0, 7)
     const { fixedExpenseMonths, fixedExpenses } = get()
-    return fixedExpenseMonths
-      .filter(fem => fem.month === m)
-      .reduce((sum, fem) => {
-        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
-        if (!fe?.isActive) return sum
-        return sum + fem.amount
+    return fixedExpenses
+      .filter(fe => fe.isActive)
+      .reduce((sum, fe) => {
+        const fem = fixedExpenseMonths.find(f => f.fixedExpenseId === fe.id && f.month === m)
+        return sum + (fem?.amount ?? fe.suggestedAmount)
       }, 0)
   },
 
@@ -714,12 +713,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const m = month ?? new Date().toISOString().slice(0, 7)
     const { fixedExpenseMonths, fixedExpenses } = get()
     const result: Record<string, number> = {}
-    fixedExpenseMonths
-      .filter(fem => fem.month === m)
-      .forEach(fem => {
-        const fe = fixedExpenses.find(f => f.id === fem.fixedExpenseId)
-        if (!fe?.isActive) return
-        result[fe.categoryId] = (result[fe.categoryId] ?? 0) + fem.amount
+    fixedExpenses
+      .filter(fe => fe.isActive)
+      .forEach(fe => {
+        const fem = fixedExpenseMonths.find(f => f.fixedExpenseId === fe.id && f.month === m)
+        const amount = fem?.amount ?? fe.suggestedAmount
+        result[fe.categoryId] = (result[fe.categoryId] ?? 0) + amount
       })
     return result
   },
