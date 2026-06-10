@@ -698,27 +698,20 @@ export const useAppStore = create<AppState>()((set, get) => ({
     return result
   },
 
-  getFixedMonthlyContribution: (month) => {
-    const m = month ?? new Date().toISOString().slice(0, 7)
-    const { fixedExpenseMonths, fixedExpenses } = get()
+  getFixedMonthlyContribution: (_month?: string) => {
+    const { fixedExpenses } = get()
     return fixedExpenses
       .filter(fe => fe.isActive)
-      .reduce((sum, fe) => {
-        const fem = fixedExpenseMonths.find(f => f.fixedExpenseId === fe.id && f.month === m)
-        return sum + (fem?.amount ?? fe.suggestedAmount)
-      }, 0)
+      .reduce((sum, fe) => sum + fe.suggestedAmount, 0)
   },
 
-  getFixedMonthlyCategoryContribution: (month) => {
-    const m = month ?? new Date().toISOString().slice(0, 7)
-    const { fixedExpenseMonths, fixedExpenses } = get()
+  getFixedMonthlyCategoryContribution: (_month?: string) => {
+    const { fixedExpenses } = get()
     const result: Record<string, number> = {}
     fixedExpenses
       .filter(fe => fe.isActive)
       .forEach(fe => {
-        const fem = fixedExpenseMonths.find(f => f.fixedExpenseId === fe.id && f.month === m)
-        const amount = fem?.amount ?? fe.suggestedAmount
-        result[fe.categoryId] = (result[fe.categoryId] ?? 0) + amount
+        result[fe.categoryId] = (result[fe.categoryId] ?? 0) + fe.suggestedAmount
       })
     return result
   },
