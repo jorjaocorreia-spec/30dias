@@ -64,7 +64,7 @@ interface Category { id: string; name: string; icon: string; color: string; isDe
 // IncomeCategory tem a mesma forma que Category
 interface Establishment { id: string; name: string; categoryId: string }
 interface FixedExpense {
-  id: string; description: string; suggestedAmount: number; categoryId: string
+  id: string; description: string; suggestedAmount: number; categoryId: string  // suggestedAmount obrigatório (> 0)
   establishmentId?: string; paymentMethod: PaymentMethod; notes?: string
   isActive: boolean; createdAt: string   // YYYY-MM-DD
   dueDateDay?: number      // dia do mês do vencimento (1–31)
@@ -132,10 +132,10 @@ interface IncomeEntry {
 
 ### Budget automático de fixas
 
-- `getFixedWeeklyContribution(month?)` → soma semanal (÷4) das fixas ativas confirmadas — usado na Navbar para cota semanal
-- `getFixedMonthlyContribution(month?)` → soma mensal real das fixas ativas confirmadas — usado no Dashboard e na página de Orçamento
+- `getFixedWeeklyContribution(month?)` → soma semanal (÷4) dos `suggestedAmount` das fixas ativas — usado na Navbar para cota semanal
+- `getFixedMonthlyContribution(month?)` → soma dos `suggestedAmount` das fixas ativas — usado no Dashboard e na página de Orçamento. **Sempre usa `suggestedAmount`, nunca o valor registrado no mês (`FixedExpenseMonth.amount`)**
 - `getFixedCategoryContribution(month?)` → `getFixedWeeklyContribution` agrupado por `categoryId` — Navbar
-- `getFixedMonthlyCategoryContribution(month?)` → `getFixedMonthlyContribution` agrupado por `categoryId` — Dashboard (breakdown por categoria)
+- `getFixedMonthlyCategoryContribution(month?)` → `getFixedMonthlyContribution` agrupado por `categoryId` — Dashboard. **Idem: sempre `suggestedAmount`**
 - **Cota semanal efetiva** (Navbar) = `monthlyBudget / weeksInMonth + fixedWeekly + goalDeductWeekly` (modo fixo) | `sum(categoryBudgets) / weeksInMonth + sum(fixedByCategory) + goalDeductWeekly` (por categoria)
 - `weeksInMonth` = `getWeekOfMonth(weekKey).total`
 - **Orçamento mensal total** (Dashboard + página Orçamento) = `monthlyBudget + fixedMonthly + goalDeductMonthly`
