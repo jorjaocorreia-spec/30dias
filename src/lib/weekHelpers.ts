@@ -5,6 +5,20 @@ export function getEffectiveAmount(expense: Expense): number {
   return expense.amount - expense.sharedWith.reduce((sum, p) => sum + p.amount, 0)
 }
 
+export function isInstallment(expense: Expense): boolean {
+  return (expense.installmentTotal ?? 1) > 1
+}
+
+// Avança baseDate por `months` meses, fixando o dia no `dueDayOfMonth`.
+// Lida com meses curtos (ex: dia 31 em fevereiro → dia 28/29).
+export function addMonthsToDate(baseDate: string, months: number, dueDayOfMonth: number): string {
+  const d = new Date(baseDate + 'T12:00:00')
+  d.setMonth(d.getMonth() + months)
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  d.setDate(Math.min(dueDayOfMonth, lastDay))
+  return toLocalDateKey(d)
+}
+
 // Returns ISO week number for a given date
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))

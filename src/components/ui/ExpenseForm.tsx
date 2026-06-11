@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Plus, Check, Users, Trash2 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { Expense, ExpenseParticipant, PaymentMethod } from '@/types'
-import { formatCurrency, getTodayKey, toLocalDateKey } from '@/lib/weekHelpers'
+import { formatCurrency, getTodayKey, toLocalDateKey, addMonthsToDate, isInstallment } from '@/lib/weekHelpers'
 import { CategoryIcon } from './CategoryIcon'
 import { nanoid } from 'nanoid'
 
@@ -45,7 +45,7 @@ function getNowDatetime() {
 }
 
 export function ExpenseForm({ initialData, onSuccess }: Props) {
-  const { categories, establishments, addExpense, updateExpense, addCategory, addEstablishment, addFixedExpense } = useAppStore()
+  const { categories, establishments, addExpense, addExpenses, updateExpense, addCategory, addEstablishment, addFixedExpense } = useAppStore()
   const isEdit = !!initialData
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -68,6 +68,12 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
   // Fixed expense toggle (only for new expenses)
   const [isFixed, setIsFixed] = useState(false)
   const weeklyAmount = isFixed && watchedAmount > 0 ? Math.round((watchedAmount / 4) * 100) / 100 : 0
+
+  // Installment state (only for new expenses)
+  const [isInstallmentMode, setIsInstallmentMode] = useState(false)
+  const [installmentTotal, setInstallmentTotal] = useState(2)
+  const [dueDayOfMonth, setDueDayOfMonth] = useState(10)
+  const installmentAmount = watchedAmount > 0 ? Math.floor((watchedAmount / installmentTotal) * 100) / 100 : 0
 
   // Shared expense (split) state
   const [isShared, setIsShared] = useState(() =>
@@ -206,6 +212,35 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       setEstSearch(''); setEstSelected(false)
       setIsFixed(false)
       onSuccess(data.description)
+    } else if (isInstallmentMode && installmentTotal > 1) {
+      const groupId = nanoid()
+      const [dateOnly] = data.date.includes('T') ? data.date.split('T') : [data.date]
+      const items = Array.from({ length: installmentTotal }, (_, i) => {
+        const parcDate = addMonthsToDate(dateOnly, i, dueDayOfMonth)
+        const parcAmount = i < installmentTotal - 1
+          ? installmentAmount
+          : Math.round((data.amount - installmentAmount * (installmentTotal - 1)) * 100) / 100
+        return {
+          ...expenseData,
+          amount: parcAmount,
+          date: parcDate,
+          sharedWith,
+          userShares: savedUserShares,
+          installmentGroupId: groupId,
+          installmentCurrent: i + 1,
+          installmentTotal,
+        }
+      })
+      addExpenses(items)
+      reset(newExpenseDefaults)
+      setEstSearch(''); setEstSelected(false)
+      setParticipants([])
+      setUserShares(1)
+      setIsShared(false)
+      setIsInstallmentMode(false)
+      setInstallmentTotal(2)
+      setDueDayOfMonth(10)
+      onSuccess(data.description)
     } else {
       addExpense({ ...expenseData, sharedWith, userShares: savedUserShares })
       reset(newExpenseDefaults)
@@ -280,6 +315,127 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
             }} />
           </div>
         </button>
+      )}
+
+      {/* Installment toggle — only for new, non-fixed expenses */}
+      {!isEdit && !isFixed && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setIsInstallmentMode((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all"
+            style={{
+              background: isInstallmentMode ? 'rgba(245,158,11,0.12)' : 'var(--bg-input)',
+              borderColor: isInstallmentMode ? 'var(--amber)' : 'var(--border)',
+            }}
+          >
+            <div style={{ textAlign: 'left' }}>
+              <p className="text-sm font-medium" style={{ color: isInstallmentMode ? 'var(--amber)' : 'var(--text)' }}>
+                Compra parcelada
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {isInstallmentMode && watchedAmount > 0
+                  ? `${installmentTotal}x de ${formatCurrency(installmentAmount)}`
+                  : 'Distribuir automaticamente nos próximos meses'}
+              </p>
+            </div>
+            <div style={{
+              width: 44, height: 24, borderRadius: 12, flexShrink: 0,
+              background: isInstallmentMode ? 'var(--amber)' : 'var(--border)',
+              position: 'relative', transition: 'background 0.2s',
+            }}>
+              <div style={{
+                width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 3, left: isInstallmentMode ? 23 : 3,
+                transition: 'left 0.2s',
+              }} />
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {isInstallmentMode && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div
+                  className="mt-2 p-4 rounded-2xl border space-y-4"
+                  style={{ background: 'var(--bg-input)', borderColor: 'rgba(245,158,11,0.3)' }}
+                >
+                  {/* Número de parcelas */}
+                  <div>
+                    <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Número de parcelas</p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setInstallmentTotal(v => Math.max(2, v - 1))}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0"
+                        style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      >−</button>
+                      <div className="flex-1 text-center">
+                        <span style={{ fontFamily: 'var(--font-dm-mono)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--amber)' }}>
+                          {installmentTotal}x
+                        </span>
+                        {watchedAmount > 0 && (
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                            de {formatCurrency(installmentAmount)} cada
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setInstallmentTotal(v => Math.min(60, v + 1))}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0"
+                        style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      >+</button>
+                    </div>
+                  </div>
+
+                  {/* Dia de vencimento */}
+                  <div>
+                    <label htmlFor="installment-due-day" className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+                      Dia de vencimento (fatura)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="installment-due-day"
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={dueDayOfMonth}
+                        onChange={(e) => {
+                          const v = Math.max(1, Math.min(31, parseInt(e.target.value) || 1))
+                          setDueDayOfMonth(v)
+                        }}
+                        className="w-20 px-3 py-2 rounded-xl border text-center outline-none text-sm font-bold"
+                        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text)', fontFamily: 'var(--font-dm-mono)' }}
+                      />
+                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>do mês</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Installment badge in edit mode */}
+      {isEdit && initialData && isInstallment(initialData) && (
+        <div
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl border"
+          style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.25)' }}
+        >
+          <span className="text-sm" style={{ color: 'var(--amber)' }}>
+            Parcela {initialData.installmentCurrent}/{initialData.installmentTotal}
+          </span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            — editar apenas esta parcela
+          </span>
+        </div>
       )}
 
       {/* Shared expense toggle — only for non-fixed expenses */}

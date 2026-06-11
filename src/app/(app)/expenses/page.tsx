@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Trash2, Filter, X, Users, Check } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
-import { formatCurrency, formatDate, getEffectiveAmount } from '@/lib/weekHelpers'
+import { formatCurrency, formatDate, getEffectiveAmount, isInstallment } from '@/lib/weekHelpers'
 
 const PAYMENT_LABELS: Record<string, string> = {
   credit_card: 'Cartão',
@@ -21,7 +21,7 @@ export default function ExpensesListPage() {
   const [filterCategory, setFilterCategory] = useState('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'variable' | 'fixed' | 'shared'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'variable' | 'fixed' | 'shared' | 'installment'>('all')
   const [showFilters, setShowFilters] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [sharedOpen, setSharedOpen] = useState<Set<string>>(new Set())
@@ -43,6 +43,7 @@ export default function ExpensesListPage() {
         if (filterType === 'fixed' && !e.fixedExpenseId) return false
         if (filterType === 'variable' && e.fixedExpenseId) return false
         if (filterType === 'shared' && !e.sharedWith?.length) return false
+        if (filterType === 'installment' && !isInstallment(e)) return false
         return true
       })
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -126,6 +127,7 @@ export default function ExpensesListPage() {
                     { value: 'variable', label: 'Variáveis' },
                     { value: 'fixed', label: '🔁 Fixas' },
                     { value: 'shared', label: '👥 Divididas' },
+                    { value: 'installment', label: '📦 Parceladas' },
                   ] as const).map(({ value, label }) => (
                     <button
                       key={value}
@@ -290,6 +292,14 @@ export default function ExpensesListPage() {
                           style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6' }}
                         >
                           🔁 Fixa
+                        </span>
+                      )}
+                      {isInstallment(expense) && (
+                        <span
+                          className="text-xs px-1.5 py-0.5 rounded-lg font-medium"
+                          style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--amber)', fontFamily: 'var(--font-dm-mono)' }}
+                        >
+                          {expense.installmentCurrent}/{expense.installmentTotal}x
                         </span>
                       )}
                       {expense.sharedWith?.length ? (() => {

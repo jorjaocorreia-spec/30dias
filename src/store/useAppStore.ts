@@ -75,6 +75,7 @@ interface AppState {
 
   // Expenses
   addExpense: (data: Omit<Expense, 'id' | 'weekKey'>) => void
+  addExpenses: (items: Omit<Expense, 'id' | 'weekKey'>[]) => void
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id' | 'weekKey'>>) => void
   deleteExpense: (id: string) => void
 
@@ -318,6 +319,16 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ expenses: [...state.expenses, expense] }))
     const { user } = get()
     if (user) supabase.from('expenses').insert(toDB(expense, user.id)).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  addExpenses: (items) => {
+    const { user } = get()
+    const expenses = items.map(data => ({ ...data, id: nanoid(), weekKey: getWeekKey(data.date) } as Expense))
+    set(state => ({ expenses: [...state.expenses, ...expenses] }))
+    if (user) {
+      const rows = expenses.map(e => toDB(e, user.id))
+      supabase.from('expenses').insert(rows).then(({ error }) => { if (error) console.error(error) })
+    }
   },
 
   updateExpense: (id, data) => {

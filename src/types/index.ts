@@ -38,6 +38,9 @@ export interface Expense {
   fixedExpenseMonthId?: string  // links to the specific FixedExpenseMonth that generated this entry
   sharedWith?: ExpenseParticipant[]  // defined when expense is split among multiple people
   userShares?: number                // partes do próprio usuário (ex: casal = 2); padrão 1
+  installmentGroupId?: string        // nanoid compartilhado entre todas as parcelas do mesmo parcelamento
+  installmentCurrent?: number        // número da parcela (1-based)
+  installmentTotal?: number          // total de parcelas
 }
 
 export interface FixedExpense {
