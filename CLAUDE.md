@@ -59,6 +59,9 @@ interface Expense {
   fixedExpenseId?: string; fixedExpenseMonthId?: string
   sharedWith?: ExpenseParticipant[]   // definido quando a despesa é dividida
   userShares?: number                 // partes do próprio usuário no split (ex: casal = 2); padrão 1
+  installmentGroupId?: string         // nanoid compartilhado entre todas as parcelas do mesmo parcelamento
+  installmentCurrent?: number         // número da parcela (1-based)
+  installmentTotal?: number           // total de parcelas
 }
 interface Category { id: string; name: string; icon: string; color: string; isDefault?: boolean }
 // IncomeCategory tem a mesma forma que Category
@@ -108,6 +111,18 @@ interface IncomeEntry {
 - Chamar após qualquer mutação em `fixedExpenseMonths` e em `onRehydrateStorage`
 - Deletar template → remove `fixedExpenseMonths` + `expenses` vinculados
 - `dueDateDay` + `reminderEnabled`: lembrete WhatsApp 1 dia antes e no dia do vencimento. Ver seção "Lembretes de vencimento"
+
+### Despesas parceladas
+- `installmentGroupId` = nanoid gerado uma vez, copiado para todas as N parcelas do mesmo parcelamento
+- `installmentCurrent` / `installmentTotal` — identificam a posição da parcela (ex: 3/12)
+- Ao registrar, o `ExpenseForm` gera N `Expense` via `addExpenses` (batch insert — 1 round-trip)
+- Cada parcela cai no dia `dueDayOfMonth` do mês correspondente; meses curtos (fev) usam o último dia
+- Helper `addMonthsToDate(baseDate, months, dueDayOfMonth)` em `weekHelpers.ts` cuida dos edge cases
+- Helper `isInstallment(expense)` → `(installmentTotal ?? 1) > 1`
+- Última parcela absorve o resíduo de centavo: `total - parcela × (N-1)`
+- Cada parcela é independente após criação — editar/excluir individualmente
+- `addExpenses(items[])` no store — insere um array de despesas em um único `supabase.insert(rows)`
+- Migration: `supabase/migrations/20260611_expense_installments.sql` (já aplicada)
 
 ### Despesas divididas (split)
 - `amount` = valor total pago; `sharedWith` = partes de cada participante
@@ -195,6 +210,8 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 - **`toLocalDateKey(d)`** — YYYY-MM-DD em hora local. **NUNCA** `.toISOString().split('T')[0]` (retorna UTC → bug de dia no Brasil)
 - `getTodayKey()` = `toLocalDateKey(new Date())`
 - `getMondaysBetween(from, to)` — todas as segundas-feiras inclusive
+- `isInstallment(expense)` → `(installmentTotal ?? 1) > 1`
+- `addMonthsToDate(baseDate, months, dueDayOfMonth)` — avança N meses fixando o dia; trata meses curtos
 
 ## Categorias e ícones
 
@@ -213,7 +230,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 |------|-----------|
 | `/` | Landing + auth (Google SVG inline, Apple, email) |
 | `/dashboard` | Navegação por mês (← →). KPIs mensais (gastos, disponível, receitas + condicionais A Receber/Metas). Saldo do mês. Barra de orçamento mensal. Projeção (só mês atual). BarChart semanal — 4–5 barras por mês, clique seleciona semana e exibe despesas. PieChart por categoria (mensal). |
-| `/expenses` | Lista com filtro categoria/período/tipo/divididas, editar/excluir inline, painel de participantes inline |
+| `/expenses` | Lista com filtro categoria/período/tipo/divididas/parceladas, editar/excluir inline, painel de participantes inline. Badge âmbar `X/Yx` em despesas parceladas |
 | `/expenses/new` e `/expenses/[id]` | `ExpenseForm` sem/com `initialData` |
 | `/categories` | CRUD, bottom sheet (mobile)/inline (lg), picker ícone+cor, exclusão com modal |
 | `/establishments` | CRUD; selecionar preenche categoria no `ExpenseForm` |
