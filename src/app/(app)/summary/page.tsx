@@ -18,7 +18,7 @@ const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const HISTORY_PAGE = 6
 
 export default function SummaryPage() {
-  const { expenses, categories, preferences, getFixedWeeklyContribution, getGoalWeeklyTotal, getMonthlyBalance, getBudgetForMonth } = useAppStore()
+  const { expenses, categories, incomeEntries, incomeCategories, preferences, getFixedWeeklyContribution, getGoalWeeklyTotal, getMonthlyBalance, getBudgetForMonth } = useAppStore()
 
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks')
   const [weekKey, setWeekKey] = useState(getCurrentWeekKey())
@@ -26,6 +26,7 @@ export default function SummaryPage() {
   const [monthHistoryExpanded, setMonthHistoryExpanded] = useState(false)
   const [expandedWeekCatId, setExpandedWeekCatId] = useState<string | null>(null)
   const [expandedMonthCatId, setExpandedMonthCatId] = useState<string | null>(null)
+  const [expandedMonthIncomeCatId, setExpandedMonthIncomeCatId] = useState<string | null>(null)
   const topRef = useRef<HTMLDivElement>(null)
   const isCurrentWeek = weekKey === getCurrentWeekKey()
 
@@ -121,6 +122,29 @@ export default function SummaryPage() {
       })
       .sort((a, b) => b.amount - a.amount)
   }, [monthExpenses, categories])
+
+  const monthIncomeCategoryData = useMemo(() => {
+    const entries = incomeEntries.filter(e => e.month === monthKey)
+    const byCategory: Record<string, { amount: number; entries: typeof incomeEntries }> = {}
+    for (const e of entries) {
+      if (!byCategory[e.categoryId]) byCategory[e.categoryId] = { amount: 0, entries: [] }
+      byCategory[e.categoryId].amount += e.amount
+      byCategory[e.categoryId].entries.push(e)
+    }
+    const total = Object.values(byCategory).reduce((s, v) => s + v.amount, 0)
+    return Object.entries(byCategory)
+      .map(([id, { amount, entries }]) => {
+        const cat = incomeCategories.find(c => c.id === id)
+        return {
+          id, name: cat?.name ?? id, amount, entries,
+          color: cat?.color ?? '#10b981',
+          icon: cat?.icon ?? 'TrendingUp',
+          percent: total > 0 ? (amount / total) * 100 : 0,
+        }
+      })
+      .sort((a, b) => b.amount - a.amount)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incomeEntries, monthKey, incomeCategories])
 
   const last6MonthsData = useMemo(() => {
     return Array.from({ length: 6 }, (_, i) => {
@@ -633,6 +657,101 @@ export default function SummaryPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Monthly income category breakdown */}
+          {monthIncomeCategoryData.length > 0 && (
+            <div
+              className="p-4 rounded-2xl border mb-4"
+              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+            >
+              <p className="text-sm font-semibold mb-4">Receitas por categoria</p>
+              <div className="flex items-center gap-4 mb-4">
+                <ResponsiveContainer width={100} height={100}>
+                  <PieChart>
+                    <Pie data={monthIncomeCategoryData} dataKey="amount" innerRadius={28} outerRadius={44} paddingAngle={3}>
+                      {monthIncomeCategoryData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex-1 space-y-1.5 min-w-0">
+                  {monthIncomeCategoryData.map((d) => (
+                    <div key={d.id} className="flex items-center gap-2 text-xs">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                      <span className="truncate flex-1" style={{ color: 'var(--text-muted)' }}>{d.name}</span>
+                      <span className="font-medium">{d.percent.toFixed(0)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2.5">
+                {monthIncomeCategoryData.map((d) => {
+                  const isExpanded = expandedMonthIncomeCatId === d.id
+                  const sortedEntries = [...d.entries].sort((a, b) => {
+                    const aDate = a.receivedDate ?? `${a.month}-01`
+                    const bDate = b.receivedDate ?? `${b.month}-01`
+                    return bDate.localeCompare(aDate)
+                  })
+                  return (
+                    <div key={d.id}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <button
+                          type="button"
+                          aria-label={isExpanded ? `Fechar receitas de ${d.name}` : `Ver receitas de ${d.name}`}
+                          onClick={() => setExpandedMonthIncomeCatId(v => v === d.id ? null : d.id)}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{
+                            background: d.color + '20',
+                            outline: isExpanded ? `1.5px solid ${d.color}` : 'none',
+                            cursor: 'pointer',
+                            border: 'none',
+                          }}
+                        >
+                          <CategoryIcon name={d.icon} size={12} style={{ color: d.color }} />
+                        </button>
+                        <span className="text-xs flex-1 truncate">{d.name}</span>
+                        <span className="text-xs font-bold">{formatCurrency(d.amount)}</span>
+                      </div>
+                      <div className="ml-8 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-input)' }}>
+                        <motion.div
+                          className="h-full rounded-full"
+                          initial={{ width: 0 }} animate={{ width: `${d.percent}%` }} transition={{ duration: 0.6 }}
+                          style={{ background: d.color }}
+                        />
+                      </div>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.22 }}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <div className="ml-8 mt-2 space-y-1.5 pb-1">
+                              {sortedEntries.map(e => (
+                                <div key={e.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                                  style={{ background: 'var(--bg-input)' }}>
+                                  <p className="text-xs truncate flex-1">{e.description}</p>
+                                  <p className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                                    {e.receivedDate
+                                      ? new Date(e.receivedDate + 'T12:00:00').toLocaleDateString('pt-BR')
+                                      : e.month}
+                                  </p>
+                                  <p className="text-xs font-bold flex-shrink-0" style={{ fontFamily: 'var(--font-dm-mono)' }}>
+                                    {formatCurrency(e.amount)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Monthly category breakdown */}
           {monthCategoryData.length > 0 && (
