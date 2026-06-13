@@ -384,57 +384,63 @@ export default function BudgetPage() {
                   initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="flex items-center gap-3 px-5 py-3"
+                  className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-3 px-5 py-3"
                   style={{
                     borderBottom: i < categories.length - 1 ? '1px solid var(--border)' : 'none',
                   }}
                 >
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: cat.color + '20' }}
-                  >
-                    <CategoryIcon name={cat.icon} size={15} style={{ color: cat.color }} />
-                  </div>
-                  <span className="flex-1 text-sm font-medium truncate">{cat.name}</span>
-                  {hasAnyCatFixed && (
-                    <span className="text-xs text-right" style={{ color: catFixed > 0 ? 'var(--text-muted)' : 'transparent', width: 90 }}>
-                      {catFixed > 0 ? formatCurrency(catFixed) : '—'}
-                    </span>
-                  )}
-                  <div className="relative" style={{ width: 120 }}>
-                    <span
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"
-                      style={{ color: 'var(--text-muted)', pointerEvents: 'none' }}
+                  {/* Ícone + nome — sempre visível */}
+                  <div className="flex items-center gap-3 min-w-0 lg:flex-1">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: cat.color + '20' }}
                     >
-                      R$
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="50"
-                      placeholder="—"
-                      value={catValues[cat.id] ?? ''}
-                      disabled={isPast}
-                      onChange={(e) =>
-                        !isPast && setCatValues((prev) => ({ ...prev, [cat.id]: e.target.value }))
-                      }
-                      className="w-full rounded-xl text-sm text-right"
-                      style={{
-                        padding: '8px 10px 8px 28px',
-                        background: 'var(--bg-input)',
-                        border: '1px solid var(--border)',
-                        color: isPast ? 'var(--text-muted)' : 'var(--text)',
-                        outline: 'none',
-                        cursor: isPast ? 'not-allowed' : 'text',
-                        opacity: isPast ? 0.7 : 1,
-                      }}
-                    />
+                      <CategoryIcon name={cat.icon} size={15} style={{ color: cat.color }} />
+                    </div>
+                    <span className="text-sm font-medium truncate">{cat.name}</span>
                   </div>
-                  {hasAnyCatFixed && effective > 0 && (
-                    <span className="text-xs font-semibold text-right" style={{ color: 'var(--accent)', width: 72, flexShrink: 0 }}>
-                      {formatCurrency(effective)}
-                    </span>
-                  )}
+                  {/* Controles: fixas + input + total */}
+                  <div className="flex items-center gap-2 lg:gap-3">
+                    {hasAnyCatFixed && (
+                      <span className="text-xs text-right flex-1 lg:flex-none" style={{ color: catFixed > 0 ? 'var(--text-muted)' : 'transparent', minWidth: 72, width: 90 }}>
+                        {catFixed > 0 ? formatCurrency(catFixed) : '—'}
+                      </span>
+                    )}
+                    <div className="relative" style={{ width: 120 }}>
+                      <span
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"
+                        style={{ color: 'var(--text-muted)', pointerEvents: 'none' }}
+                      >
+                        R$
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50"
+                        placeholder="—"
+                        value={catValues[cat.id] ?? ''}
+                        disabled={isPast}
+                        onChange={(e) =>
+                          !isPast && setCatValues((prev) => ({ ...prev, [cat.id]: e.target.value }))
+                        }
+                        className="w-full rounded-xl text-sm text-right"
+                        style={{
+                          padding: '8px 10px 8px 28px',
+                          background: 'var(--bg-input)',
+                          border: '1px solid var(--border)',
+                          color: isPast ? 'var(--text-muted)' : 'var(--text)',
+                          outline: 'none',
+                          cursor: isPast ? 'not-allowed' : 'text',
+                          opacity: isPast ? 0.7 : 1,
+                        }}
+                      />
+                    </div>
+                    {hasAnyCatFixed && effective > 0 && (
+                      <span className="text-xs font-semibold text-right" style={{ color: 'var(--accent)', width: 72, flexShrink: 0 }}>
+                        {formatCurrency(effective)}
+                      </span>
+                    )}
+                  </div>
                 </motion.div>
               )
             })}
