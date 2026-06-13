@@ -22,7 +22,7 @@ function addMonths(month: string, delta: number) {
 
 export default function BudgetPage() {
   const {
-    preferences, categories, financialGoals,
+    preferences, categories, financialGoals, monthlyBudgets,
     getGoalWeeklyTotal, getGoalProgress,
     setBudgetMode,
     getFixedMonthlyContribution, getFixedMonthlyCategoryContribution,
@@ -55,7 +55,7 @@ export default function BudgetPage() {
   const [savedFixed, setSavedFixed] = useState(false)
   const [savedCat, setSavedCat] = useState(false)
 
-  // Reset form when month changes
+  // Reset form when month changes OR when data first loads from Supabase
   useEffect(() => {
     const { monthlyBudget: mb, categoryBudgets: cb = {} } = getBudgetForMonth(monthKey)
     setFixedValue(String(mb))
@@ -64,7 +64,7 @@ export default function BudgetPage() {
     ))
     setSavedFixed(false)
     setSavedCat(false)
-  }, [monthKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [monthKey, monthlyBudgets]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalCat = categories.reduce((sum, c) => {
     const v = parseFloat(catValues[c.id] ?? '')
