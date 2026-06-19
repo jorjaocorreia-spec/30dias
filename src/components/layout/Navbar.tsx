@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle, MoreHorizontal, X } from 'lucide-react'
+import { LayoutDashboard, PlusCircle, Tag, BarChart2, Store, List, Repeat2, Wallet, TrendingUp, Target, LogOut, Plug, ChevronLeft, ChevronRight, HelpCircle, MoreHorizontal, X, Trophy } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/income', icon: TrendingUp, label: 'Receitas', section: 'financial' },
   { href: '/budget', icon: Wallet, label: 'Orçamento', section: 'financial' },
   { href: '/summary', icon: BarChart2, label: 'Resumo', section: 'financial' },
+  { href: '/achievements', icon: Trophy, label: 'Conquistas', section: 'financial' },
   { href: '/categories', icon: Tag, label: 'Categorias', section: 'config' },
   { href: '/establishments', icon: Store, label: 'Locais', section: 'config' },
   { href: '/integrations', icon: Plug, label: 'Integrações', section: 'config' },

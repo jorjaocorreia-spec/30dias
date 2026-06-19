@@ -14,6 +14,14 @@ import {
 import { getWeekKey } from '@/lib/weekHelpers'
 import { nanoid } from 'nanoid'
 import { getTranscriptionFromAudioMessage } from '@/lib/whatsapp/transcribeAudio'
+import { checkAchievementsForUser } from '@/lib/achievements-server'
+
+async function notifyUnlockedAchievements(phone: string, userId: string): Promise<void> {
+  const unlocked = await checkAchievementsForUser(userId)
+  for (const achievement of unlocked) {
+    await sendWhatsAppMessage(phone, `🏆 Conquista desbloqueada!\n*${achievement.title}*\n${achievement.description}`)
+  }
+}
 
 type ExtractedMessage =
   | { phone: string; text: string; isAudio: false }
@@ -210,6 +218,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       : `✅ *+${incomeAmount}* · ${incomeCategoryName} · ${incomeDateFmt}\n_${income.description}_`
     await sendWhatsAppMessage(phone, incomeConfirm)
     console.log('[WA] income saved:', incomeId)
+    await notifyUnlockedAchievements(phone, userId)
     return NextResponse.json({ ok: true, incomeEntryId: incomeId })
   }
 
@@ -281,5 +290,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   await sendWhatsAppMessage(phone, confirm)
 
   console.log('[WA] expense saved:', id)
+  await notifyUnlockedAchievements(phone, userId)
   return NextResponse.json({ ok: true, expenseId: id })
 }

@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users } from 'lucide-react'
+import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users, Trophy } from 'lucide-react'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, Tooltip, ResponsiveContainer,
@@ -15,6 +15,7 @@ import {
   getWeekKey, getWeekStart, getMondaysBetween,
 } from '@/lib/weekHelpers'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { ACHIEVEMENTS } from '@/lib/achievements'
 
 export default function DashboardPage() {
   const {
@@ -22,7 +23,7 @@ export default function DashboardPage() {
     getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
     getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
     getSharedPendingTotal, markParticipantAsPaid, getBudgetForMonth,
-    setAvailableMode,
+    setAvailableMode, userAchievements,
   } = useAppStore()
   const router = useRouter()
 
@@ -106,6 +107,14 @@ export default function DashboardPage() {
     : 0
 
   const sharedPending = getSharedPendingTotal(monthKey)
+
+  const latestAchievement = useMemo(() => {
+    if (userAchievements.length === 0) return null
+    const sorted = [...userAchievements].sort((a, b) => b.unlockedAt.localeCompare(a.unlockedAt))
+    const latest = sorted[0]
+    const achievement = ACHIEVEMENTS.find(a => a.id === latest.achievementId)
+    return achievement ?? null
+  }, [userAchievements])
 
   const activeGoals = useMemo(
     () => financialGoals.filter(g => g.isActive && !g.completedAt),
@@ -237,7 +246,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className={`grid grid-cols-2 gap-3 mb-5 ${(sharedPending > 0 || activeGoals.length > 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+      <div className={`grid grid-cols-2 gap-3 mb-5 ${(sharedPending > 0 || activeGoals.length > 0 || userAchievements.length > 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         {[
           {
             icon: Wallet,
@@ -289,6 +298,15 @@ export default function DashboardPage() {
             color: '#10b981',
             colSpanMobile: false,
             onClick: () => router.push('/goals'),
+          }] : []),
+          ...(userAchievements.length > 0 ? [{
+            icon: Trophy,
+            label: 'Conquistas',
+            value: `${userAchievements.length}/${ACHIEVEMENTS.length}`,
+            sub: latestAchievement ? latestAchievement.title : 'desbloqueadas',
+            color: '#f59e0b',
+            colSpanMobile: false,
+            onClick: () => router.push('/achievements'),
           }] : []),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ].map(({ icon: Icon, label, value, sub, color, colSpanMobile, onClick, isAvailable }: any, i: number) => (

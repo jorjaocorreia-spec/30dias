@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
+import { AchievementCelebrationModal } from '@/components/ui/AchievementCelebrationModal'
 import { useAppStore } from '@/store/useAppStore'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -74,6 +75,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="app-main">
         {children}
       </main>
+      <AchievementCelebrationModal />
     </div>
   )
 }

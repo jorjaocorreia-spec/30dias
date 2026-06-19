@@ -97,6 +97,7 @@ interface IncomeEntry {
   amount: number; month: string   // YYYY-MM
   receivedDate?: string; paymentMethod: PaymentMethod; notes?: string
 }
+interface UserAchievement { id: string; achievementId: string; unlockedAt: string }  // YYYY-MM-DD
 ```
 
 ### Receitas
@@ -144,6 +145,17 @@ interface IncomeEntry {
 - Metas com `deductFromBudget=true` aparecem na página de Orçamento como linha "🎯 Metas (automático)"
 - Migration: `supabase/migrations/20260527_financial_goals.sql` (já aplicada)
 - **Atenção:** para limpar `completedAt` ao reabrir uma meta, passar `null` (não `undefined`) em `updateFinancialGoal`. `dbUpdate` usa `Object.entries` que inclui `undefined`, mas o JSON.stringify o descarta → campo não vira NULL no banco. `null` é serializado corretamente.
+
+### Conquistas (achievements)
+- Catálogo de ~23 conquistas hardcoded em `src/lib/achievements.ts` (`ACHIEVEMENTS`), com `check(ctx)` puro por item. `UserAchievement` no Supabase guarda só o que foi desbloqueado (`achievementId`, `unlockedAt`)
+- Categorias: `usage`, `consistency`, `goals`, `budget`, `milestones`
+- `useAppStore.checkAchievements()` — monta `AchievementContext` a partir do estado já carregado, roda `evaluateAchievements`, insere novos desbloqueios em `user_achievements` e empilha em `celebrationQueue` (consumida por `AchievementCelebrationModal`, fila simples via `dismissCelebration`)
+- Chamado após: `addExpense(s)`, `addIncomeEntry`, `addCategory`, `addEstablishment`, `addFinancialGoal`, `updateFinancialGoal`, `addGoalContribution`, `addFixedExpenseMonth`, `updateFixedExpenseMonth`, `setBudgetMode`, `setWhatsappNumber`, e em `loadUserData`
+- WhatsApp: mesma engine roda server-side em `src/lib/achievements-server.ts` (`checkAchievementsForUser`, via `supabaseAdmin`) — chamada pelo webhook após salvar despesa/receita; novos desbloqueios disparam mensagem via `sendWhatsAppMessage`
+- `getAchievementStatuses(ctx, unlockedRecords)` → status completo (desbloqueadas + bloqueadas com progresso) usado pela página `/achievements`
+- Conquistas são permanentes (não relockam); bloqueadas ficam visíveis com progresso (não são secretas)
+- Migration: `supabase/migrations/20260619_user_achievements.sql`
+- Design completo: `docs/ACHIEVEMENTS_DESIGN.md`
 
 ### Budget automático de fixas
 
@@ -239,6 +251,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 | `/income` | Fontes recorrentes + entradas mensais, seção Pendentes (amber), saldo mensal |
 | `/budget` | Modo fixo: discricionário mensal + fixas (🔒 auto) + metas (🎯 auto, se deductFromBudget) + total mensal. Modo categoria: idem. Dica de cota semanal (≈ R$ X/sem · N semanas este mês) exibida abaixo de cada campo. Inputs são valores mensais diretamente. |
 | `/summary` | Total, AreaChart, donut, barras animadas por categoria, histórico semanal paginado |
+| `/achievements` | Grid de conquistas por categoria (desbloqueadas com data, bloqueadas com barra de progresso), progresso geral no topo |
 | `/integrations` | Card WhatsApp: salvar número, exemplos de mensagens para registro, lista de comandos de consulta |
 | `/help` | Central de ajuda: índice com busca e cards agrupados por categoria |
 | `/help/[slug]` | Artigo de ajuda com sumário lateral, blocos tipados (callout, steps, tabelas) e navegação prev/next |
