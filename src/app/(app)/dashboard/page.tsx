@@ -12,7 +12,7 @@ import {
 import { useAppStore } from '@/store/useAppStore'
 import {
   formatCurrency, formatDate, getEffectiveAmount, getCurrentWeekKey,
-  getWeekKey, getWeekStart, getMondaysBetween,
+  getWeekKey, getWeekStart, getMondaysBetween, getEffectiveMonth,
 } from '@/lib/weekHelpers'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { ACHIEVEMENTS } from '@/lib/achievements'
@@ -23,7 +23,7 @@ export default function DashboardPage() {
     getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
     getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
     getSharedPendingTotal, markParticipantAsPaid, getBudgetForMonth,
-    setAvailableMode, userAchievements,
+    setAvailableMode, userAchievements, creditCards,
   } = useAppStore()
   const router = useRouter()
 
@@ -76,6 +76,11 @@ export default function DashboardPage() {
     [expenses, monthKey]
   )
 
+  const invoiceMonthExpenses = useMemo(
+    () => expenses.filter(e => getEffectiveMonth(e, creditCards) === monthKey),
+    [expenses, monthKey, creditCards]
+  )
+
   const monthBalance = getMonthlyBalance(monthKey)
   const fixedMonthly = getFixedMonthlyContribution(monthKey)
   const fixedByCatMonthly = getFixedMonthlyCategoryContribution(monthKey)
@@ -87,14 +92,11 @@ export default function DashboardPage() {
       + fixedMonthly + goalDeductMonthly
     : mBudget + fixedMonthly + goalDeductMonthly
 
-  const totalMonthlyExpenses = useMemo(
-    () => monthExpenses.reduce((sum, e) => sum + getEffectiveAmount(e), 0),
-    [monthExpenses]
-  )
+  const totalMonthlyExpenses = monthBalance.expenses
 
   const fixedMonthExpenses = useMemo(
-    () => monthExpenses.filter(e => !!e.fixedExpenseId).reduce((sum, e) => sum + getEffectiveAmount(e), 0),
-    [monthExpenses]
+    () => invoiceMonthExpenses.filter(e => !!e.fixedExpenseId).reduce((sum, e) => sum + getEffectiveAmount(e), 0),
+    [invoiceMonthExpenses]
   )
   const variableMonthExpenses = monthBalance.expenses - fixedMonthExpenses
 
