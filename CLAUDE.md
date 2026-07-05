@@ -55,7 +55,7 @@ interface Expense {
   date: string            // YYYY-MM-DD
   weekKey: string         // YYYY-WNN
   paymentMethod: PaymentMethod
-  notes?: string; establishmentId?: string
+  notes?: string; establishmentId?: string; creditCardId?: string
   fixedExpenseId?: string; fixedExpenseMonthId?: string
   sharedWith?: ExpenseParticipant[]   // definido quando a despesa é dividida
   userShares?: number                 // partes do próprio usuário no split (ex: casal = 2); padrão 1
@@ -74,6 +74,17 @@ interface FixedExpense {
   reminderEnabled?: boolean
 }
 interface FixedExpenseMonth { id: string; fixedExpenseId: string; month: string; amount: number }
+interface CreditCard {
+  id: string; name: string              // ex: "Nubank", "Inter"
+  closingDay: number         // 1–31, dia de fechamento do ciclo
+  dueDay: number             // 1–31, dia de vencimento da fatura
+  color: string; isActive: boolean; createdAt: string          // YYYY-MM-DD
+}
+interface CreditCardInvoice {
+  id: string; creditCardId: string
+  month: string              // YYYY-MM — mês de VENCIMENTO da fatura
+  paid: boolean; paidAt?: string            // YYYY-MM-DD
+}
 interface FinancialGoal {
   id: string; name: string; targetAmount: number; deadline: string  // YYYY-MM
   icon: string; color: string; notes?: string
@@ -134,6 +145,17 @@ interface UserAchievement { id: string; achievementId: string; unlockedAt: strin
 - Coluna `shared_with JSONB` na tabela `expenses` do Supabase (já migrada)
 - **`shares`** em `ExpenseParticipant`: quantas partes essa pessoa representa (casal = 2). "Dividir igual" distribui proporcionalmente; arredondamento ocorre após multiplicar (nunca antes)
 - **`userShares`** em `Expense`: partes do próprio usuário no split. Contador `+`/`−` na linha "Sua parte" do form. `getEffectiveAmount` continua correto pois retorna o resto após subtrair os participantes
+
+### Cartões de crédito
+
+- `CreditCard` = template do cartão (nome, dia de fechamento, dia de vencimento); `CreditCardInvoice` = instância mensal auto-gerada, com `paid`/`paidAt` para confirmação manual
+- `getInvoiceMonth(purchaseDate, card)` em `weekHelpers.ts` — calcula o mês (`YYYY-MM`) de vencimento da fatura a partir do dia da compra e do fechamento/vencimento do cartão
+- `getEffectiveMonth(expense, creditCards)` em `weekHelpers.ts` — mês efetivo de uma despesa para fins de saldo: despesas não-cartão usam a data da compra; despesas de cartão usam o mês de vencimento da fatura; despesas de cartão sem `creditCardId` (legado) caem no fallback "compra + 1 mês"
+- **Somente `getMonthlyBalance` e os cálculos de "Disponível"/"GASTOS" do dashboard usam `getEffectiveMonth`** — orçamento por categoria, gráficos e a listagem de `/expenses` continuam por data da compra, propositalmente
+- `syncCreditCardInvoices()` gera faturas automaticamente a partir das despesas de cartão, chamada após `addExpense`, `addExpenses`, `updateExpense` e no `onRehydrateStorage` — idem ao padrão de `syncFixedExpenses()`
+- Excluir um cartão é bloqueado (no-op) se houver despesas vinculadas (`creditCardId`) — o usuário deve desativar (`isActive: false`) em vez de excluir
+- Página `/credit-cards`: CRUD de cartões + histórico de faturas por cartão com confirmação manual de pagamento
+- Migration: `supabase/migrations/20260705_credit_cards.sql`
 
 ### Metas financeiras
 - `FinancialGoal` = template com alvo, prazo e config; `GoalContribution` = contribuição mensal registrada pelo usuário
@@ -224,6 +246,8 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 - `getMondaysBetween(from, to)` — todas as segundas-feiras inclusive
 - `isInstallment(expense)` → `(installmentTotal ?? 1) > 1`
 - `addMonthsToDate(baseDate, months, dueDayOfMonth)` — avança N meses fixando o dia; trata meses curtos
+- `getInvoiceMonth(purchaseDate, card)` — mês (`YYYY-MM`) de vencimento da fatura de um cartão a partir da data da compra
+- `getEffectiveMonth(expense, creditCards)` — mês efetivo de uma despesa para saldo (compra ou fatura, conforme cartão)
 
 ## Categorias e ícones
 
@@ -247,6 +271,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 | `/categories` | CRUD, bottom sheet (mobile)/inline (lg), picker ícone+cor, exclusão com modal |
 | `/establishments` | CRUD; selecionar preenche categoria no `ExpenseForm` |
 | `/fixed-expenses` | Templates + confirmação mensal, seção Pendentes (amber), histórico |
+| `/credit-cards` | Cartões de crédito: CRUD de cartões (nome, fechamento, vencimento), histórico de faturas por cartão com confirmação manual de pagamento |
 | `/goals` | Metas financeiras: seção Pendentes (amber), cards com barra de progresso + sugestão semanal, modal de contribuição mensal, histórico expandível, concluir/pausar/excluir |
 | `/income` | Fontes recorrentes + entradas mensais, seção Pendentes (amber), saldo mensal |
 | `/budget` | Modo fixo: discricionário mensal + fixas (🔒 auto) + metas (🎯 auto, se deductFromBudget) + total mensal. Modo categoria: idem. Dica de cota semanal (≈ R$ X/sem · N semanas este mês) exibida abaixo de cada campo. Inputs são valores mensais diretamente. |
