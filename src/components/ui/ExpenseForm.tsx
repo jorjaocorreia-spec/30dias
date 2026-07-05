@@ -29,6 +29,11 @@ const schema = z.object({
   notes: z.string().optional(),
   paymentMethod: z.enum(['credit_card', 'pix', 'ted', 'cash']),
   establishmentId: z.string().optional(),
+  creditCardId: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.paymentMethod === 'credit_card' && !data.creditCardId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['creditCardId'], message: 'Selecione o cartão' })
+  }
 })
 
 type FormData = z.infer<typeof schema>
@@ -45,7 +50,7 @@ function getNowDatetime() {
 }
 
 export function ExpenseForm({ initialData, onSuccess }: Props) {
-  const { categories, establishments, addExpense, addExpenses, updateExpense, addCategory, addEstablishment, addFixedExpense } = useAppStore()
+  const { categories, establishments, creditCards, addExpense, addExpenses, updateExpense, addCategory, addEstablishment, addFixedExpense } = useAppStore()
   const isEdit = !!initialData
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -58,6 +63,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       notes: initialData?.notes ?? '',
       paymentMethod: initialData?.paymentMethod ?? 'pix',
       establishmentId: initialData?.establishmentId ?? undefined,
+      creditCardId: initialData?.creditCardId ?? undefined,
     },
   })
 
@@ -188,6 +194,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
     notes: '',
     paymentMethod: 'pix' as const,
     establishmentId: undefined,
+    creditCardId: undefined,
   }
 
   const onSubmit = (data: FormData) => {
@@ -829,6 +836,31 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
         </div>
         {errors.paymentMethod && <p className="text-xs mt-1.5 text-red-400">{errors.paymentMethod.message}</p>}
       </div>
+
+      {/* Credit card selection — only when paymentMethod is credit_card */}
+      {selectedPaymentMethod === 'credit_card' && (
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Cartão</label>
+          {creditCards.length === 0 ? (
+            <a href="/credit-cards" className="block text-xs px-4 py-3 rounded-2xl border"
+              style={{ borderColor: 'var(--border)', background: 'var(--bg-input)', color: 'var(--accent)' }}>
+              Nenhum cartão cadastrado — cadastrar cartão →
+            </a>
+          ) : (
+            <select
+              aria-label="Cartão"
+              {...register('creditCardId')}
+              className={fieldClass} style={fieldStyle}
+            >
+              <option value="">Selecione o cartão</option>
+              {creditCards.filter(c => c.isActive).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          )}
+          {errors.creditCardId && <p className="text-xs mt-1.5 text-red-400">{errors.creditCardId.message}</p>}
+        </div>
+      )}
 
       {/* Notes */}
       <div>
