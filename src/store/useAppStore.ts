@@ -3,10 +3,10 @@
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { Category, Establishment, Expense, ExpenseParticipant, FinancialGoal, FixedExpense, FixedExpenseMonth, GoalContribution, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry, MonthlyBudget, UserAchievement } from '@/types'
+import { Category, CreditCard, CreditCardInvoice, Establishment, Expense, ExpenseParticipant, FinancialGoal, FixedExpense, FixedExpenseMonth, GoalContribution, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry, MonthlyBudget, UserAchievement } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/categories'
 import { DEFAULT_INCOME_CATEGORIES } from '@/data/incomeCategories'
-import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey, getEffectiveAmount, getWeeksUntilDeadline } from '@/lib/weekHelpers'
+import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey, getEffectiveAmount, getWeeksUntilDeadline, getInvoiceMonth, getEffectiveMonth } from '@/lib/weekHelpers'
 import { Achievement, AchievementContext, evaluateAchievements } from '@/lib/achievements'
 import { fromDB } from '@/lib/dbMapping'
 import { nanoid } from 'nanoid'
@@ -48,6 +48,8 @@ interface AppState {
   establishments: Establishment[]
   fixedExpenses: FixedExpense[]
   fixedExpenseMonths: FixedExpenseMonth[]
+  creditCards: CreditCard[]
+  creditCardInvoices: CreditCardInvoice[]
   incomeCategories: IncomeCategory[]
   incomeSources: IncomeSource[]
   incomeEntries: IncomeEntry[]
@@ -92,6 +94,15 @@ interface AppState {
   updateFixedExpenseMonth: (id: string, amount: number, date?: string) => Promise<void>
   deleteFixedExpenseMonth: (id: string) => void
   syncFixedExpenses: () => void
+
+  // Credit Cards
+  addCreditCard: (data: Omit<CreditCard, 'id' | 'createdAt'>) => void
+  updateCreditCard: (id: string, data: Partial<Omit<CreditCard, 'id' | 'createdAt'>>) => void
+  deleteCreditCard: (id: string) => void
+
+  // Credit Card Invoices
+  syncCreditCardInvoices: () => void
+  setCreditCardInvoicePaid: (id: string, paid: boolean) => void
 
   // Income Categories
   addIncomeCategory: (data: Omit<IncomeCategory, 'id'>) => void
@@ -158,6 +169,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   establishments: [],
   fixedExpenses: [],
   fixedExpenseMonths: [],
+  creditCards: [],
+  creditCardInvoices: [],
   incomeCategories: [],
   incomeSources: [],
   incomeEntries: [],
@@ -193,6 +206,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
           establishments: [],
           fixedExpenses: [],
           fixedExpenseMonths: [],
+          creditCards: [],
+          creditCardInvoices: [],
           incomeCategories: [],
           incomeSources: [],
           incomeEntries: [],
@@ -232,13 +247,15 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (!user) return
     set({ isLoading: true })
 
-    const [catRes, estRes, expRes, feRes, femRes, icatRes, isrcRes, ieRes, prefRes, goalsRes, contribRes, mbRes, achRes] =
+    const [catRes, estRes, expRes, feRes, femRes, ccRes, ccInvRes, icatRes, isrcRes, ieRes, prefRes, goalsRes, contribRes, mbRes, achRes] =
       await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('establishments').select('*'),
         supabase.from('expenses').select('*'),
         supabase.from('fixed_expenses').select('*'),
         supabase.from('fixed_expense_months').select('*'),
+        supabase.from('credit_cards').select('*'),
+        supabase.from('credit_card_invoices').select('*'),
         supabase.from('income_categories').select('*'),
         supabase.from('income_sources').select('*'),
         supabase.from('income_entries').select('*'),
@@ -302,6 +319,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
       expenses,
       fixedExpenses: feRes.data?.map(r => fromDB<FixedExpense>(r)) ?? [],
       fixedExpenseMonths: femRes.data?.map(r => fromDB<FixedExpenseMonth>(r)) ?? [],
+      creditCards: ccRes.data?.map(r => fromDB<CreditCard>(r)) ?? [],
+      creditCardInvoices: ccInvRes.data?.map(r => fromDB<CreditCardInvoice>(r)) ?? [],
       incomeCategories,
       incomeSources: isrcRes.data?.map(r => fromDB<IncomeSource>(r)) ?? [],
       incomeEntries: ieRes.data?.map(r => fromDB<IncomeEntry>(r)) ?? [],
@@ -314,6 +333,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     })
 
     get().syncFixedExpenses()
+    get().syncCreditCardInvoices()
     get().checkAchievements()
   },
 
@@ -324,6 +344,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const { user } = get()
     if (user) supabase.from('expenses').insert(toDB(expense, user.id)).then(({ error }) => { if (error) console.error(error) })
     get().checkAchievements()
+    get().syncCreditCardInvoices()
   },
 
   addExpenses: (items) => {
@@ -335,6 +356,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       supabase.from('expenses').insert(rows).then(({ error }) => { if (error) console.error(error) })
     }
     get().checkAchievements()
+    get().syncCreditCardInvoices()
   },
 
   updateExpense: (id, data) => {
@@ -349,6 +371,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       if (data.date) update.week_key = getWeekKey(data.date)
       supabase.from('expenses').update(update).eq('id', id).then(({ error }) => { if (error) console.error(error) })
     }
+    get().syncCreditCardInvoices()
   },
 
   deleteExpense: (id) => {
@@ -539,6 +562,76 @@ export const useAppStore = create<AppState>()((set, get) => ({
         supabase.from('expenses').insert(newEntries.map(e => toDB(e, user.id)))
           .then(({ error }) => { if (error) console.error(error) })
       }
+    }
+  },
+
+  // ── Credit Cards ─────────────────────────────────────────────────────────
+  addCreditCard: (data) => {
+    const card: CreditCard = { ...data, id: nanoid(), createdAt: getTodayKey() }
+    set(state => ({ creditCards: [...state.creditCards, card] }))
+    const { user } = get()
+    if (user) supabase.from('credit_cards').insert(toDB(card, user.id)).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  updateCreditCard: (id, data) => {
+    set(state => ({ creditCards: state.creditCards.map(c => c.id === id ? { ...c, ...data } : c) }))
+    const { user } = get()
+    if (user) supabase.from('credit_cards').update(dbUpdate(data)).eq('id', id).then(({ error }) => { if (error) console.error(error) })
+  },
+
+  deleteCreditCard: (id) => {
+    const inUse = get().expenses.some(e => e.creditCardId === id)
+    if (inUse) return
+    set(state => ({
+      creditCards: state.creditCards.filter(c => c.id !== id),
+      creditCardInvoices: state.creditCardInvoices.filter(inv => inv.creditCardId !== id),
+    }))
+    const { user } = get()
+    if (user) {
+      Promise.all([
+        supabase.from('credit_cards').delete().eq('id', id),
+        supabase.from('credit_card_invoices').delete().eq('credit_card_id', id),
+      ]).then(results => results.forEach(({ error }) => { if (error) console.error(error) }))
+    }
+  },
+
+  // ── Credit Card Invoices ─────────────────────────────────────────────────
+  syncCreditCardInvoices: () => {
+    const { creditCards, expenses, creditCardInvoices, user } = get()
+    const newInvoices: CreditCardInvoice[] = []
+
+    for (const card of creditCards) {
+      const months = new Set(
+        expenses
+          .filter(e => e.creditCardId === card.id)
+          .map(e => getInvoiceMonth(e.date, card))
+      )
+      for (const month of months) {
+        const exists = creditCardInvoices.some(inv => inv.creditCardId === card.id && inv.month === month)
+          || newInvoices.some(inv => inv.creditCardId === card.id && inv.month === month)
+        if (!exists) {
+          newInvoices.push({ id: nanoid(), creditCardId: card.id, month, paid: false })
+        }
+      }
+    }
+
+    if (newInvoices.length === 0) return
+    set(state => ({ creditCardInvoices: [...state.creditCardInvoices, ...newInvoices] }))
+    if (user) {
+      supabase.from('credit_card_invoices').insert(newInvoices.map(inv => toDB(inv, user.id)))
+        .then(({ error }) => { if (error) console.error(error) })
+    }
+  },
+
+  setCreditCardInvoicePaid: (id, paid) => {
+    const paidAt = paid ? getTodayKey() : undefined
+    set(state => ({
+      creditCardInvoices: state.creditCardInvoices.map(inv => inv.id === id ? { ...inv, paid, paidAt } : inv),
+    }))
+    const { user } = get()
+    if (user) {
+      supabase.from('credit_card_invoices').update(dbUpdate({ paid, paidAt: paidAt ?? null })).eq('id', id)
+        .then(({ error }) => { if (error) console.error(error) })
     }
   },
 
