@@ -1,4 +1,4 @@
-import { Expense, WeekSummary } from '@/types'
+import { CreditCard, Expense, WeekSummary } from '@/types'
 
 export function getEffectiveAmount(expense: Expense): number {
   if (!expense.sharedWith?.length) return expense.amount
@@ -17,6 +17,44 @@ export function addMonthsToDate(baseDate: string, months: number, dueDayOfMonth:
   const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
   d.setDate(Math.min(dueDayOfMonth, lastDay))
   return toLocalDateKey(d)
+}
+
+// Mês (YYYY-MM) em que a fatura do cartão vence, dado o dia da compra e o
+// fechamento/vencimento do cartão. O vencimento é sempre cronologicamente
+// depois do fechamento — se dueDay < closingDay numericamente, o vencimento
+// cai no mês seguinte ao fechamento.
+export function getInvoiceMonth(purchaseDate: string, card: Pick<CreditCard, 'closingDay' | 'dueDay'>): string {
+  const d = new Date(purchaseDate + 'T12:00:00')
+  const purchaseDay = d.getDate()
+
+  const closeMonthDate = new Date(d.getFullYear(), d.getMonth(), 1)
+  if (purchaseDay > card.closingDay) {
+    closeMonthDate.setMonth(closeMonthDate.getMonth() + 1)
+  }
+
+  const dueMonthDate = new Date(closeMonthDate)
+  if (card.dueDay < card.closingDay) {
+    dueMonthDate.setMonth(dueMonthDate.getMonth() + 1)
+  }
+
+  return `${dueMonthDate.getFullYear()}-${String(dueMonthDate.getMonth() + 1).padStart(2, '0')}`
+}
+
+// Mês efetivo de uma despesa para fins de saldo/caixa: despesas não-cartão
+// usam a data da compra; despesas de cartão usam o mês de vencimento da
+// fatura. Despesas de cartão antigas sem creditCardId (pré-migração) caem
+// no fallback "compra + 1 mês".
+export function getEffectiveMonth(expense: Expense, creditCards: CreditCard[]): string {
+  if (expense.paymentMethod !== 'credit_card') return expense.date.slice(0, 7)
+
+  const card = creditCards.find(c => c.id === expense.creditCardId)
+  if (!card) {
+    const [year, month] = expense.date.slice(0, 7).split('-').map(Number)
+    const d = new Date(year, month, 1) // month is 1-based here, so this is already +1
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  }
+
+  return getInvoiceMonth(expense.date, card)
 }
 
 // Returns ISO week number for a given date
