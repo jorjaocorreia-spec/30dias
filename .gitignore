@@ -50,3 +50,6 @@ next-env.d.ts
 # server pending entries (gerado em runtime)
 pending-entries.json
 integration-config.json
+
+# subagent-driven-development scratch workspace
+.superpowers/
