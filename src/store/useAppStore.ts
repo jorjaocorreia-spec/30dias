@@ -790,9 +790,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
   getMonthlyBalance: (month) => {
-    const { incomeEntries, expenses } = get()
+    const { incomeEntries, expenses, creditCards } = get()
     const income = incomeEntries.filter(e => e.month === month).reduce((sum, e) => sum + e.amount, 0)
-    const monthExpenses = expenses.filter(e => e.date.startsWith(month)).reduce((sum, e) => sum + getEffectiveAmount(e), 0)
+    const monthExpenses = expenses
+      .filter(e => getEffectiveMonth(e, creditCards) === month)
+      .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
     return { income, expenses: monthExpenses, balance: income - monthExpenses }
   },
 
