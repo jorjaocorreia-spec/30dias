@@ -41,7 +41,10 @@ export default function CreditCardsPage() {
       .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
 
   const invoicesForCard = (cardId: string) =>
-    creditCardInvoices.filter(inv => inv.creditCardId === cardId).sort((a, b) => b.month.localeCompare(a.month))
+    creditCardInvoices
+      .filter(inv => inv.creditCardId === cardId)
+      .filter(inv => inv.paid || invoiceTotal(cardId, inv.month) > 0)
+      .sort((a, b) => b.month.localeCompare(a.month))
 
   const openNew = () => { setEditing(null); setForm(defaultCardForm); setShowForm(true) }
   const openEdit = (card: CreditCard) => {
