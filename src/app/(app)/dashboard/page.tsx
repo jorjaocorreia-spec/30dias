@@ -365,12 +365,15 @@ export default function DashboardPage() {
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
       >
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-1">
           <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Saldo do mês</p>
           <Link href="/income" className="text-xs px-2 py-1 rounded-lg" style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}>
             Ver receitas
           </Link>
         </div>
+        <p className="text-xs mb-3" style={{ color: 'var(--text-dim)' }}>
+          Despesas de cartão contam pelo vencimento da fatura, não pela data da compra
+        </p>
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: 'Receitas', value: monthBalance.income, color: '#10b981', Icon: TrendingUp },
