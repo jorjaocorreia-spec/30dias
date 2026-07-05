@@ -34,6 +34,7 @@ export interface Expense {
   weekKey: string // YYYY-WNN format
   paymentMethod: PaymentMethod
   establishmentId?: string
+  creditCardId?: string         // qual cartão gerou esta despesa (obrigatório em novas despesas com paymentMethod === 'credit_card')
   fixedExpenseId?: string       // links to FixedExpense template
   fixedExpenseMonthId?: string  // links to the specific FixedExpenseMonth that generated this entry
   sharedWith?: ExpenseParticipant[]  // defined when expense is split among multiple people
@@ -63,6 +64,24 @@ export interface FixedExpenseMonth {
   month: string   // YYYY-MM
   amount: number  // actual amount confirmed for this month
   date?: string   // YYYY-MM-DD — data real do lançamento no mês
+}
+
+export interface CreditCard {
+  id: string
+  name: string              // ex: "Nubank", "Inter"
+  closingDay: number         // 1–31, dia de fechamento do ciclo
+  dueDay: number             // 1–31, dia de vencimento da fatura
+  color: string
+  isActive: boolean
+  createdAt: string          // YYYY-MM-DD
+}
+
+export interface CreditCardInvoice {
+  id: string
+  creditCardId: string
+  month: string              // YYYY-MM — mês de VENCIMENTO da fatura
+  paid: boolean
+  paidAt?: string            // YYYY-MM-DD
 }
 
 export interface IncomeCategory {
