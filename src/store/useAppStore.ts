@@ -136,6 +136,7 @@ interface AppState {
 
   // Helpers
   getMonthlyBalance: (month: string) => { income: number; expenses: number; balance: number }
+  getCashBalance: (month: string) => { income: number; expenses: number; balance: number }
   getFixedWeeklyContribution: (month?: string) => number
   getFixedCategoryContribution: (month?: string) => Record<string, number>
   getFixedMonthlyContribution: (month?: string) => number
@@ -799,6 +800,29 @@ export const useAppStore = create<AppState>()((set, get) => ({
       .filter(e => getEffectiveMonth(e, creditCards) === month)
       .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
     return { income, expenses: monthExpenses, balance: income - monthExpenses }
+  },
+
+  getCashBalance: (month) => {
+    const { incomeEntries, expenses, creditCards, creditCardInvoices } = get()
+    const income = incomeEntries.filter(e => e.month === month).reduce((sum, e) => sum + e.amount, 0)
+
+    const nonCardExpenses = expenses
+      .filter(e => !e.creditCardId && e.date.startsWith(month))
+      .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
+
+    const paidInvoicesExpenses = creditCardInvoices
+      .filter(inv => inv.paid && inv.paidAt?.startsWith(month))
+      .reduce((total, inv) => {
+        const card = creditCards.find(c => c.id === inv.creditCardId)
+        if (!card) return total
+        const invTotal = expenses
+          .filter(e => e.creditCardId === card.id && getInvoiceMonth(e.date, card) === inv.month)
+          .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
+        return total + invTotal
+      }, 0)
+
+    const cashExpenses = nonCardExpenses + paidInvoicesExpenses
+    return { income, expenses: cashExpenses, balance: income - cashExpenses }
   },
 
   getFixedWeeklyContribution: (month) => {

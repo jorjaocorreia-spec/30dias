@@ -23,7 +23,7 @@ export default function DashboardPage() {
     getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
     getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
     getSharedPendingTotal, markParticipantAsPaid, getBudgetForMonth,
-    setAvailableMode, userAchievements, creditCards, getPendingInvoicesTotal,
+    setAvailableMode, userAchievements, creditCards, getPendingInvoicesTotal, getCashBalance,
   } = useAppStore()
   const router = useRouter()
 
@@ -110,6 +110,7 @@ export default function DashboardPage() {
 
   const sharedPending = getSharedPendingTotal(monthKey)
   const pendingInvoices = getPendingInvoicesTotal(monthKey)
+  const cashBalance = getCashBalance(monthKey)
 
   const latestAchievement = useMemo(() => {
     if (userAchievements.length === 0) return null
@@ -414,6 +415,46 @@ export default function DashboardPage() {
                   <span style={{ color: sl.color, fontFamily: 'var(--font-dm-mono)', fontSize: 10, fontWeight: 600 }}>{formatCurrency(sl.value)}</span>
                 </div>
               ))}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Cash balance */}
+      <motion.div
+        className="p-4 rounded-2xl border mb-5"
+        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }}
+      >
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm font-semibold" style={{ fontFamily: 'var(--font-syne)' }}>Saldo em caixa</p>
+          {pendingInvoices > 0 && (
+            <button onClick={() => router.push('/credit-cards')}
+              className="text-xs px-2 py-1 rounded-lg font-medium"
+              style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.12)' }}>
+              {formatCurrency(pendingInvoices)} de fatura pendente
+            </button>
+          )}
+        </div>
+        <p className="text-xs mb-3" style={{ color: 'var(--text-dim)' }}>
+          Faturas de cartão só entram aqui no mês em que forem marcadas como pagas
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Receitas', value: cashBalance.income, color: '#10b981', Icon: TrendingUp },
+            { label: 'Saiu da conta', value: cashBalance.expenses, color: '#f43f5e', Icon: TrendingDown },
+            { label: 'Saldo real', value: cashBalance.balance, color: cashBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', Icon: ArrowUpDown, sign: true },
+          ].map(({ label, value, color, Icon, sign }) => (
+            <div key={label}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: color + '20' }}>
+                  <Icon size={11} style={{ color }} />
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              </div>
+              <p className="text-base font-bold" style={{ color, fontFamily: 'var(--font-dm-mono)' }}>
+                {sign && value >= 0 ? '+' : ''}{formatCurrency(value)}
+              </p>
             </div>
           ))}
         </div>
