@@ -142,6 +142,7 @@ interface AppState {
   getFixedMonthlyCategoryContribution: (month?: string) => Record<string, number>
   markParticipantAsPaid: (expenseId: string, participantId: string, paid: boolean) => void
   getSharedPendingTotal: (month?: string) => number
+  getPendingInvoicesTotal: (month?: string) => number
 
   // Preferences
   setTheme: (theme: UserPreferences['theme']) => void
@@ -856,6 +857,21 @@ export const useAppStore = create<AppState>()((set, get) => ({
       .reduce((total, e) => {
         const pending = (e.sharedWith ?? []).filter(p => !p.paid).reduce((s, p) => s + p.amount, 0)
         return total + pending
+      }, 0)
+  },
+
+  getPendingInvoicesTotal: (month) => {
+    const { creditCards, creditCardInvoices, expenses } = get()
+    const m = month ?? new Date().toISOString().slice(0, 7)
+    return creditCardInvoices
+      .filter(inv => inv.month === m && !inv.paid)
+      .reduce((total, inv) => {
+        const card = creditCards.find(c => c.id === inv.creditCardId)
+        if (!card) return total
+        const invTotal = expenses
+          .filter(e => e.creditCardId === card.id && getInvoiceMonth(e.date, card) === m)
+          .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
+        return total + invTotal
       }, 0)
   },
 

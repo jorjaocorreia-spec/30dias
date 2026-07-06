@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users, Trophy } from 'lucide-react'
+import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users, Trophy, CreditCard as CreditCardIcon } from 'lucide-react'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, Tooltip, ResponsiveContainer,
@@ -23,7 +23,7 @@ export default function DashboardPage() {
     getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
     getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
     getSharedPendingTotal, markParticipantAsPaid, getBudgetForMonth,
-    setAvailableMode, userAchievements, creditCards,
+    setAvailableMode, userAchievements, creditCards, getPendingInvoicesTotal,
   } = useAppStore()
   const router = useRouter()
 
@@ -109,6 +109,7 @@ export default function DashboardPage() {
     : 0
 
   const sharedPending = getSharedPendingTotal(monthKey)
+  const pendingInvoices = getPendingInvoicesTotal(monthKey)
 
   const latestAchievement = useMemo(() => {
     if (userAchievements.length === 0) return null
@@ -248,7 +249,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className={`grid grid-cols-2 gap-3 mb-5 ${(sharedPending > 0 || activeGoals.length > 0 || userAchievements.length > 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+      <div className={`grid grid-cols-2 gap-3 mb-5 ${(sharedPending > 0 || pendingInvoices > 0 || activeGoals.length > 0 || userAchievements.length > 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         {[
           {
             icon: Wallet,
@@ -281,7 +282,7 @@ export default function DashboardPage() {
             value: formatCurrency(monthBalance.income),
             sub: 'este mês',
             color: '#8b5cf6',
-            colSpanMobile: sharedPending === 0 && activeGoals.length === 0,
+            colSpanMobile: sharedPending === 0 && pendingInvoices === 0 && activeGoals.length === 0,
           },
           ...(sharedPending > 0 ? [{
             icon: ArrowUpDown,
@@ -291,6 +292,15 @@ export default function DashboardPage() {
             color: '#f59e0b',
             colSpanMobile: false,
             onClick: () => { setDrawerMonth(monthKey); setSharedDrawerOpen(true) },
+          }] : []),
+          ...(pendingInvoices > 0 ? [{
+            icon: CreditCardIcon,
+            label: 'Faturas a pagar',
+            value: formatCurrency(pendingInvoices),
+            sub: 'de cartão de crédito',
+            color: '#f43f5e',
+            colSpanMobile: false,
+            onClick: () => router.push('/credit-cards'),
           }] : []),
           ...(activeGoals.length > 0 ? [{
             icon: Target,
