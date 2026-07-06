@@ -154,8 +154,12 @@ interface UserAchievement { id: string; achievementId: string; unlockedAt: strin
 - **Somente `getMonthlyBalance` e os cálculos de "Disponível"/"GASTOS" do dashboard usam `getEffectiveMonth`** — orçamento por categoria, gráficos e a listagem de `/expenses` continuam por data da compra, propositalmente
 - `syncCreditCardInvoices()` gera faturas automaticamente a partir das despesas de cartão, chamada após `addExpense`, `addExpenses`, `updateExpense` e no `onRehydrateStorage` — idem ao padrão de `syncFixedExpenses()`
 - Excluir um cartão é bloqueado (no-op) se houver despesas vinculadas (`creditCardId`) — o usuário deve desativar (`isActive: false`) em vez de excluir
-- Página `/credit-cards`: CRUD de cartões + histórico de faturas por cartão com confirmação manual de pagamento
+- Página `/credit-cards`: CRUD de cartões + histórico de faturas por cartão com confirmação manual de pagamento; cada fatura é expansível e lista as despesas que a compõem (data, descrição/categoria, valor) para conferência
 - Migration: `supabase/migrations/20260705_credit_cards.sql`
+- **`inv.paid`/`paidAt` são só um marcador manual** — não alteram `getMonthlyBalance`/GASTOS/Orçamento (que seguem por competência via `getEffectiveMonth`, mês de vencimento da fatura). Confirmar pagamento não muda nenhum valor de planejamento, só alimenta o regime de caixa abaixo
+- `getPendingInvoicesTotal(month?)` — soma das faturas **não pagas** que vencem no mês; alimenta o card "Faturas a pagar" no dashboard (aparece só quando > 0, clique leva a `/credit-cards`)
+- `getCashBalance(month)` — **regime de caixa real**, separado do `getMonthlyBalance` (competência): despesas não-cartão contam pela data da compra; faturas de cartão só entram no mês em que forem marcadas como pagas (`paidAt`), nunca no mês de vencimento. Usado só no card "Saldo em caixa" do dashboard — não afeta orçamento, categorias ou GASTOS
+- **Dois regimes coexistem de propósito:** "Saldo do mês"/GASTOS/Orçamento = competência (planejamento, conta a despesa no mês de vencimento da fatura mesmo sem pagar); "Saldo em caixa" = regime de caixa (dinheiro que de fato saiu da conta). Não fundir os dois — cada um serve a um propósito diferente
 
 ### Metas financeiras
 - `FinancialGoal` = template com alvo, prazo e config; `GoalContribution` = contribuição mensal registrada pelo usuário
@@ -284,6 +288,8 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 **Dashboard — navegação mensal:** estado `monthKey` (YYYY-MM). Ao trocar mês, `selectedWeekKey` reseta para a semana atual (se no mês) ou a última semana do mês. Projeção só renderiza quando `isCurrentMonth`.
 
 **Dashboard — card "A Receber":** aparece quando `getSharedPendingTotal(monthKey)` > 0 no mês selecionado. Abre drawer já no `monthKey` selecionado.
+**Dashboard — card "Faturas a pagar":** aparece quando `getPendingInvoicesTotal(monthKey)` > 0. Click → `/credit-cards`. Puramente informativo, não entra em nenhum cálculo de orçamento.
+**Dashboard — seção "Saldo em caixa":** card separado do "Saldo do mês" (competência), logo abaixo dele. Usa `getCashBalance(monthKey)` — regime de caixa real (ver seção Cartões de crédito). Mostra badge "fatura pendente" (clicável → `/credit-cards`) quando há faturas não pagas no mês.
 **Dashboard — card "Metas":** aparece quando há metas ativas (`isActive && !completedAt`); mostra % médio de progresso + quantidade. Click → `/goals`.
 **Dashboard — KPI grid:** passa de `lg:grid-cols-3` para `lg:grid-cols-4` quando há card "A Receber" ou card "Metas" (mobile sempre 2 cols).
 
@@ -310,7 +316,7 @@ Carregadas em `layout.tsx` via `next/font/google`, expostas como CSS vars:
 - **Componentes usam `style={}` inline** para cor/bg/padding. Tailwind só para utilitários (`flex`, `items-center`, `rounded-xl`, `gap-*`). **Nunca** `dark:` prefix — usar CSS vars.
 - **Tipografia:** aplicar `fontFamily: 'var(--font-syne)'` em headings/títulos de seção; `fontFamily: 'var(--font-dm-mono)'` em valores monetários e percentuais. Nunca hardcode de nome de fonte.
 - **Dark-only:** não adicionar lógica de tema claro. O toggle foi removido da Navbar; `UserPreferences.theme` existe no store mas não é mais exposto na UI.
-- **Bottom nav mobile:** exibe apenas os 5 primeiros `navItems` (dashboard, adicionar, despesas, fixas, metas).
+- **Bottom nav mobile:** exibe os 4 primeiros `navItems` (dashboard, adicionar, despesas, fixas) + botão "Mais", que abre bottom sheet com o restante agrupado por `section` (`financial`, `config`). **Todo item novo deve usar `section: 'financial'` ou `'config'`** — itens com `section: 'main'` além dos 4 primeiros não aparecem em lugar nenhum no mobile (o bottom sheet só itera `financial`/`config`).
 - Datas: exibir com `new Date(date + 'T12:00:00')`. Salvar `weekKey` via `getWeekKey(date)`.
 - Store Zustand: usar `(set, get)` quando a action lê estado após mutação. `get().syncFixedExpenses()` após mutações em `fixedExpenseMonths`.
 - Recharts Tooltip: `(v) => [formatCurrency(Number(v)), 'Label']`
