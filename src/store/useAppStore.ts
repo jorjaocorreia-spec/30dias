@@ -269,13 +269,15 @@ export const useAppStore = create<AppState>()((set, get) => ({
     let categories = catRes.data?.map(r => fromDB<Category>(r)) ?? []
     let incomeCategories = icatRes.data?.map(r => fromDB<IncomeCategory>(r)) ?? []
 
-    // Seed defaults for new users
+    // Seed defaults for new users. upsert + ignoreDuplicates makes this idempotent —
+    // onAuthStateChange can fire SIGNED_IN more than once for a single login, racing two
+    // concurrent loadUserData() calls that both see an empty table and try to seed it.
     if (categories.length === 0) {
-      await supabase.from('categories').insert(DEFAULT_CATEGORIES.map(c => toDB(c, user.id)))
+      await supabase.from('categories').upsert(DEFAULT_CATEGORIES.map(c => toDB(c, user.id)), { onConflict: 'id', ignoreDuplicates: true })
       categories = DEFAULT_CATEGORIES
     }
     if (incomeCategories.length === 0) {
-      await supabase.from('income_categories').insert(DEFAULT_INCOME_CATEGORIES.map(c => toDB(c, user.id)))
+      await supabase.from('income_categories').upsert(DEFAULT_INCOME_CATEGORIES.map(c => toDB(c, user.id)), { onConflict: 'id', ignoreDuplicates: true })
       incomeCategories = DEFAULT_INCOME_CATEGORIES
     }
 
