@@ -65,6 +65,7 @@ interface TemplateForm {
   categoryId: string
   establishmentId: string
   paymentMethod: PaymentMethod
+  creditCardId: string
   notes: string
   isActive: boolean
   dueDateDay: string        // '' | '1'–'31'
@@ -77,6 +78,7 @@ const defaultTemplateForm: TemplateForm = {
   categoryId: '',
   establishmentId: '',
   paymentMethod: 'pix',
+  creditCardId: '',
   notes: '',
   isActive: true,
   dueDateDay: '',
@@ -87,7 +89,7 @@ const defaultTemplateForm: TemplateForm = {
 
 export default function FixedExpensesPage() {
   const {
-    fixedExpenses, fixedExpenseMonths, categories, establishments, preferences,
+    fixedExpenses, fixedExpenseMonths, categories, establishments, preferences, creditCards,
     addFixedExpense, updateFixedExpense, deleteFixedExpense,
     addFixedExpenseMonth, updateFixedExpenseMonth, deleteFixedExpenseMonth,
     addCategory, addEstablishment,
@@ -101,6 +103,7 @@ export default function FixedExpensesPage() {
   const [templateForm, setTemplateForm] = useState<TemplateForm>(defaultTemplateForm)
   const [templateSuccess, setTemplateSuccess] = useState('')
   const [amountError, setAmountError] = useState(false)
+  const [cardError, setCardError] = useState(false)
   const templateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // monthly register state
@@ -162,6 +165,7 @@ export default function FixedExpensesPage() {
     setTemplateForm(defaultTemplateForm)
     setTemplateSuccess('')
     setAmountError(false)
+    setCardError(false)
     setShowTemplateForm(true)
     focusTemplateForm()
   }
@@ -174,6 +178,7 @@ export default function FixedExpensesPage() {
       categoryId: fe.categoryId,
       establishmentId: fe.establishmentId ?? '',
       paymentMethod: fe.paymentMethod,
+      creditCardId: fe.creditCardId ?? '',
       notes: fe.notes ?? '',
       isActive: fe.isActive,
       dueDateDay: fe.dueDateDay ? String(fe.dueDateDay) : '',
@@ -181,6 +186,7 @@ export default function FixedExpensesPage() {
     })
     setTemplateSuccess('')
     setAmountError(false)
+    setCardError(false)
     setShowTemplateForm(true)
     focusTemplateForm()
   }
@@ -190,6 +196,8 @@ export default function FixedExpensesPage() {
     const suggestedAmount = parseFloat(templateForm.suggestedAmount)
     if (!suggestedAmount || suggestedAmount <= 0) { setAmountError(true); return }
     setAmountError(false)
+    if (templateForm.paymentMethod === 'credit_card' && !templateForm.creditCardId) { setCardError(true); return }
+    setCardError(false)
     const dueDateDay = templateForm.dueDateDay ? parseInt(templateForm.dueDateDay) : undefined
     const data = {
       description: templateForm.description.trim(),
@@ -197,6 +205,7 @@ export default function FixedExpensesPage() {
       categoryId: templateForm.categoryId,
       establishmentId: templateForm.establishmentId || undefined,
       paymentMethod: templateForm.paymentMethod,
+      creditCardId: templateForm.paymentMethod === 'credit_card' ? templateForm.creditCardId : undefined,
       notes: templateForm.notes || undefined,
       isActive: templateForm.isActive,
       dueDateDay,
@@ -933,6 +942,32 @@ export default function FixedExpensesPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Credit card selector — only when paymentMethod is credit_card */}
+              {templateForm.paymentMethod === 'credit_card' && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Cartão
+                  </label>
+                  {creditCards.filter(c => c.isActive).length === 0 ? (
+                    <p className="text-xs px-3 py-2.5 rounded-xl" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                      Cadastre um cartão em Cartões de Crédito antes de usar esta forma de pagamento.
+                    </p>
+                  ) : (
+                    <select
+                      aria-label="Cartão"
+                      value={templateForm.creditCardId}
+                      onChange={(e) => { setCardError(false); setTemplateForm({ ...templateForm, creditCardId: e.target.value }) }}
+                      className="w-full px-4 py-3 rounded-2xl border outline-none text-sm"
+                      style={{ background: 'var(--bg-input)', borderColor: cardError ? 'var(--red)' : 'var(--border)', color: 'var(--text)' }}
+                    >
+                      <option value="">Selecione o cartão</option>
+                      {creditCards.filter(c => c.isActive).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  )}
+                  {cardError && <p className="text-xs mt-1.5" style={{ color: 'var(--red)' }}>Selecione o cartão</p>}
+                </div>
+              )}
 
               {/* Active toggle (edit only) */}
               {editingTemplate && (

@@ -119,10 +119,11 @@ interface UserAchievement { id: string; achievementId: string; unlockedAt: strin
 
 ### Despesas fixas
 - `FixedExpense` = template; `FixedExpenseMonth` = valor real confirmado por mês
-- `syncFixedExpenses()` gera entradas semanais (segundas) com `amount = Math.round((fem.amount / 4) * 100) / 100`
+- `syncFixedExpenses()` gera **uma** `Expense` por `FixedExpenseMonth` (não 4 semanais) — data = `fem.date` > `dueDateDay` do template normalizado pro mês > dia 1º; idempotente via `fixedExpenseMonthId` (`alreadyExists` guard)
 - Chamar após qualquer mutação em `fixedExpenseMonths` e em `onRehydrateStorage`
 - Deletar template → remove `fixedExpenseMonths` + `expenses` vinculados
 - `dueDateDay` + `reminderEnabled`: lembrete WhatsApp 1 dia antes e no dia do vencimento. Ver seção "Lembretes de vencimento"
+- **`creditCardId?`** no template: obrigatório na UI quando `paymentMethod === 'credit_card'` (seletor em `/fixed-expenses`, mesmo padrão do `ExpenseForm`). `syncFixedExpenses()` copia esse valor pra `Expense.creditCardId` gerada. **Sem isso, a despesa fixa cai no fallback "compra + 1 mês" de `getEffectiveMonth`, mês após mês, permanentemente** — foi a causa raiz de um bug real onde despesas fixas antigas (antes da feature de cartões existir) inflavam o GASTOS do mês seguinte. Migration: `supabase/migrations/20260705c_fixed_expense_credit_card.sql`
 
 ### Despesas parceladas
 - `installmentGroupId` = nanoid gerado uma vez, copiado para todas as N parcelas do mesmo parcelamento

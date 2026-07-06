@@ -51,6 +51,7 @@ export interface FixedExpense {
   categoryId: string
   establishmentId?: string
   paymentMethod: PaymentMethod
+  creditCardId?: string    // obrigatório em novos templates com paymentMethod === 'credit_card'
   notes?: string
   isActive: boolean
   createdAt: string        // YYYY-MM-DD

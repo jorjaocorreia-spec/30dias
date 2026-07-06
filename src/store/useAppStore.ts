@@ -553,6 +553,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
         date: dateStr,
         weekKey,
         paymentMethod: fe.paymentMethod,
+        creditCardId: fe.paymentMethod === 'credit_card' ? fe.creditCardId : undefined,
         establishmentId: fe.establishmentId,
         notes: fe.notes,
         fixedExpenseId: fe.id,
