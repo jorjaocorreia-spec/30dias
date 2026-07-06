@@ -203,7 +203,11 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
     const sharedWith = isShared && participants.length > 0 ? participants : undefined
     const savedUserShares = isShared && userShares > 1 ? userShares : undefined
     if (isEdit && initialData) {
-      updateExpense(initialData.id, { ...expenseData, sharedWith, userShares: savedUserShares })
+      // creditCardId precisa ser explicitamente null (não undefined) pra realmente limpar no banco
+      // quando a forma de pagamento deixa de ser cartão — undefined é descartado pelo JSON.stringify
+      // e o valor antigo fica "fantasma" no banco (mesmo bug documentado pra completedAt de metas).
+      const creditCardId = expenseData.paymentMethod === 'credit_card' ? expenseData.creditCardId : (null as unknown as undefined)
+      updateExpense(initialData.id, { ...expenseData, creditCardId, sharedWith, userShares: savedUserShares })
       onSuccess(data.description)
     } else if (isFixed) {
       addFixedExpense({
@@ -822,7 +826,10 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
         <div className="grid grid-cols-2 gap-2">
           {PAYMENT_METHODS.map(({ value, label, icon }) => (
             <button key={value} type="button"
-              onClick={() => setValue('paymentMethod', value)}
+              onClick={() => {
+                setValue('paymentMethod', value)
+                if (value !== 'credit_card') setValue('creditCardId', undefined)
+              }}
               className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border transition-all text-sm font-medium"
               style={{
                 borderColor: selectedPaymentMethod === value ? 'var(--accent)' : 'var(--border)',

@@ -608,7 +608,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     for (const card of creditCards) {
       const months = new Set(
         expenses
-          .filter(e => e.creditCardId === card.id)
+          .filter(e => e.paymentMethod === 'credit_card' && e.creditCardId === card.id)
           .map(e => getInvoiceMonth(e.date, card))
       )
       for (const month of months) {
@@ -808,7 +808,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const income = incomeEntries.filter(e => e.month === month).reduce((sum, e) => sum + e.amount, 0)
 
     const nonCardExpenses = expenses
-      .filter(e => !e.creditCardId && e.date.startsWith(month))
+      .filter(e => e.paymentMethod !== 'credit_card' && e.date.startsWith(month))
       .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
 
     const paidInvoicesExpenses = creditCardInvoices
@@ -817,7 +817,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
         const card = creditCards.find(c => c.id === inv.creditCardId)
         if (!card) return total
         const invTotal = expenses
-          .filter(e => e.creditCardId === card.id && getInvoiceMonth(e.date, card) === inv.month)
+          .filter(e => e.paymentMethod === 'credit_card' && e.creditCardId === card.id && getInvoiceMonth(e.date, card) === inv.month)
           .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
         return total + invTotal
       }, 0)
@@ -894,7 +894,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
         const card = creditCards.find(c => c.id === inv.creditCardId)
         if (!card) return total
         const invTotal = expenses
-          .filter(e => e.creditCardId === card.id && getInvoiceMonth(e.date, card) === m)
+          .filter(e => e.paymentMethod === 'credit_card' && e.creditCardId === card.id && getInvoiceMonth(e.date, card) === m)
           .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
         return total + invTotal
       }, 0)

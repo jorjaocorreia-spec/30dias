@@ -38,11 +38,11 @@ export default function CreditCardsPage() {
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
-  const cardsInUse = useMemo(() => new Set(expenses.filter(e => e.creditCardId).map(e => e.creditCardId!)), [expenses])
+  const cardsInUse = useMemo(() => new Set(expenses.filter(e => e.paymentMethod === 'credit_card' && e.creditCardId).map(e => e.creditCardId!)), [expenses])
 
   const invoiceExpenses = (cardId: string, month: string) =>
     expenses
-      .filter(e => e.creditCardId === cardId && getInvoiceMonth(e.date, creditCards.find(c => c.id === cardId)!) === month)
+      .filter(e => e.paymentMethod === 'credit_card' && e.creditCardId === cardId && getInvoiceMonth(e.date, creditCards.find(c => c.id === cardId)!) === month)
       .sort((a, b) => a.date.localeCompare(b.date))
 
   const invoiceTotal = (cardId: string, month: string) =>
