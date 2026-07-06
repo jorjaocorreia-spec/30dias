@@ -7,6 +7,10 @@ import { useAppStore } from '@/store/useAppStore'
 import { formatCurrency, getEffectiveAmount, getInvoiceMonth } from '@/lib/weekHelpers'
 import { CreditCard } from '@/types'
 
+function formatDay(date: string): string {
+  return new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
+
 const QUICK_COLORS = ['#10b981', '#06b6d4', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#f97316', '#64748b']
 
 function formatMonth(month: string): string {
@@ -25,20 +29,24 @@ interface CardForm {
 const defaultCardForm: CardForm = { name: '', closingDay: '', dueDay: '', color: QUICK_COLORS[0], isActive: true }
 
 export default function CreditCardsPage() {
-  const { creditCards, creditCardInvoices, expenses, addCreditCard, updateCreditCard, deleteCreditCard, setCreditCardInvoicePaid } = useAppStore()
+  const { creditCards, creditCardInvoices, expenses, categories, addCreditCard, updateCreditCard, deleteCreditCard, setCreditCardInvoicePaid } = useAppStore()
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<CreditCard | null>(null)
   const [form, setForm] = useState<CardForm>(defaultCardForm)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const cardsInUse = useMemo(() => new Set(expenses.filter(e => e.creditCardId).map(e => e.creditCardId!)), [expenses])
 
-  const invoiceTotal = (cardId: string, month: string) =>
+  const invoiceExpenses = (cardId: string, month: string) =>
     expenses
       .filter(e => e.creditCardId === cardId && getInvoiceMonth(e.date, creditCards.find(c => c.id === cardId)!) === month)
-      .reduce((sum, e) => sum + getEffectiveAmount(e), 0)
+      .sort((a, b) => a.date.localeCompare(b.date))
+
+  const invoiceTotal = (cardId: string, month: string) =>
+    invoiceExpenses(cardId, month).reduce((sum, e) => sum + getEffectiveAmount(e), 0)
 
   const invoicesForCard = (cardId: string) =>
     creditCardInvoices
@@ -127,19 +135,50 @@ export default function CreditCardsPage() {
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Nenhuma fatura ainda.</p>
                         ) : invoices.map(inv => {
                           const total = invoiceTotal(card.id, inv.month)
+                          const invExpenses = invoiceExpenses(card.id, inv.month)
+                          const isInvOpen = expandedInvoice === inv.id
                           return (
-                            <div key={inv.id} className="flex items-center justify-between gap-2">
-                              <span className="text-xs" style={{ color: inv.paid ? 'var(--text-muted)' : '#f59e0b' }}>
-                                {formatMonth(inv.month)}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-dm-mono)' }}>{formatCurrency(total)}</span>
-                                <button onClick={() => setCreditCardInvoicePaid(inv.id, !inv.paid)}
-                                  className="text-xs px-2 py-0.5 rounded-lg font-medium"
-                                  style={{ background: inv.paid ? 'var(--bg-input)' : 'rgba(245,158,11,0.15)', color: inv.paid ? 'var(--text-muted)' : '#f59e0b' }}>
-                                  {inv.paid ? 'Paga' : 'Confirmar pagamento'}
-                                </button>
-                              </div>
+                            <div key={inv.id}>
+                              <button onClick={() => setExpandedInvoice(isInvOpen ? null : inv.id)}
+                                className="w-full flex items-center justify-between gap-2 py-1"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                <span className="flex items-center gap-1 text-xs" style={{ color: inv.paid ? 'var(--text-muted)' : '#f59e0b' }}>
+                                  {isInvOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                  {formatMonth(inv.month)}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-dm-mono)' }}>{formatCurrency(total)}</span>
+                                  <span onClick={(e) => { e.stopPropagation(); setCreditCardInvoicePaid(inv.id, !inv.paid) }}
+                                    className="text-xs px-2 py-0.5 rounded-lg font-medium"
+                                    style={{ background: inv.paid ? 'var(--bg-input)' : 'rgba(245,158,11,0.15)', color: inv.paid ? 'var(--text-muted)' : '#f59e0b' }}>
+                                    {inv.paid ? 'Paga' : 'Confirmar pagamento'}
+                                  </span>
+                                </div>
+                              </button>
+                              <AnimatePresence>
+                                {isInvOpen && (
+                                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
+                                    <div className="space-y-1 pl-4 pb-2 pt-0.5">
+                                      {invExpenses.length === 0 ? (
+                                        <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Nenhuma despesa nesta fatura.</p>
+                                      ) : invExpenses.map(exp => {
+                                        const cat = categories.find(c => c.id === exp.categoryId)
+                                        return (
+                                          <div key={exp.id} className="flex items-center justify-between gap-2">
+                                            <span className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                                              {formatDay(exp.date)} · {exp.description || cat?.name || 'Despesa'}
+                                            </span>
+                                            <span className="text-xs flex-shrink-0" style={{ fontFamily: 'var(--font-dm-mono)', color: 'var(--text-muted)' }}>
+                                              {formatCurrency(getEffectiveAmount(exp))}
+                                            </span>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
                           )
                         })}
