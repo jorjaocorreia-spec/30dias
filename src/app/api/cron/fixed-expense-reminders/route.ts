@@ -31,6 +31,13 @@ function brazilDates(): {
   }
 }
 
+// Converte um timestamp ISO (UTC) pra data YYYY-MM-DD em fuso BRT (UTC-3)
+function toBRTDateStr(isoTimestamp: string): string {
+  const d = new Date(new Date(isoTimestamp).getTime() - 3 * 60 * 60 * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
+}
+
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, '')
   if (digits.startsWith('55') && digits.length >= 12) return digits
@@ -74,16 +81,24 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'DB error' }, { status: 500 })
   }
 
-  // ── 2. Despesas VARIÁVEIS com data hoje ou amanhã (lançadas com data futura) ─
+  // ── 2. Despesas VARIÁVEIS pré-registradas com data futura hoje ou amanhã ────
+  // Só entra aqui quem foi lançado ANTES da data de vencimento (created_at < date).
+  // Sem isso, uma despesa lançada no próprio dia (o caso normal — compra já
+  // aconteceu) também batia no filtro de data e virava um falso "vence hoje".
   const { data: variableExpenses, error: veError } = await supabaseAdmin
     .from('expenses')
-    .select('id, user_id, description, amount, category_id, date')
+    .select('id, user_id, description, amount, category_id, date, created_at')
     .in('date', [today.dateStr, tomorrow.dateStr])
 
   if (veError) {
     console.error('[cron-reminders] fetch variable expenses:', veError)
     // não aborta — continua com fixas
   }
+
+  const preRegisteredExpenses = (variableExpenses ?? []).filter(ve => {
+    const createdAtBRT = toBRTDateStr(ve.created_at)
+    return createdAtBRT < ve.date
+  })
 
   // ── 3. Coletar todos os user_ids envolvidos ─────────────────────────────────
   const userIdsSet = new Set<string>()
@@ -138,7 +153,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     tomorrowItems: { description: string; amount: number }[]
   }> = {}
 
-  for (const ve of variableExpenses ?? []) {
+  for (const ve of preRegisteredExpenses) {
     userIdsSet.add(ve.user_id)
     if (!variableByUser[ve.user_id]) variableByUser[ve.user_id] = { todayItems: [], tomorrowItems: [] }
     const item = { description: ve.description, amount: ve.amount }
