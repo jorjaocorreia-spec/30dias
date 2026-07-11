@@ -564,7 +564,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (newEntries.length > 0) {
       set(state => ({ expenses: [...state.expenses, ...newEntries] }))
       if (user) {
-        supabase.from('expenses').insert(newEntries.map(e => toDB(e, user.id)))
+        // onConflict + ignoreDuplicates: `alreadyExists` above only checks in-memory
+        // state, which races across concurrent calls (two tabs, a stale client).
+        // The DB-level unique index on fixed_expense_month_id is the real guard —
+        // this upsert makes a racing duplicate insert a no-op instead of a new row.
+        supabase.from('expenses').upsert(newEntries.map(e => toDB(e, user.id)), { onConflict: 'fixed_expense_month_id', ignoreDuplicates: true })
           .then(({ error }) => { if (error) console.error(error) })
       }
     }
