@@ -7,6 +7,7 @@ import { Pencil, Trash2, Filter, X, Users, Check } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Money } from '@/components/ui/Money'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatCurrency, formatDate, getEffectiveAmount, isInstallment } from '@/lib/weekHelpers'
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -216,7 +217,6 @@ export default function ExpensesListPage() {
         <AnimatePresence>
           {filtered.map((expense) => {
             const cat = getCat(expense.categoryId)
-            const isDeleting = deleteConfirm === expense.id
 
             return (
               <motion.div
@@ -394,52 +394,35 @@ export default function ExpensesListPage() {
                 </AnimatePresence>
 
                 {/* Actions */}
-                {isDeleting ? (
-                  <div
-                    className="flex items-center gap-2 mt-3 pt-3"
-                    style={{ borderTop: '1px solid var(--border)' }}
+                <div className="flex items-center justify-end gap-1.5 mt-2.5">
+                  <Link
+                    href={`/expenses/${expense.id}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+                    style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', textDecoration: 'none' }}
                   >
-                    <p className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>
-                      Excluir esta despesa?
-                    </p>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(expense.id)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}
-                    >
-                      Excluir
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-end gap-1.5 mt-2.5">
-                    <Link
-                      href={`/expenses/${expense.id}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', textDecoration: 'none' }}
-                    >
-                      <Pencil size={12} /> Editar
-                    </Link>
-                    <button
-                      onClick={() => setDeleteConfirm(expense.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}
-                    >
-                      <Trash2 size={12} /> Excluir
-                    </button>
-                  </div>
-                )}
+                    <Pencil size={12} /> Editar
+                  </Link>
+                  <button
+                    onClick={() => setDeleteConfirm(expense.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+                    style={{ background: 'var(--red-light)', color: 'var(--red)' }}
+                  >
+                    <Trash2 size={12} /> Excluir
+                  </button>
+                </div>
               </motion.div>
             )
           })}
         </AnimatePresence>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Excluir esta despesa?"
+        message="Esta ação não pode ser desfeita. O lançamento será removido permanentemente."
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => { if (deleteConfirm) handleDelete(deleteConfirm) }}
+      />
     </div>
   )
 }

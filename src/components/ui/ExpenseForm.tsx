@@ -613,7 +613,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                   {participants.length > 0 && (
                     <div
                       className="flex items-center justify-between px-3 py-2 rounded-xl"
-                      style={{ background: '#06b6d415', borderLeft: '3px solid #06b6d4' }}
+                      style={{ background: '#06b6d415', border: '1px solid #06b6d440' }}
                     >
                       <div className="flex items-center gap-2">
                         <p className="text-xs font-medium" style={{ color: '#06b6d4' }}>Sua parte</p>

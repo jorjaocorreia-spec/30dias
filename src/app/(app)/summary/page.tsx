@@ -137,7 +137,7 @@ export default function SummaryPage() {
         const cat = incomeCategories.find(c => c.id === id)
         return {
           id, name: cat?.name ?? id, amount, entries,
-          color: cat?.color ?? '#10b981',
+          color: cat?.color ?? 'var(--accent)',
           icon: cat?.icon ?? 'TrendingUp',
           percent: total > 0 ? (amount / total) * 100 : 0,
         }
@@ -314,13 +314,13 @@ export default function SummaryPage() {
               <span style={{ color: 'var(--text-muted)' }}>
                 Limite: <strong style={{ color: 'var(--text)' }}>{formatCurrency(summary.budget)}</strong>
               </span>
-              <span style={{ color: remaining >= 0 ? '#10b981' : 'var(--red)' }}>
+              <span style={{ color: remaining >= 0 ? 'var(--accent)' : 'var(--red)' }}>
                 {remaining >= 0
                   ? `${formatCurrency(remaining)} disponível`
                   : `${formatCurrency(Math.abs(remaining))} acima`}
               </span>
               {prevSummary.totalAmount > 0 && (
-                <span style={{ color: weekChange <= 0 ? '#10b981' : '#f59e0b' }}>
+                <span style={{ color: weekChange <= 0 ? 'var(--accent)' : 'var(--amber)' }}>
                   {weekChange <= 0 ? '▼' : '▲'} {Math.abs(weekChange).toFixed(0)}% vs anterior
                 </span>
               )}
@@ -518,7 +518,7 @@ export default function SummaryPage() {
                     const isSelected = w.weekKey === weekKey
                     const barColor = w.pct >= 100
                       ? 'linear-gradient(90deg, #f59e0b, var(--red))'
-                      : w.pct >= 80 ? '#f59e0b'
+                      : w.pct >= 80 ? 'var(--amber)'
                       : 'linear-gradient(90deg, #10b981, #06b6d4)'
                     return (
                       <motion.button
@@ -595,22 +595,22 @@ export default function SummaryPage() {
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#10b98120' }}>
-                    <TrendingUp size={11} style={{ color: '#10b981' }} />
+                    <TrendingUp size={11} style={{ color: 'var(--accent)' }} />
                   </div>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Receitas</p>
                 </div>
-                <p className="text-lg font-bold" style={{ color: '#10b981', fontFamily: 'var(--font-dm-mono)' }}>
+                <p className="text-lg font-bold" style={{ color: 'var(--accent)', fontFamily: 'var(--font-dm-mono)' }}>
                   {formatCurrency(monthBalance.income)}
                 </p>
               </div>
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#f43f5e20' }}>
-                    <TrendingDown size={11} style={{ color: '#f43f5e' }} />
+                    <TrendingDown size={11} style={{ color: 'var(--red)' }} />
                   </div>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Despesas</p>
                 </div>
-                <p className="text-lg font-bold" style={{ color: '#f43f5e', fontFamily: 'var(--font-dm-mono)' }}>
+                <p className="text-lg font-bold" style={{ color: 'var(--red)', fontFamily: 'var(--font-dm-mono)' }}>
                   {formatCurrency(monthBalance.expenses)}
                 </p>
               </div>
@@ -620,13 +620,13 @@ export default function SummaryPage() {
                     className="w-5 h-5 rounded-md flex items-center justify-center"
                     style={{ background: monthBalance.balance >= 0 ? '#06b6d420' : '#f59e0b20' }}
                   >
-                    <TrendingUp size={11} style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b' }} />
+                    <TrendingUp size={11} style={{ color: monthBalance.balance >= 0 ? 'var(--cyan)' : 'var(--amber)' }} />
                   </div>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Saldo</p>
                 </div>
                 <p
                   className="text-lg font-bold"
-                  style={{ color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', fontFamily: 'var(--font-dm-mono)' }}
+                  style={{ color: monthBalance.balance >= 0 ? 'var(--cyan)' : 'var(--amber)', fontFamily: 'var(--font-dm-mono)' }}
                 >
                   {monthBalance.balance >= 0 ? '+' : ''}{formatCurrency(monthBalance.balance)}
                 </p>
@@ -654,7 +654,7 @@ export default function SummaryPage() {
                   {last6MonthsData.map((d, i) => (
                     <Cell
                       key={i}
-                      fill={d.isSelected ? '#10b981' : d.month === currentMonthKey ? 'rgba(16,185,129,0.35)' : 'var(--bg-input)'}
+                      fill={d.isSelected ? 'var(--accent)' : d.month === currentMonthKey ? 'rgba(16,185,129,0.35)' : 'var(--bg-input)'}
                     />
                   ))}
                 </Bar>
@@ -928,13 +928,13 @@ export default function SummaryPage() {
                             <p className="text-xs font-medium capitalize truncate" style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}>
                               {m.label}
                             </p>
-                            <p className="text-xs font-bold flex-shrink-0 ml-2" style={{ color: '#f43f5e' }}>
+                            <p className="text-xs font-bold flex-shrink-0 ml-2" style={{ color: 'var(--red)' }}>
                               −{formatCurrency(m.expenses)}
                             </p>
                           </div>
                           <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                            <span style={{ color: '#10b981' }}>+{formatCurrency(m.income)}</span>
-                            <span style={{ color: m.balance >= 0 ? '#06b6d4' : '#f59e0b' }}>
+                            <span style={{ color: 'var(--accent)' }}>+{formatCurrency(m.income)}</span>
+                            <span style={{ color: m.balance >= 0 ? 'var(--cyan)' : 'var(--amber)' }}>
                               {m.balance >= 0 ? '+' : ''}{formatCurrency(m.balance)}
                             </span>
                             <span>{m.count} {m.count === 1 ? 'despesa' : 'despesas'}</span>

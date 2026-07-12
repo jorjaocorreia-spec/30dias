@@ -371,6 +371,9 @@ export default function GoalsPage() {
                   <span className="text-sm">Deduzir do orçamento semanal</span>
                   <button
                     onClick={() => setForm(f => ({ ...f, deductFromBudget: !f.deductFromBudget }))}
+                    role="switch"
+                    aria-checked={form.deductFromBudget}
+                    aria-label="Deduzir do orçamento semanal"
                     className="w-11 h-6 rounded-full transition-colors relative"
                     style={{ background: form.deductFromBudget ? '#10b981' : 'var(--bg-input)' }}
                   >
@@ -385,6 +388,9 @@ export default function GoalsPage() {
                     <span className="text-sm">Meta ativa</span>
                     <button
                       onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
+                      role="switch"
+                      aria-checked={form.isActive}
+                      aria-label="Meta ativa"
                       className="w-11 h-6 rounded-full transition-colors relative"
                       style={{ background: form.isActive ? '#10b981' : 'var(--bg-input)' }}
                     >

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, CreditCard as CreditCardIcon } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatCurrency, getEffectiveAmount, getInvoiceMonth } from '@/lib/weekHelpers'
 import { CreditCard } from '@/types'
 
@@ -101,7 +102,6 @@ export default function CreditCardsPage() {
             const invoices = invoicesForCard(card.id)
             const pending = invoices.filter(inv => !inv.paid)
             const isExpanded = expandedId === card.id
-            const isDeleting = deleteConfirm === card.id
             const inUse = cardsInUse.has(card.id)
 
             return (
@@ -197,46 +197,35 @@ export default function CreditCardsPage() {
                   )}
                 </AnimatePresence>
 
-                {isDeleting ? (
-                  <div className="flex items-center gap-2 px-3.5 pb-3.5 pt-1">
-                    <p className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>Excluir este cartão?</p>
-                    <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>Cancelar</button>
-                    <button onClick={() => { deleteCreditCard(card.id); setDeleteConfirm(null) }}
-                      className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}>Excluir</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
-                    <button onClick={() => toggleActive(card)}
-                      role="switch"
-                      aria-checked={card.isActive}
-                      aria-label={card.isActive ? `Desativar ${card.name}` : `Ativar ${card.name}`}
-                      className="flex items-center gap-2 text-xs font-medium"
-                      style={{ color: card.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      <div style={{ width: 36, height: 20, borderRadius: 10, background: card.isActive ? 'var(--accent)' : 'var(--border)', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                        <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: card.isActive ? 19 : 3, transition: 'left 0.2s' }} />
-                      </div>
-                      {card.isActive ? 'Ativo' : 'Inativo'}
-                    </button>
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => openEdit(card)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                        style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
-                        <Pencil size={12} /> Editar
-                      </button>
-                      <button
-                        onClick={() => !inUse && setDeleteConfirm(card.id)}
-                        disabled={inUse}
-                        title={inUse ? 'Desative em vez de excluir — há despesas vinculadas' : undefined}
-                        aria-label={inUse ? 'Excluir — indisponível: desative o cartão em vez de excluir, há despesas vinculadas' : undefined}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium disabled:opacity-40"
-                        style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
-                        <Trash2 size={12} /> Excluir
-                      </button>
+                <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
+                  <button onClick={() => toggleActive(card)}
+                    role="switch"
+                    aria-checked={card.isActive}
+                    aria-label={card.isActive ? `Desativar ${card.name}` : `Ativar ${card.name}`}
+                    className="flex items-center gap-2 text-xs font-medium"
+                    style={{ color: card.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <div style={{ width: 36, height: 20, borderRadius: 10, background: card.isActive ? 'var(--accent)' : 'var(--border)', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: card.isActive ? 19 : 3, transition: 'left 0.2s' }} />
                     </div>
+                    {card.isActive ? 'Ativo' : 'Inativo'}
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => openEdit(card)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+                      style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+                      <Pencil size={12} /> Editar
+                    </button>
+                    <button
+                      onClick={() => !inUse && setDeleteConfirm(card.id)}
+                      disabled={inUse}
+                      title={inUse ? 'Desative em vez de excluir — há despesas vinculadas' : undefined}
+                      aria-label={inUse ? 'Excluir — indisponível: desative o cartão em vez de excluir, há despesas vinculadas' : undefined}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium disabled:opacity-40"
+                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
+                      <Trash2 size={12} /> Excluir
+                    </button>
                   </div>
-                )}
+                </div>
               </motion.div>
             )
           })}
@@ -309,6 +298,9 @@ export default function CreditCardsPage() {
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Ativo</p>
                     <button type="button" onClick={() => setForm({ ...form, isActive: !form.isActive })}
+                      role="switch"
+                      aria-checked={form.isActive}
+                      aria-label={form.isActive ? 'Desativar cartão' : 'Ativar cartão'}
                       style={{ width: 44, height: 24, borderRadius: 12, flexShrink: 0, background: form.isActive ? 'var(--accent)' : 'var(--border)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
                       <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: form.isActive ? 23 : 3, transition: 'left 0.2s' }} />
                     </button>
@@ -326,6 +318,14 @@ export default function CreditCardsPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Excluir este cartão?"
+        message="O cartão será removido permanentemente. Isso não afeta despesas já lançadas."
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => { if (deleteConfirm) { deleteCreditCard(deleteConfirm); setDeleteConfirm(null) } }}
+      />
     </div>
   )
 }

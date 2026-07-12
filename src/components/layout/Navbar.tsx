@@ -151,7 +151,7 @@ export function Navbar() {
             )}
           </div>
           {!collapsed && (
-            <button onClick={() => toggle(true)} style={iconBtn}>
+            <button onClick={() => toggle(true)} aria-label="Recolher menu" style={iconBtn}>
               <ChevronLeft size={15} />
             </button>
           )}
@@ -160,7 +160,7 @@ export function Navbar() {
         {/* Expand btn when collapsed */}
         {collapsed && (
           <div style={{ padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center' }}>
-            <button onClick={() => toggle(false)} style={iconBtn}>
+            <button onClick={() => toggle(false)} aria-label="Expandir menu" style={iconBtn}>
               <ChevronRight size={15} />
             </button>
           </div>
@@ -177,7 +177,7 @@ export function Navbar() {
                 {items.map(({ href, icon: Icon, label: lbl }) => {
                   const active = isActive(pathname, href)
                   return (
-                    <Link key={href} href={href} title={collapsed ? lbl : undefined} style={navLinkBase(active, collapsed)}>
+                    <Link key={href} href={href} title={collapsed ? lbl : undefined} aria-label={collapsed ? lbl : undefined} style={navLinkBase(active, collapsed)}>
                       <Icon size={16} style={{ flexShrink: 0, opacity: active ? 1 : 0.6, ...(active ? { filter: 'drop-shadow(0 0 4px #10b981)' } : {}) }} />
                       {!collapsed && lbl}
                     </Link>
@@ -193,6 +193,7 @@ export function Navbar() {
           <button
             onClick={logout}
             title={collapsed ? 'Sair' : undefined}
+            aria-label={collapsed ? 'Sair' : undefined}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -240,6 +241,7 @@ export function Navbar() {
         <button
           onClick={logout}
           title="Sair"
+          aria-label="Sair"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 36, height: 36, borderRadius: 10,
@@ -330,6 +332,7 @@ export function Navbar() {
             <button
               onClick={() => setMoreOpen(false)}
               title="Fechar"
+              aria-label="Fechar"
               style={{
                 position: 'absolute', top: 12, right: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

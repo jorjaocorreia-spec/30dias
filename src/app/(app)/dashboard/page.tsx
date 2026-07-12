@@ -262,7 +262,7 @@ export default function DashboardPage() {
             sub: availableMode === 'income'
               ? (monthBalance.income > 0 ? `de ${formatCurrency(monthBalance.income)}` : 'sem renda registrada')
               : `de ${formatCurrency(totalMonthlyBudget)}`,
-            color: '#10b981',
+            color: 'var(--accent)',
           },
           {
             icon: TrendingDown,
@@ -277,7 +277,7 @@ export default function DashboardPage() {
                 : availableMode === 'income' ? 'da renda' : 'do orçamento',
             color: availableMode === 'income' && monthBalance.income === 0
               ? 'var(--text-muted)'
-              : remaining < 0 ? 'var(--red)' : '#06b6d4',
+              : remaining < 0 ? 'var(--red)' : 'var(--cyan)',
             isAvailable: true,
           },
           {
@@ -285,7 +285,7 @@ export default function DashboardPage() {
             label: 'Receitas',
             value: formatCurrency(monthBalance.income),
             sub: 'este mês',
-            color: '#8b5cf6',
+            color: 'var(--violet)',
             colSpanMobile: true,
           },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -317,7 +317,7 @@ export default function DashboardPage() {
                         fontSize: 9,
                         letterSpacing: '0.05em',
                         background: availableMode === mode ? 'rgba(6,182,212,0.18)' : 'transparent',
-                        color: availableMode === mode ? '#06b6d4' : 'var(--text-muted)',
+                        color: availableMode === mode ? 'var(--cyan)' : 'var(--text-muted)',
                         borderRight: mode === 'budget' ? '1px solid var(--border)' : undefined,
                       }}
                     >
@@ -345,7 +345,7 @@ export default function DashboardPage() {
             label: 'A receber',
             value: formatCurrency(sharedPending),
             sub: 'de despesas divididas',
-            color: '#f59e0b',
+            color: 'var(--amber)',
             onClick: () => { setDrawerMonth(monthKey); setSharedDrawerOpen(true) },
           }] : []),
           ...(pendingInvoices > 0 ? [{
@@ -353,7 +353,7 @@ export default function DashboardPage() {
             label: 'Faturas a pagar',
             value: formatCurrency(pendingInvoices),
             sub: 'de cartão de crédito',
-            color: '#f43f5e',
+            color: 'var(--red)',
             onClick: () => router.push('/credit-cards'),
           }] : []),
           ...(activeGoals.length > 0 ? [{
@@ -361,7 +361,7 @@ export default function DashboardPage() {
             label: 'Metas',
             value: `${avgGoalProgress}%`,
             sub: `${activeGoals.length} ativa${activeGoals.length > 1 ? 's' : ''}`,
-            color: '#10b981',
+            color: 'var(--accent)',
             onClick: () => router.push('/goals'),
           }] : []),
           ...(userAchievements.length > 0 ? [{
@@ -369,7 +369,7 @@ export default function DashboardPage() {
             label: 'Conquistas',
             value: `${userAchievements.length}/${ACHIEVEMENTS.length}`,
             sub: latestAchievement ? latestAchievement.title : 'desbloqueadas',
-            color: '#f59e0b',
+            color: 'var(--amber)',
             onClick: () => router.push('/achievements'),
           }] : []),
         ]
@@ -390,7 +390,7 @@ export default function DashboardPage() {
             >
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.2)' }}>
-                  <AlertTriangle size={15} style={{ color: '#f59e0b' }} />
+                  <AlertTriangle size={15} style={{ color: 'var(--amber)' }} />
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-semibold">Atenção</p>
@@ -455,15 +455,15 @@ export default function DashboardPage() {
         </p>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Receitas', value: monthBalance.income, color: '#10b981', Icon: TrendingUp },
+            { label: 'Receitas', value: monthBalance.income, color: 'var(--accent)', Icon: TrendingUp },
             {
-              label: 'Despesas', value: monthBalance.expenses, color: '#f43f5e', Icon: TrendingDown,
+              label: 'Despesas', value: monthBalance.expenses, color: 'var(--red)', Icon: TrendingDown,
               subLines: [
-                { label: 'Fixa', value: fixedMonthExpenses, color: '#8b5cf6' },
-                { label: 'Variável', value: variableMonthExpenses, color: '#f43f5e' },
+                { label: 'Fixa', value: fixedMonthExpenses, color: 'var(--violet)' },
+                { label: 'Variável', value: variableMonthExpenses, color: 'var(--red)' },
               ],
             },
-            { label: 'Saldo', value: monthBalance.balance, color: monthBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', Icon: ArrowUpDown, sign: true },
+            { label: 'Saldo', value: monthBalance.balance, color: monthBalance.balance >= 0 ? 'var(--cyan)' : 'var(--amber)', Icon: ArrowUpDown, sign: true },
           ].map(({ label, value, color, Icon, sign, subLines }) => (
             <div key={label}>
               <div className="flex items-center gap-1.5 mb-1">
@@ -497,7 +497,7 @@ export default function DashboardPage() {
           {pendingInvoices > 0 && (
             <button onClick={() => router.push('/credit-cards')}
               className="text-xs px-2 py-1 rounded-lg font-medium"
-              style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.12)' }}>
+              style={{ color: 'var(--amber)', background: 'rgba(245,158,11,0.12)' }}>
               {formatCurrency(pendingInvoices)} de fatura pendente
             </button>
           )}
@@ -507,9 +507,9 @@ export default function DashboardPage() {
         </p>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Receitas', value: cashBalance.income, color: '#10b981', Icon: TrendingUp },
-            { label: 'Saiu da conta', value: cashBalance.expenses, color: '#f43f5e', Icon: TrendingDown },
-            { label: 'Saldo real', value: cashBalance.balance, color: cashBalance.balance >= 0 ? '#06b6d4' : '#f59e0b', Icon: ArrowUpDown, sign: true },
+            { label: 'Receitas', value: cashBalance.income, color: 'var(--accent)', Icon: TrendingUp },
+            { label: 'Saiu da conta', value: cashBalance.expenses, color: 'var(--red)', Icon: TrendingDown },
+            { label: 'Saldo real', value: cashBalance.balance, color: cashBalance.balance >= 0 ? 'var(--cyan)' : 'var(--amber)', Icon: ArrowUpDown, sign: true },
           ].map(({ label, value, color, Icon, sign }) => (
             <div key={label}>
               <div className="flex items-center gap-1.5 mb-1">
@@ -527,7 +527,7 @@ export default function DashboardPage() {
         {cashBalance.pendingCardPurchases > 0 && (
           <div className="flex items-center gap-1.5 mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
             <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>↳ Compras no cartão este mês, a pagar</span>
-            <span style={{ color: '#f59e0b', fontFamily: 'var(--font-dm-mono)', fontSize: 11, fontWeight: 600 }}>
+            <span style={{ color: 'var(--amber)', fontFamily: 'var(--font-dm-mono)', fontSize: 11, fontWeight: 600 }}>
               {formatCurrency(cashBalance.pendingCardPurchases)}
             </span>
           </div>
@@ -550,7 +550,7 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold" style={{ color: budgetPercent >= 90 ? '#f43f5e' : 'var(--accent)', fontFamily: 'var(--font-dm-mono)' }}>
+            <span className="text-sm font-bold" style={{ color: budgetPercent >= 90 ? 'var(--red)' : 'var(--accent)', fontFamily: 'var(--font-dm-mono)' }}>
               {budgetPercent.toFixed(0)}%
             </span>
             <Link href="/budget" className="text-xs px-2 py-1 rounded-lg" style={{ color: 'var(--text-muted)', background: 'var(--bg-input)' }}>
@@ -582,10 +582,10 @@ export default function DashboardPage() {
           >
             {budgetPercent >= 100
               ? <XCircle size={15} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 1 }} />
-              : <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
+              : <AlertTriangle size={15} style={{ color: 'var(--amber)', flexShrink: 0, marginTop: 1 }} />
             }
             <div>
-              <p className="text-xs font-semibold" style={{ color: budgetPercent >= 100 ? 'var(--red)' : '#f59e0b' }}>
+              <p className="text-xs font-semibold" style={{ color: budgetPercent >= 100 ? 'var(--red)' : 'var(--amber)' }}>
                 {budgetPercent >= 100
                   ? `Orçamento ultrapassado em ${formatCurrency(totalMonthlyExpenses - totalMonthlyBudget)}`
                   : `${budgetPercent.toFixed(0)}% do orçamento mensal utilizado`
@@ -612,7 +612,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#8b5cf620' }}>
-                <TrendingUp size={13} style={{ color: '#8b5cf6' }} />
+                <TrendingUp size={13} style={{ color: 'var(--violet)' }} />
               </div>
               <p className="text-sm font-semibold">Projeção do mês</p>
             </div>
@@ -623,9 +623,9 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5">
               {projection.delta > 0
                 ? <TrendingUp size={13} style={{ color: 'var(--red)' }} />
-                : <TrendingDown size={13} style={{ color: '#10b981' }} />
+                : <TrendingDown size={13} style={{ color: 'var(--accent)' }} />
               }
-              <p className="text-sm" style={{ color: projection.delta > 0 ? 'var(--red)' : '#10b981' }}>
+              <p className="text-sm" style={{ color: projection.delta > 0 ? 'var(--red)' : 'var(--accent)' }}>
                 {formatCurrency(Math.abs(projection.delta))}{' '}
                 {projection.delta > 0 ? 'acima da sua renda' : 'abaixo da sua renda'}
               </p>
@@ -674,7 +674,7 @@ export default function DashboardPage() {
                     key={d.weekKey}
                     fill={
                       d.weekKey === selectedWeekKey
-                        ? '#10b981'
+                        ? 'var(--accent)'
                         : d.weekKey === currentWeekKey
                         ? 'rgba(16,185,129,0.25)'
                         : 'var(--bg-input)'
@@ -754,12 +754,12 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: isOver ? 'rgba(244,63,94,0.15)' : cat.color + '20' }}>
-                          <CategoryIcon name={cat.icon} size={13} style={{ color: isOver ? '#f43f5e' : cat.color }} />
+                          <CategoryIcon name={cat.icon} size={13} style={{ color: isOver ? 'var(--red)' : cat.color }} />
                         </div>
-                        <span className="text-sm font-medium" style={isOver ? { color: '#f43f5e' } : undefined}>{cat.name}</span>
+                        <span className="text-sm font-medium" style={isOver ? { color: 'var(--red)' } : undefined}>{cat.name}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs font-semibold" style={{ color: isOver ? '#f43f5e' : 'var(--text)' }}>{formatCurrency(spent)}</span>
+                        <span className="text-xs font-semibold" style={{ color: isOver ? 'var(--red)' : 'var(--text)' }}>{formatCurrency(spent)}</span>
                         {budget > 0 && <span className="text-xs" style={{ color: 'var(--text-muted)' }}> / {formatCurrency(budget)}</span>}
                         {budget === 0 && <span className="text-xs" style={{ color: 'var(--text-muted)' }}> sem limite</span>}
                       </div>
@@ -781,14 +781,14 @@ export default function DashboardPage() {
                     </div>
                     {isOver && isCurrentMonth && (
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <XCircle size={11} style={{ color: '#f43f5e', flexShrink: 0 }} />
-                        <p className="text-xs font-medium" style={{ color: '#f43f5e' }}>Limite ultrapassado em {formatCurrency(spent - budget)}</p>
+                        <XCircle size={11} style={{ color: 'var(--red)', flexShrink: 0 }} />
+                        <p className="text-xs font-medium" style={{ color: 'var(--red)' }}>Limite ultrapassado em {formatCurrency(spent - budget)}</p>
                       </div>
                     )}
                     {!isOver && rawPct >= 80 && isCurrentMonth && (
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <AlertTriangle size={11} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                        <p className="text-xs" style={{ color: '#f59e0b' }}>{rawPct.toFixed(0)}% utilizado</p>
+                        <AlertTriangle size={11} style={{ color: 'var(--amber)', flexShrink: 0 }} />
+                        <p className="text-xs" style={{ color: 'var(--amber)' }}>{rawPct.toFixed(0)}% utilizado</p>
                       </div>
                     )}
                   </div>
@@ -820,7 +820,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between px-5 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#f59e0b20' }}>
-                    <Users size={15} style={{ color: '#f59e0b' }} />
+                    <Users size={15} style={{ color: 'var(--amber)' }} />
                   </div>
                   <div>
                     <p className="text-sm font-semibold">A Receber</p>
@@ -875,30 +875,30 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-input)' }}>
                           {pendingCount === 0
-                            ? <span className="text-xs font-medium" style={{ color: '#10b981' }}>✓ Todos pagaram</span>
+                            ? <span className="text-xs font-medium" style={{ color: 'var(--accent)' }}>✓ Todos pagaram</span>
                             : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{paidCount}/{(expense.sharedWith ?? []).length} pagaram</span>
                           }
                         </div>
                         <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
                           {expense.sharedWith?.map(p => (
                             <div key={p.id} className="flex items-center gap-3 px-3 py-2.5">
-                              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: p.paid ? '#10b98120' : 'var(--bg-input)', color: p.paid ? '#10b981' : 'var(--text-muted)' }}>
+                              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold" style={{ background: p.paid ? '#10b98120' : 'var(--bg-input)', color: p.paid ? 'var(--accent)' : 'var(--text-muted)' }}>
                                 {p.name.charAt(0).toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{p.name}</p>
                                 {p.paid && p.paidAt
-                                  ? <p className="text-xs" style={{ color: '#10b981' }}>Pago em {formatDate(p.paidAt)}</p>
+                                  ? <p className="text-xs" style={{ color: 'var(--accent)' }}>Pago em {formatDate(p.paidAt)}</p>
                                   : <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pendente</p>
                                 }
                               </div>
-                              <p className="text-sm font-bold flex-shrink-0" style={{ color: p.paid ? '#10b981' : 'inherit' }}>
+                              <p className="text-sm font-bold flex-shrink-0" style={{ color: p.paid ? 'var(--accent)' : 'inherit' }}>
                                 {formatCurrency(p.amount)}
                               </p>
                               <button
                                 onClick={() => markParticipantAsPaid(expense.id, p.id, !p.paid)}
                                 className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-xl flex-shrink-0"
-                                style={{ background: p.paid ? '#10b98120' : 'var(--bg-input)', color: p.paid ? '#10b981' : 'var(--text-muted)', border: `1px solid ${p.paid ? '#10b98140' : 'var(--border)'}`, minWidth: 72, justifyContent: 'center' }}
+                                style={{ background: p.paid ? '#10b98120' : 'var(--bg-input)', color: p.paid ? 'var(--accent)' : 'var(--text-muted)', border: `1px solid ${p.paid ? '#10b98140' : 'var(--border)'}`, minWidth: 72, justifyContent: 'center' }}
                               >
                                 {p.paid ? <Check size={11} /> : null}
                                 {p.paid ? 'Pago' : 'Pendente'}
@@ -958,10 +958,10 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-medium truncate">{expense.description}</p>
                       {expense.fixedExpenseId && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0" style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', fontSize: 10 }}>🔁</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0" style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--violet)', fontSize: 10 }}>🔁</span>
                       )}
                       {expense.sharedWith?.length ? (
-                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0" style={{ background: '#06b6d420', color: '#06b6d4', fontSize: 10 }}>
+                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-lg font-medium flex-shrink-0" style={{ background: '#06b6d420', color: 'var(--cyan)', fontSize: 10 }}>
                           <Users size={9} /> ÷
                         </span>
                       ) : null}

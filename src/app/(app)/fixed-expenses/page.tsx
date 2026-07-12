@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { CenteredModal } from '@/components/ui/CenteredModal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatCurrency } from '@/lib/weekHelpers'
 import { FixedExpense, PaymentMethod } from '@/types'
 
@@ -396,101 +398,83 @@ export default function FixedExpensesPage() {
       )}
 
       {/* ── Monthly register modal ── */}
-      <AnimatePresence>
+      <CenteredModal open={!!registerTarget} onClose={() => setRegisterTarget(null)}>
         {registerTarget && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-40 bg-black/60"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setRegisterTarget(null)}
-            />
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-            <motion.div
-              className="w-full"
-              style={{ maxWidth: 400, pointerEvents: 'auto' }}
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div
-                className="p-6 rounded-3xl space-y-4"
-                style={{ background: 'var(--bg-modal)', border: '1px solid var(--border)' }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold">{registerTarget.fe.description}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {formatMonth(registerTarget.month)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setRegisterTarget(null)}
-                    className="w-7 h-7 rounded-xl flex items-center justify-center"
-                    style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Valor deste mês (R$)
-                  </label>
-                  <input
-                    ref={registerInputRef}
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={registerAmount}
-                    onChange={(e) => setRegisterAmount(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') confirmRegister() }}
-                    className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
-                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Data do lançamento
-                  </label>
-                  <input
-                    type="date"
-                    title="Data do lançamento"
-                    value={registerDate}
-                    onChange={(e) => setRegisterDate(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl border outline-none text-sm date-input-dark"
-                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)', colorScheme: 'dark' }}
-                  />
-                </div>
-
-                {registerTarget.existingId && (
-                  <p className="text-xs px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
-                    Este mês já tem um valor registrado. Confirmar irá atualizar os lançamentos.
-                  </p>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setRegisterTarget(null)}
-                    className="flex-1 py-2.5 rounded-2xl text-sm font-medium"
-                    style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={confirmRegister}
-                    disabled={!registerAmount || parseFloat(registerAmount) <= 0}
-                    className="flex-1 py-2.5 rounded-2xl text-sm font-medium text-white disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
-                  >
-                    Confirmar
-                  </button>
-                </div>
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-semibold">{registerTarget.fe.description}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {formatMonth(registerTarget.month)}
+                </p>
               </div>
-            </motion.div>
+              <button
+                onClick={() => setRegisterTarget(null)}
+                aria-label="Fechar"
+                className="w-7 h-7 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+              >
+                <X size={14} />
+              </button>
             </div>
-          </>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Valor deste mês (R$)
+              </label>
+              <input
+                ref={registerInputRef}
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={registerAmount}
+                onChange={(e) => setRegisterAmount(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') confirmRegister() }}
+                className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
+                style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)', fontFamily: 'var(--font-dm-mono)' }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Data do lançamento
+              </label>
+              <input
+                type="date"
+                title="Data do lançamento"
+                value={registerDate}
+                onChange={(e) => setRegisterDate(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl border outline-none text-sm date-input-dark"
+                style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)', colorScheme: 'dark' }}
+              />
+            </div>
+
+            {registerTarget.existingId && (
+              <p className="text-xs px-3 py-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                Este mês já tem um valor registrado. Confirmar irá atualizar os lançamentos.
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRegisterTarget(null)}
+                className="flex-1 py-2.5 rounded-2xl text-sm font-medium"
+                style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmRegister}
+                disabled={!registerAmount || parseFloat(registerAmount) <= 0}
+                className="flex-1 py-2.5 rounded-2xl text-sm font-medium text-white disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
+      </CenteredModal>
 
       {/* ── Templates list ── */}
       {fixedExpenses.length === 0 ? (
@@ -505,7 +489,6 @@ export default function FixedExpensesPage() {
             const cat = getCat(fe.categoryId)
             const months = getMonthsForFe(fe.id)
             const isExpanded = expandedId === fe.id
-            const isDeleting = deleteConfirm === fe.id
 
             return (
               <motion.div
@@ -625,58 +608,40 @@ export default function FixedExpensesPage() {
                 </AnimatePresence>
 
                 {/* Actions row */}
-                {isDeleting ? (
-                  <div className="flex items-center gap-2 px-3.5 pb-3.5 pt-1">
-                    <p className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>
-                      Excluir template e todos os lançamentos?
-                    </p>
-                    <button onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
-                      Cancelar
-                    </button>
-                    <button onClick={() => { deleteFixedExpense(fe.id); setDeleteConfirm(null) }}
-                      className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
-                      Excluir
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
-                    <button onClick={() => toggleActive(fe)}
-                      role="switch"
-                      aria-checked={fe.isActive}
-                      aria-label={fe.isActive ? `Pausar ${fe.description}` : `Ativar ${fe.description}`}
-                      className="flex items-center gap-2 text-xs font-medium"
-                      style={{ color: fe.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
+                <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
+                  <button onClick={() => toggleActive(fe)}
+                    role="switch"
+                    aria-checked={fe.isActive}
+                    aria-label={fe.isActive ? `Pausar ${fe.description}` : `Ativar ${fe.description}`}
+                    className="flex items-center gap-2 text-xs font-medium"
+                    style={{ color: fe.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    <div style={{
+                      width: 36, height: 20, borderRadius: 10,
+                      background: fe.isActive ? 'var(--accent)' : 'var(--border)',
+                      position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                    }}>
                       <div style={{
-                        width: 36, height: 20, borderRadius: 10,
-                        background: fe.isActive ? 'var(--accent)' : 'var(--border)',
-                        position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-                      }}>
-                        <div style={{
-                          width: 14, height: 14, borderRadius: '50%', background: '#fff',
-                          position: 'absolute', top: 3, left: fe.isActive ? 19 : 3,
-                          transition: 'left 0.2s',
-                        }} />
-                      </div>
-                      {fe.isActive ? 'Ativa' : 'Inativa'}
-                    </button>
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => openEditTemplate(fe)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                        style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
-                        <Pencil size={12} /> Editar
-                      </button>
-                      <button onClick={() => setDeleteConfirm(fe.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                        style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
-                        <Trash2 size={12} /> Excluir
-                      </button>
+                        width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                        position: 'absolute', top: 3, left: fe.isActive ? 19 : 3,
+                        transition: 'left 0.2s',
+                      }} />
                     </div>
+                    {fe.isActive ? 'Ativa' : 'Inativa'}
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => openEditTemplate(fe)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+                      style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+                      <Pencil size={12} /> Editar
+                    </button>
+                    <button onClick={() => setDeleteConfirm(fe.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
+                      <Trash2 size={12} /> Excluir
+                    </button>
                   </div>
-                )}
+                </div>
               </motion.div>
             )
           })}
@@ -1034,6 +999,14 @@ export default function FixedExpensesPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Excluir template e todos os lançamentos?"
+        message="Todas as confirmações mensais e despesas geradas por este template serão removidas permanentemente."
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => { if (deleteConfirm) { deleteFixedExpense(deleteConfirm); setDeleteConfirm(null) } }}
+      />
     </div>
   )
 }

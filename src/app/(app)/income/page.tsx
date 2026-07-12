@@ -6,6 +6,8 @@ import { Plus, ChevronLeft, ChevronRight, Pencil, Trash2, X, ChevronDown, Chevro
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Money } from '@/components/ui/Money'
+import { CenteredModal } from '@/components/ui/CenteredModal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatCurrency } from '@/lib/weekHelpers'
 import { IncomeSource, IncomeEntry, PaymentMethod } from '@/types'
 
@@ -524,7 +526,6 @@ export default function IncomePage() {
             {incomeSources.map((source) => {
               const cat = getCat(source.categoryId)
               const isExpanded = expandedSourceId === source.id
-              const isDeleting = deleteConfirm === source.id
               const sourceMonthEntries = incomeEntries
                 .filter((e) => e.incomeSourceId === source.id)
                 .sort((a, b) => b.month.localeCompare(a.month))
@@ -626,64 +627,45 @@ export default function IncomePage() {
                     )}
                   </AnimatePresence>
 
-                  {isDeleting ? (
-                    <div className="flex items-center gap-2 px-3.5 pb-3.5 pt-1">
-                      <p className="text-xs flex-1" style={{ color: 'var(--text-muted)' }}>
-                        Excluir fonte e todos os registros vinculados?
-                      </p>
+                  <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
+                    <button
+                      onClick={() => toggleSourceActive(source)}
+                      role="switch"
+                      aria-checked={source.isActive}
+                      aria-label={source.isActive ? `Pausar ${source.description}` : `Ativar ${source.description}`}
+                      className="flex items-center gap-2 text-xs font-medium"
+                      style={{ color: source.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      <div style={{
+                        width: 36, height: 20, borderRadius: 10,
+                        background: source.isActive ? 'var(--accent)' : 'var(--border)',
+                        position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                      }}>
+                        <div style={{
+                          width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                          position: 'absolute', top: 3, left: source.isActive ? 19 : 3,
+                          transition: 'left 0.2s',
+                        }} />
+                      </div>
+                      {source.isActive ? 'Ativa' : 'Inativa'}
+                    </button>
+                    <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="px-3 py-1.5 rounded-xl text-xs font-medium"
+                        onClick={() => openEditSource(source)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
                         style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
                       >
-                        Cancelar
+                        <Pencil size={12} /> Editar
                       </button>
                       <button
-                        onClick={() => { deleteIncomeSource(source.id); setDeleteConfirm(null) }}
-                        className="px-3 py-1.5 rounded-xl text-xs font-medium"
+                        onClick={() => setDeleteConfirm(source.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
                         style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                       >
-                        Excluir
+                        <Trash2 size={12} /> Excluir
                       </button>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
-                      <button
-                        onClick={() => toggleSourceActive(source)}
-                        className="flex items-center gap-2 text-xs font-medium"
-                        style={{ color: source.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-                      >
-                        <div style={{
-                          width: 36, height: 20, borderRadius: 10,
-                          background: source.isActive ? 'var(--accent)' : 'var(--border)',
-                          position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-                        }}>
-                          <div style={{
-                            width: 14, height: 14, borderRadius: '50%', background: '#fff',
-                            position: 'absolute', top: 3, left: source.isActive ? 19 : 3,
-                            transition: 'left 0.2s',
-                          }} />
-                        </div>
-                        {source.isActive ? 'Ativa' : 'Inativa'}
-                      </button>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => openEditSource(source)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                          style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                        >
-                          <Pencil size={12} /> Editar
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(source.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                          style={{ background: 'var(--red-light)', color: 'var(--red)' }}
-                        >
-                          <Trash2 size={12} /> Excluir
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </motion.div>
               )
             })}
@@ -692,98 +674,71 @@ export default function IncomePage() {
       )}
 
       {/* ── Quick register from source modal ── */}
-      <AnimatePresence>
+      <CenteredModal open={!!registerTarget} onClose={() => setRegisterTarget(null)}>
         {registerTarget && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-40 bg-black/60"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setRegisterTarget(null)}
-            />
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-            <motion.div
-              className="w-full"
-              style={{ maxWidth: 400, pointerEvents: 'auto' }}
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className="p-6 rounded-3xl space-y-4" style={{ background: 'var(--bg-modal)', border: '1px solid var(--border)' }}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold">{registerTarget.source.description}</p>
-                    <p className="text-xs mt-0.5 capitalize" style={{ color: 'var(--text-muted)' }}>
-                      {formatMonth(registerTarget.month)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setRegisterTarget(null)}
-                    className="w-7 h-7 rounded-xl flex items-center justify-center"
-                    style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Valor recebido (R$)
-                  </label>
-                  <input
-                    ref={registerInputRef}
-                    type="number" step="0.01" min="0.01"
-                    value={registerAmount}
-                    onChange={(e) => setRegisterAmount(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') confirmRegisterSource() }}
-                    className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
-                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setRegisterTarget(null)}
-                    className="flex-1 py-2.5 rounded-2xl text-sm font-medium"
-                    style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={confirmRegisterSource}
-                    disabled={!registerAmount || parseFloat(registerAmount) <= 0}
-                    className="flex-1 py-2.5 rounded-2xl text-sm font-medium text-white disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
-                  >
-                    Confirmar
-                  </button>
-                </div>
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-semibold">{registerTarget.source.description}</p>
+                <p className="text-xs mt-0.5 capitalize" style={{ color: 'var(--text-muted)' }}>
+                  {formatMonth(registerTarget.month)}
+                </p>
               </div>
-            </motion.div>
+              <button
+                onClick={() => setRegisterTarget(null)}
+                aria-label="Fechar"
+                className="w-7 h-7 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+              >
+                <X size={14} />
+              </button>
             </div>
-          </>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Valor recebido (R$)
+              </label>
+              <input
+                ref={registerInputRef}
+                type="number" step="0.01" min="0.01"
+                value={registerAmount}
+                onChange={(e) => setRegisterAmount(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') confirmRegisterSource() }}
+                className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
+                style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)', fontFamily: 'var(--font-dm-mono)' }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRegisterTarget(null)}
+                className="flex-1 py-2.5 rounded-2xl text-sm font-medium"
+                style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmRegisterSource}
+                disabled={!registerAmount || parseFloat(registerAmount) <= 0}
+                className="flex-1 py-2.5 rounded-2xl text-sm font-medium text-white disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
+      </CenteredModal>
 
       {/* ── Entry modal (avulsa / from source) ── */}
-      <AnimatePresence>
+      <CenteredModal open={showEntryModal} onClose={() => setShowEntryModal(false)} maxWidth={440} maxHeight="calc(100vh - 48px)">
         {showEntryModal && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-40 bg-black/60"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setShowEntryModal(false)}
-            />
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 pointer-events-none">
-            <motion.div
-              className="w-full overflow-y-auto"
-              style={{ maxWidth: 440, maxHeight: 'calc(100vh - 48px)', pointerEvents: 'auto' }}
-              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className="p-6 rounded-3xl space-y-4" style={{ background: 'var(--bg-modal)', border: '1px solid var(--border)' }}>
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="font-semibold">
                     {editingEntry ? 'Editar receita' : 'Nova receita'}
                   </h2>
                   <button
                     onClick={() => setShowEntryModal(false)}
+                    aria-label="Fechar"
                     className="w-8 h-8 rounded-xl flex items-center justify-center"
                     style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
                   >
@@ -857,7 +812,7 @@ export default function IncomePage() {
                     onChange={(e) => setEntryForm((f) => ({ ...f, amount: e.target.value }))}
                     placeholder="0,00"
                     className="w-full px-4 py-3 rounded-2xl border outline-none text-2xl font-bold"
-                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)', fontFamily: 'var(--font-dm-mono)' }}
                   />
                 </div>
 
@@ -955,11 +910,8 @@ export default function IncomePage() {
                   </button>
                 </div>
               </div>
-            </motion.div>
-            </div>
-          </>
         )}
-      </AnimatePresence>
+      </CenteredModal>
 
       {/* ── Source form (bottom sheet / inline) ── */}
       <AnimatePresence>
@@ -1126,6 +1078,14 @@ export default function IncomePage() {
           </>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Excluir fonte de receita?"
+        message="Todos os registros mensais vinculados a esta fonte serão removidos permanentemente."
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => { if (deleteConfirm) { deleteIncomeSource(deleteConfirm); setDeleteConfirm(null) } }}
+      />
     </div>
   )
 }
