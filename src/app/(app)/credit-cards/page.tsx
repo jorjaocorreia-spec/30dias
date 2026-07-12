@@ -139,7 +139,12 @@ export default function CreditCardsPage() {
                           const isInvOpen = expandedInvoice === inv.id
                           return (
                             <div key={inv.id}>
-                              <button onClick={() => setExpandedInvoice(isInvOpen ? null : inv.id)}
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => setExpandedInvoice(isInvOpen ? null : inv.id)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedInvoice(isInvOpen ? null : inv.id) } }}
+                                aria-expanded={isInvOpen}
                                 className="w-full flex items-center justify-between gap-2 py-1"
                                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                                 <span className="flex items-center gap-1 text-xs" style={{ color: inv.paid ? 'var(--text-muted)' : '#f59e0b' }}>
@@ -148,13 +153,18 @@ export default function CreditCardsPage() {
                                 </span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-dm-mono)' }}>{formatCurrency(total)}</span>
-                                  <span onClick={(e) => { e.stopPropagation(); setCreditCardInvoicePaid(inv.id, !inv.paid) }}
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={inv.paid}
+                                    aria-label={inv.paid ? `Fatura de ${formatMonth(inv.month)} paga — clique para desmarcar` : `Confirmar pagamento da fatura de ${formatMonth(inv.month)}`}
+                                    onClick={(e) => { e.stopPropagation(); setCreditCardInvoicePaid(inv.id, !inv.paid) }}
                                     className="text-xs px-2 py-0.5 rounded-lg font-medium"
-                                    style={{ background: inv.paid ? 'var(--bg-input)' : 'rgba(245,158,11,0.15)', color: inv.paid ? 'var(--text-muted)' : '#f59e0b' }}>
+                                    style={{ background: inv.paid ? 'var(--bg-input)' : 'rgba(245,158,11,0.15)', color: inv.paid ? 'var(--text-muted)' : '#f59e0b', border: 'none', cursor: 'pointer' }}>
                                     {inv.paid ? 'Paga' : 'Confirmar pagamento'}
-                                  </span>
+                                  </button>
                                 </div>
-                              </button>
+                              </div>
                               <AnimatePresence>
                                 {isInvOpen && (
                                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
@@ -194,11 +204,14 @@ export default function CreditCardsPage() {
                       style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>Cancelar</button>
                     <button onClick={() => { deleteCreditCard(card.id); setDeleteConfirm(null) }}
                       className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: '#ef444420', color: '#ef4444' }}>Excluir</button>
+                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}>Excluir</button>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
                     <button onClick={() => toggleActive(card)}
+                      role="switch"
+                      aria-checked={card.isActive}
+                      aria-label={card.isActive ? `Desativar ${card.name}` : `Ativar ${card.name}`}
                       className="flex items-center gap-2 text-xs font-medium"
                       style={{ color: card.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
                       <div style={{ width: 36, height: 20, borderRadius: 10, background: card.isActive ? 'var(--accent)' : 'var(--border)', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
@@ -216,8 +229,9 @@ export default function CreditCardsPage() {
                         onClick={() => !inUse && setDeleteConfirm(card.id)}
                         disabled={inUse}
                         title={inUse ? 'Desative em vez de excluir — há despesas vinculadas' : undefined}
+                        aria-label={inUse ? 'Excluir — indisponível: desative o cartão em vez de excluir, há despesas vinculadas' : undefined}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium disabled:opacity-40"
-                        style={{ background: '#ef444420', color: '#ef4444' }}>
+                        style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
                         <Trash2 size={12} /> Excluir
                       </button>
                     </div>

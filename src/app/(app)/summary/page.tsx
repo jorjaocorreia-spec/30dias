@@ -223,6 +223,7 @@ export default function SummaryPage() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setWeekKey(getPreviousWeekKey(weekKey))}
+              aria-label="Semana anterior"
               className="w-8 h-8 flex items-center justify-center rounded-xl border"
               style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
             >
@@ -239,6 +240,7 @@ export default function SummaryPage() {
             <button
               onClick={() => setWeekKey(getNextWeekKey(weekKey))}
               disabled={isCurrentWeek}
+              aria-label="Próxima semana"
               className="w-8 h-8 flex items-center justify-center rounded-xl border disabled:opacity-40"
               style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
             >
@@ -249,6 +251,7 @@ export default function SummaryPage() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={prevMonth}
+              aria-label="Mês anterior"
               className="w-8 h-8 flex items-center justify-center rounded-xl border"
               style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
             >
@@ -265,6 +268,7 @@ export default function SummaryPage() {
             <button
               onClick={nextMonth}
               disabled={isCurrentMonth}
+              aria-label="Próximo mês"
               className="w-8 h-8 flex items-center justify-center rounded-xl border disabled:opacity-40"
               style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
             >
@@ -310,7 +314,7 @@ export default function SummaryPage() {
               <span style={{ color: 'var(--text-muted)' }}>
                 Limite: <strong style={{ color: 'var(--text)' }}>{formatCurrency(summary.budget)}</strong>
               </span>
-              <span style={{ color: remaining >= 0 ? '#10b981' : '#ef4444' }}>
+              <span style={{ color: remaining >= 0 ? '#10b981' : 'var(--red)' }}>
                 {remaining >= 0
                   ? `${formatCurrency(remaining)} disponível`
                   : `${formatCurrency(Math.abs(remaining))} acima`}
@@ -328,7 +332,7 @@ export default function SummaryPage() {
                 initial={{ width: 0 }} animate={{ width: `${budgetPercent}%` }} transition={{ duration: 0.8 }}
                 style={{
                   background: budgetPercent >= 90
-                    ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                    ? 'linear-gradient(90deg, #f59e0b, var(--red))'
                     : 'linear-gradient(90deg, #10b981, #06b6d4)',
                 }}
               />
@@ -513,7 +517,7 @@ export default function SummaryPage() {
                   {visibleHistory.map((w, i) => {
                     const isSelected = w.weekKey === weekKey
                     const barColor = w.pct >= 100
-                      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                      ? 'linear-gradient(90deg, #f59e0b, var(--red))'
                       : w.pct >= 80 ? '#f59e0b'
                       : 'linear-gradient(90deg, #10b981, #06b6d4)'
                     return (

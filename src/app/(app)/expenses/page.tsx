@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Pencil, Trash2, Filter, X, Users, Check } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { Money } from '@/components/ui/Money'
 import { formatCurrency, formatDate, getEffectiveAmount, isInstallment } from '@/lib/weekHelpers'
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -81,7 +82,7 @@ export default function ExpensesListPage() {
             <button
               onClick={clearFilters}
               className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-medium"
-              style={{ background: '#ef444420', color: '#ef4444' }}
+              style={{ background: 'var(--red-light)', color: 'var(--red)' }}
             >
               <X size={12} /> Limpar
             </button>
@@ -259,11 +260,11 @@ export default function ExpensesListPage() {
                           </p>
                         ) : null}
                         <p className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
-                          {formatCurrency(getEffectiveAmount(expense))}
+                          <Money value={formatCurrency(getEffectiveAmount(expense))} />
                         </p>
                         {expense.sharedWith?.length && getEffectiveAmount(expense) !== expense.amount ? (
                           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            de {formatCurrency(expense.amount)} total
+                            de <Money value={formatCurrency(expense.amount)} /> total
                           </p>
                         ) : null}
                       </div>
@@ -352,7 +353,7 @@ export default function ExpensesListPage() {
                               className="text-sm font-semibold flex-shrink-0"
                               style={{ color: p.paid ? '#10b981' : 'var(--text-muted)' }}
                             >
-                              {formatCurrency(p.amount)}
+                              <Money value={formatCurrency(p.amount)} />
                             </p>
                             <button
                               type="button"
@@ -376,7 +377,7 @@ export default function ExpensesListPage() {
                               style={{ background: '#f59e0b15', color: '#f59e0b' }}
                             >
                               <span>A receber</span>
-                              <span>{formatCurrency(pending)}</span>
+                              <span><Money value={formatCurrency(pending)} /></span>
                             </div>
                           ) : (
                             <div
@@ -411,7 +412,7 @@ export default function ExpensesListPage() {
                     <button
                       onClick={() => handleDelete(expense.id)}
                       className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: '#ef444420', color: '#ef4444' }}
+                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                     >
                       Excluir
                     </button>
@@ -428,7 +429,7 @@ export default function ExpensesListPage() {
                     <button
                       onClick={() => setDeleteConfirm(expense.id)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: '#ef444420', color: '#ef4444' }}
+                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                     >
                       <Trash2 size={12} /> Excluir
                     </button>

@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { ExpenseForm } from '@/components/ui/ExpenseForm'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Trash2 } from 'lucide-react'
 
 export default function EditExpensePage() {
@@ -10,6 +12,7 @@ export default function EditExpensePage() {
   const { id } = useParams<{ id: string }>()
   const { expenses, deleteExpense } = useAppStore()
   const expense = expenses.find((e) => e.id === id)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   if (!expense) {
     return (
@@ -38,15 +41,23 @@ export default function EditExpensePage() {
           ← Voltar
         </button>
         <button
-          onClick={handleDelete}
+          onClick={() => setConfirmDelete(true)}
           className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl transition-opacity hover:opacity-80"
-          style={{ color: '#ef4444', background: '#ef444420' }}
+          style={{ color: 'var(--red)', background: 'var(--red-light)' }}
         >
           <Trash2 size={14} /> Excluir
         </button>
       </div>
       <h1 className="text-xl font-bold mb-6">Editar despesa</h1>
       <ExpenseForm initialData={expense} onSuccess={(_) => router.push('/dashboard')} />
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Excluir esta despesa?"
+        message="Esta ação não pode ser desfeita. O lançamento será removido permanentemente."
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

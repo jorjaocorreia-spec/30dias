@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, X, Store, Check } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Establishment } from '@/types'
 
 const QUICK_CAT_COLORS = ['#10b981', '#06b6d4', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#f97316', '#64748b']
@@ -19,6 +20,7 @@ export default function EstablishmentsPage() {
   const [form, setForm] = useState<FormState>(defaultForm)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<Establishment | null>(null)
 
   // Quick-add category state
   const [showQuickCat, setShowQuickCat] = useState(false)
@@ -117,15 +119,17 @@ export default function EstablishmentsPage() {
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => openEdit(est)}
+                  aria-label={`Editar estabelecimento ${est.name}`}
                   className="w-8 h-8 rounded-xl flex items-center justify-center"
                   style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
                 >
                   <Pencil size={13} />
                 </button>
                 <button
-                  onClick={() => deleteEstablishment(est.id)}
+                  onClick={() => setConfirmDelete(est)}
+                  aria-label={`Excluir estabelecimento ${est.name}`}
                   className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ background: '#ef444420', color: '#ef4444' }}
+                  style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                 >
                   <Trash2 size={13} />
                 </button>
@@ -285,6 +289,14 @@ export default function EstablishmentsPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={`Excluir "${confirmDelete?.name}"?`}
+        message="Despesas já lançadas com este estabelecimento não serão afetadas, mas ele não poderá ser recuperado."
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => { if (confirmDelete) { deleteEstablishment(confirmDelete.id); setConfirmDelete(null) } }}
+      />
     </div>
   )
 }

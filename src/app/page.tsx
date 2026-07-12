@@ -713,7 +713,7 @@ export default function LandingPage() {
                   </div>
 
                   {error && (
-                    <p style={{ fontSize: 13, color: '#ef4444', textAlign: 'center', padding: '8px 12px', borderRadius: 10, background: 'rgba(239,68,68,0.1)' }}>
+                    <p style={{ fontSize: 13, color: 'var(--red)', textAlign: 'center', padding: '8px 12px', borderRadius: 10, background: 'rgba(244,63,94,0.1)' }}>
                       {error}
                     </p>
                   )}

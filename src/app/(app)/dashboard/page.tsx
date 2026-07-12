@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users, Trophy, CreditCard as CreditCardIcon } from 'lucide-react'
+import { PlusCircle, ChevronLeft, ChevronRight, ChevronDown, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users, Trophy, CreditCard as CreditCardIcon } from 'lucide-react'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, Tooltip, ResponsiveContainer,
@@ -184,6 +184,7 @@ export default function DashboardPage() {
 
   const [sharedDrawerOpen, setSharedDrawerOpen] = useState(false)
   const [drawerMonth, setDrawerMonth] = useState(currentMonthKey)
+  const [attentionOpen, setAttentionOpen] = useState(false)
 
   const sharedExpenses = useMemo(
     () => expenses
@@ -225,6 +226,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-1.5">
           <button
             onClick={prevMonth}
+            aria-label="Mês anterior"
             className="w-8 h-8 flex items-center justify-center rounded-xl border"
             style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
           >
@@ -241,6 +243,7 @@ export default function DashboardPage() {
           <button
             onClick={nextMonth}
             disabled={isCurrentMonth}
+            aria-label="Próximo mês"
             className="w-8 h-8 flex items-center justify-center rounded-xl border disabled:opacity-40"
             style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
           >
@@ -249,8 +252,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className={`grid grid-cols-2 gap-3 mb-5 ${(sharedPending > 0 || pendingInvoices > 0 || activeGoals.length > 0 || userAchievements.length > 0) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+      {/* Primary KPI Cards — always 3, stable grid regardless of pending state */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
         {[
           {
             icon: Wallet,
@@ -274,7 +277,7 @@ export default function DashboardPage() {
                 : availableMode === 'income' ? 'da renda' : 'do orçamento',
             color: availableMode === 'income' && monthBalance.income === 0
               ? 'var(--text-muted)'
-              : remaining < 0 ? '#ef4444' : '#06b6d4',
+              : remaining < 0 ? 'var(--red)' : '#06b6d4',
             isAvailable: true,
           },
           {
@@ -283,55 +286,17 @@ export default function DashboardPage() {
             value: formatCurrency(monthBalance.income),
             sub: 'este mês',
             color: '#8b5cf6',
-            colSpanMobile: sharedPending === 0 && pendingInvoices === 0 && activeGoals.length === 0,
+            colSpanMobile: true,
           },
-          ...(sharedPending > 0 ? [{
-            icon: ArrowUpDown,
-            label: 'A receber',
-            value: formatCurrency(sharedPending),
-            sub: 'de despesas divididas',
-            color: '#f59e0b',
-            colSpanMobile: false,
-            onClick: () => { setDrawerMonth(monthKey); setSharedDrawerOpen(true) },
-          }] : []),
-          ...(pendingInvoices > 0 ? [{
-            icon: CreditCardIcon,
-            label: 'Faturas a pagar',
-            value: formatCurrency(pendingInvoices),
-            sub: 'de cartão de crédito',
-            color: '#f43f5e',
-            colSpanMobile: false,
-            onClick: () => router.push('/credit-cards'),
-          }] : []),
-          ...(activeGoals.length > 0 ? [{
-            icon: Target,
-            label: 'Metas',
-            value: `${avgGoalProgress}%`,
-            sub: `${activeGoals.length} ativa${activeGoals.length > 1 ? 's' : ''}`,
-            color: '#10b981',
-            colSpanMobile: false,
-            onClick: () => router.push('/goals'),
-          }] : []),
-          ...(userAchievements.length > 0 ? [{
-            icon: Trophy,
-            label: 'Conquistas',
-            value: `${userAchievements.length}/${ACHIEVEMENTS.length}`,
-            sub: latestAchievement ? latestAchievement.title : 'desbloqueadas',
-            color: '#f59e0b',
-            colSpanMobile: false,
-            onClick: () => router.push('/achievements'),
-          }] : []),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ].map(({ icon: Icon, label, value, sub, color, colSpanMobile, onClick, isAvailable }: any, i: number) => (
+        ].map(({ icon: Icon, label, value, sub, color, colSpanMobile, isAvailable }: any, i: number) => (
           <motion.div
             key={label}
-            className={`p-4 rounded-2xl border ${colSpanMobile ? 'col-span-2 lg:col-span-1' : ''} ${onClick ? 'cursor-pointer' : ''}`}
+            className={`p-4 rounded-2xl border ${colSpanMobile ? 'col-span-2 lg:col-span-1' : ''}`}
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-            onClick={onClick}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.07 }}
-            whileTap={onClick ? { scale: 0.97 } : undefined}
           >
             <div className="flex items-start justify-between mb-2">
               <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 9 }}>{label}</p>
@@ -371,6 +336,107 @@ export default function DashboardPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* "Atenção" tile — groups the conditional KPIs (A receber, Faturas, Metas, Conquistas) so the primary grid never resizes */}
+      {(() => {
+        const attentionItems = [
+          ...(sharedPending > 0 ? [{
+            icon: ArrowUpDown,
+            label: 'A receber',
+            value: formatCurrency(sharedPending),
+            sub: 'de despesas divididas',
+            color: '#f59e0b',
+            onClick: () => { setDrawerMonth(monthKey); setSharedDrawerOpen(true) },
+          }] : []),
+          ...(pendingInvoices > 0 ? [{
+            icon: CreditCardIcon,
+            label: 'Faturas a pagar',
+            value: formatCurrency(pendingInvoices),
+            sub: 'de cartão de crédito',
+            color: '#f43f5e',
+            onClick: () => router.push('/credit-cards'),
+          }] : []),
+          ...(activeGoals.length > 0 ? [{
+            icon: Target,
+            label: 'Metas',
+            value: `${avgGoalProgress}%`,
+            sub: `${activeGoals.length} ativa${activeGoals.length > 1 ? 's' : ''}`,
+            color: '#10b981',
+            onClick: () => router.push('/goals'),
+          }] : []),
+          ...(userAchievements.length > 0 ? [{
+            icon: Trophy,
+            label: 'Conquistas',
+            value: `${userAchievements.length}/${ACHIEVEMENTS.length}`,
+            sub: latestAchievement ? latestAchievement.title : 'desbloqueadas',
+            color: '#f59e0b',
+            onClick: () => router.push('/achievements'),
+          }] : []),
+        ]
+
+        if (attentionItems.length === 0) return null
+
+        return (
+          <motion.div
+            className="rounded-2xl border mb-5 overflow-hidden"
+            style={{ background: 'var(--amber-light)', borderColor: 'rgba(245,158,11,0.3)' }}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}
+          >
+            <button
+              type="button"
+              onClick={() => setAttentionOpen(v => !v)}
+              className="w-full flex items-center justify-between p-4"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.2)' }}>
+                  <AlertTriangle size={15} style={{ color: '#f59e0b' }} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold">Atenção</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {attentionItems.length} {attentionItems.length > 1 ? 'itens precisam' : 'item precisa'} da sua atenção
+                  </p>
+                </div>
+              </div>
+              <ChevronDown
+                size={16}
+                style={{ color: 'var(--text-muted)', transform: attentionOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+              />
+            </button>
+            <AnimatePresence initial={false}>
+              {attentionOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+                    {attentionItems.map(item => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={item.onClick}
+                        className="flex flex-col items-start p-3 rounded-xl text-left cursor-pointer"
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <item.icon size={12} style={{ color: item.color }} />
+                          <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-dm-mono)', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: 9 }}>{item.label}</span>
+                        </div>
+                        <p className="text-sm font-bold" style={{ fontFamily: 'var(--font-dm-mono)' }}>{item.value}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.sub}</p>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )
+      })()}
 
       {/* Monthly balance */}
       <motion.div
@@ -510,16 +576,16 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
             className="mt-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
             style={{
-              background: budgetPercent >= 100 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
-              border: `1px solid ${budgetPercent >= 100 ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
+              background: budgetPercent >= 100 ? 'rgba(244,63,94,0.1)' : 'rgba(245,158,11,0.1)',
+              border: `1px solid ${budgetPercent >= 100 ? 'rgba(244,63,94,0.25)' : 'rgba(245,158,11,0.25)'}`,
             }}
           >
             {budgetPercent >= 100
-              ? <XCircle size={15} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
+              ? <XCircle size={15} style={{ color: 'var(--red)', flexShrink: 0, marginTop: 1 }} />
               : <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
             }
             <div>
-              <p className="text-xs font-semibold" style={{ color: budgetPercent >= 100 ? '#ef4444' : '#f59e0b' }}>
+              <p className="text-xs font-semibold" style={{ color: budgetPercent >= 100 ? 'var(--red)' : '#f59e0b' }}>
                 {budgetPercent >= 100
                   ? `Orçamento ultrapassado em ${formatCurrency(totalMonthlyExpenses - totalMonthlyBudget)}`
                   : `${budgetPercent.toFixed(0)}% do orçamento mensal utilizado`
@@ -556,10 +622,10 @@ export default function DashboardPage() {
           {projection.delta !== null ? (
             <div className="flex items-center gap-1.5">
               {projection.delta > 0
-                ? <TrendingUp size={13} style={{ color: '#ef4444' }} />
+                ? <TrendingUp size={13} style={{ color: 'var(--red)' }} />
                 : <TrendingDown size={13} style={{ color: '#10b981' }} />
               }
-              <p className="text-sm" style={{ color: projection.delta > 0 ? '#ef4444' : '#10b981' }}>
+              <p className="text-sm" style={{ color: projection.delta > 0 ? 'var(--red)' : '#10b981' }}>
                 {formatCurrency(Math.abs(projection.delta))}{' '}
                 {projection.delta > 0 ? 'acima da sua renda' : 'abaixo da sua renda'}
               </p>
@@ -706,9 +772,9 @@ export default function DashboardPage() {
                         transition={{ duration: 0.7, ease: 'easeOut' }}
                         style={{
                           background: isOver
-                            ? 'linear-gradient(90deg, #f43f5e, #ef4444)'
+                            ? 'var(--red)'
                             : rawPct >= 90
-                              ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                              ? 'linear-gradient(90deg, #f59e0b, var(--red))'
                               : `linear-gradient(90deg, ${cat.color}, ${cat.color}bb)`,
                         }}
                       />
@@ -764,16 +830,16 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={prevDrawerMonth} className="w-7 h-7 flex items-center justify-center rounded-lg" style={{ background: 'var(--bg-input)' }}>
+                  <button onClick={prevDrawerMonth} aria-label="Mês anterior" className="w-7 h-7 flex items-center justify-center rounded-lg" style={{ background: 'var(--bg-input)' }}>
                     <ChevronLeft size={13} />
                   </button>
                   <span className="text-xs font-medium px-1" style={{ minWidth: 90, textAlign: 'center' }}>
                     {formatMonthLabel(drawerMonth)}
                   </span>
-                  <button onClick={nextDrawerMonth} disabled={drawerMonth >= currentMonthKey} className="w-7 h-7 flex items-center justify-center rounded-lg disabled:opacity-30" style={{ background: 'var(--bg-input)' }}>
+                  <button onClick={nextDrawerMonth} disabled={drawerMonth >= currentMonthKey} aria-label="Próximo mês" className="w-7 h-7 flex items-center justify-center rounded-lg disabled:opacity-30" style={{ background: 'var(--bg-input)' }}>
                     <ChevronRight size={13} />
                   </button>
-                  <button onClick={() => setSharedDrawerOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-lg ml-1" style={{ background: 'var(--bg-input)' }}>
+                  <button onClick={() => setSharedDrawerOpen(false)} aria-label="Fechar" className="w-7 h-7 flex items-center justify-center rounded-lg ml-1" style={{ background: 'var(--bg-input)' }}>
                     <X size={14} />
                   </button>
                 </div>

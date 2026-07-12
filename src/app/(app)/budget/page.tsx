@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Wallet, Target, Check, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { Money } from '@/components/ui/Money'
 import { formatCurrency, getWeekOfMonth, getCurrentWeekKey } from '@/lib/weekHelpers'
 
 const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -226,6 +227,7 @@ export default function BudgetPage() {
                   outline: 'none',
                   cursor: isPast ? 'not-allowed' : 'text',
                   opacity: isPast ? 0.7 : 1,
+                  fontFamily: 'var(--font-dm-mono)',
                 }}
               />
             </div>
@@ -253,7 +255,7 @@ export default function BudgetPage() {
             <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
               <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)' }}>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Variáveis</span>
-                <span className="text-sm font-medium">{formatCurrency(monthlyBudget)}</span>
+                <span className="text-sm font-medium"><Money value={formatCurrency(monthlyBudget)} /></span>
               </div>
               {hasFixedContribution && (
                 <div className="flex items-center justify-between px-3 py-2.5" style={{ background: 'var(--bg-input)', borderTop: '1px solid var(--border)' }}>
@@ -261,7 +263,7 @@ export default function BudgetPage() {
                     <Lock size={11} /> Fixas (automático)
                   </span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(fixedMonthly)}
+                    <Money value={formatCurrency(fixedMonthly)} />
                   </span>
                 </div>
               )}
@@ -271,7 +273,7 @@ export default function BudgetPage() {
                     <Target size={11} /> Metas (automático)
                   </span>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(goalDeductMonthly)}
+                    <Money value={formatCurrency(goalDeductMonthly)} />
                   </span>
                 </div>
               )}
@@ -279,7 +281,7 @@ export default function BudgetPage() {
                 <span className="text-xs font-semibold">Total mensal</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
-                    {formatCurrency(monthlyBudget + fixedMonthly + goalDeductMonthly)}
+                    <Money value={formatCurrency(monthlyBudget + fixedMonthly + goalDeductMonthly)} />
                   </span>
                 </div>
               </div>
@@ -337,7 +339,7 @@ export default function BudgetPage() {
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{percentage}%</span>
                   </div>
                   <span className="text-sm font-medium" style={{ color: g.color }}>
-                    {formatCurrency(monthlyNeeded)}/mês
+                    <Money value={`${formatCurrency(monthlyNeeded)}/mês`} />
                   </span>
                 </div>
               )
@@ -402,7 +404,7 @@ export default function BudgetPage() {
                   {/* Controles: fixas + input + total */}
                   <div className="flex items-center gap-2 lg:gap-3">
                     {hasAnyCatFixed && (
-                      <span className="text-xs text-right flex-1 lg:flex-none" style={{ color: catFixed > 0 ? 'var(--text-muted)' : 'transparent', minWidth: 72, width: 90 }}>
+                      <span className="text-xs text-right flex-1 lg:flex-none" style={{ color: catFixed > 0 ? 'var(--text-muted)' : 'transparent', minWidth: 72, width: 90, fontFamily: 'var(--font-dm-mono)' }}>
                         {catFixed > 0 ? formatCurrency(catFixed) : '—'}
                       </span>
                     )}
@@ -432,11 +434,12 @@ export default function BudgetPage() {
                           outline: 'none',
                           cursor: isPast ? 'not-allowed' : 'text',
                           opacity: isPast ? 0.7 : 1,
+                          fontFamily: 'var(--font-dm-mono)',
                         }}
                       />
                     </div>
                     {hasAnyCatFixed && effective > 0 && (
-                      <span className="text-xs font-semibold text-right" style={{ color: 'var(--accent)', width: 72, flexShrink: 0 }}>
+                      <span className="text-xs font-semibold text-right" style={{ color: 'var(--accent)', width: 72, flexShrink: 0, fontFamily: 'var(--font-dm-mono)' }}>
                         {formatCurrency(effective)}
                       </span>
                     )}
@@ -457,13 +460,11 @@ export default function BudgetPage() {
                   {(hasAnyCatFixed || hasGoalDeduct) ? 'Total mensal efetivo' : 'Total mensal'}
                 </p>
                 <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                  {formatCurrency(totalCat + totalCatFixed + goalDeductMonthly)}
+                  <Money value={formatCurrency(totalCat + totalCatFixed + goalDeductMonthly)} />
                 </p>
                 {(hasAnyCatFixed || hasGoalDeduct) && (
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    {formatCurrency(totalCat)} variáveis
-                    {hasAnyCatFixed && ` + ${formatCurrency(totalCatFixed)} fixas`}
-                    {hasGoalDeduct && ` + ${formatCurrency(goalDeductMonthly)} metas`}
+                    <Money value={`${formatCurrency(totalCat)} variáveis${hasAnyCatFixed ? ` + ${formatCurrency(totalCatFixed)} fixas` : ''}${hasGoalDeduct ? ` + ${formatCurrency(goalDeductMonthly)} metas` : ''}`} />
                   </p>
                 )}
               </div>

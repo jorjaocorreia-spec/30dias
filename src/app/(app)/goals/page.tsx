@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Check, Trophy } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { Money } from '@/components/ui/Money'
+import { CenteredModal } from '@/components/ui/CenteredModal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatCurrency, getWeeksUntilDeadline, getTodayKey } from '@/lib/weekHelpers'
 import { FinancialGoal } from '@/types'
 
@@ -296,7 +299,7 @@ export default function GoalsPage() {
                   className="px-3 py-2 rounded-xl text-xs"
                   style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}
                 >
-                  Guardar <strong>{formatCurrency(formWeeklyPreview.weekly)}/semana</strong> por {formWeeklyPreview.weeksLeft} semana{formWeeklyPreview.weeksLeft > 1 ? 's' : ''} até {formatDeadline(form.deadline)}
+                  Guardar <strong><Money value={`${formatCurrency(formWeeklyPreview.weekly)}/semana`} /></strong> por {formWeeklyPreview.weeksLeft} semana{formWeeklyPreview.weeksLeft > 1 ? 's' : ''} até {formatDeadline(form.deadline)}
                 </div>
               )}
 
@@ -460,7 +463,7 @@ export default function GoalsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{goal.name}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {percentage}% atingido · sugestão {formatCurrency(suggested)}/mês
+                      {percentage}% atingido · sugestão <Money value={`${formatCurrency(suggested)}/mês`} />
                     </div>
                   </div>
                   <button
@@ -525,8 +528,8 @@ export default function GoalsPage() {
                         {/* Progress bar */}
                         <div className="mt-2.5 mb-1">
                           <div className="flex justify-between text-xs mb-1">
-                            <span style={{ color: 'var(--text-muted)' }}>{formatCurrency(contributed)} guardados</span>
-                            <span style={{ color: 'var(--text-muted)' }}>de {formatCurrency(goal.targetAmount)}</span>
+                            <span style={{ color: 'var(--text-muted)' }}><Money value={formatCurrency(contributed)} /> guardados</span>
+                            <span style={{ color: 'var(--text-muted)' }}>de <Money value={formatCurrency(goal.targetAmount)} /></span>
                           </div>
                           <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-input)' }}>
                             <motion.div
@@ -541,10 +544,10 @@ export default function GoalsPage() {
 
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs font-medium" style={{ color: goal.color }}>
-                            {percentage}% · guardar {formatCurrency(effectiveWeekly)}/semana
+                            {percentage}% · guardar <Money value={`${formatCurrency(effectiveWeekly)}/semana`} />
                           </span>
                           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            faltam {formatCurrency(remaining)}
+                            faltam <Money value={formatCurrency(remaining)} />
                           </span>
                         </div>
                       </div>
@@ -561,6 +564,7 @@ export default function GoalsPage() {
                       </button>
                       <button
                         onClick={() => openEdit(goal)}
+                        aria-label={`Editar meta ${goal.name}`}
                         className="w-8 h-8 rounded-xl flex items-center justify-center"
                         style={{ background: 'var(--bg-input)' }}
                       >
@@ -571,15 +575,17 @@ export default function GoalsPage() {
                         className="w-8 h-8 rounded-xl flex items-center justify-center"
                         style={{ background: 'var(--bg-input)' }}
                         title="Marcar como concluída"
+                        aria-label={`Marcar meta ${goal.name} como concluída`}
                       >
                         <Trophy size={13} style={{ color: '#f59e0b' }} />
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(goal.id)}
+                        aria-label={`Excluir meta ${goal.name}`}
                         className="w-8 h-8 rounded-xl flex items-center justify-center"
                         style={{ background: 'var(--bg-input)' }}
                       >
-                        <Trash2 size={13} style={{ color: '#ef4444' }} />
+                        <Trash2 size={13} style={{ color: 'var(--red)' }} />
                       </button>
                       <button
                         onClick={() => setExpandedId(isExpanded ? null : goal.id)}
@@ -611,13 +617,13 @@ export default function GoalsPage() {
                               <div key={c.id} className="flex items-center justify-between">
                                 <span className="text-sm">{formatMonth(c.month)}</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">{formatCurrency(c.amount)}</span>
+                                  <span className="text-sm font-medium"><Money value={formatCurrency(c.amount)} /></span>
                                   <button
                                     onClick={() => deleteGoalContribution(c.id)}
                                     className="w-6 h-6 rounded-lg flex items-center justify-center"
                                     style={{ background: 'var(--bg-input)' }}
                                   >
-                                    <X size={10} style={{ color: '#ef4444' }} />
+                                    <X size={10} style={{ color: 'var(--red)' }} />
                                   </button>
                                 </div>
                               </div>
@@ -704,10 +710,11 @@ export default function GoalsPage() {
                         )}
                         <button
                           onClick={() => setDeleteConfirm(goal.id)}
+                          aria-label={`Excluir meta ${goal.name}`}
                           className="w-7 h-7 rounded-lg flex items-center justify-center"
                           style={{ background: 'var(--bg-input)' }}
                         >
-                          <Trash2 size={12} style={{ color: '#ef4444' }} />
+                          <Trash2 size={12} style={{ color: 'var(--red)' }} />
                         </button>
                       </div>
                     </div>
@@ -720,133 +727,83 @@ export default function GoalsPage() {
       )}
 
       {/* ── Contribution modal ── */}
-      <AnimatePresence>
+      <CenteredModal open={!!contributeTarget} onClose={() => setContributeTarget(null)} maxWidth={384} mobileBottomSheet>
         {contributeTarget && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.5)' }}
-            onClick={e => { if (e.target === e.currentTarget) setContributeTarget(null) }}
-          >
-            <motion.div
-              initial={{ y: 40 }}
-              animate={{ y: 0 }}
-              exit={{ y: 40 }}
-              className="w-full max-w-sm p-5 rounded-2xl"
-              style={{ background: 'var(--bg-modal)' }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-semibold text-sm">{contributeTarget.goal.name}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    Contribuição de {formatMonth(contributeTarget.month)}
-                  </p>
-                </div>
-                <button onClick={() => setContributeTarget(null)}>
-                  <X size={16} style={{ color: 'var(--text-muted)' }} />
-                </button>
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="font-semibold text-sm">{contributeTarget.goal.name}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Contribuição de {formatMonth(contributeTarget.month)}
+                </p>
               </div>
+              <button onClick={() => setContributeTarget(null)}>
+                <X size={16} style={{ color: 'var(--text-muted)' }} />
+              </button>
+            </div>
 
-              {/* Progress summary */}
-              {(() => {
-                const p = getGoalProgress(contributeTarget.goal.id)
-                return (
-                  <div
-                    className="px-3 py-2 rounded-xl text-xs mb-4"
-                    style={{ background: 'var(--bg-input)' }}
-                  >
-                    <div className="flex justify-between mb-1">
-                      <span style={{ color: 'var(--text-muted)' }}>Guardado</span>
-                      <span>{formatCurrency(p.contributed)} / {formatCurrency(contributeTarget.goal.targetAmount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-muted)' }}>Sugestão mensal</span>
-                      <span style={{ color: '#10b981' }}>{formatCurrency(Math.round(p.effectiveWeekly * 4 * 100) / 100)}</span>
-                    </div>
+            {/* Progress summary */}
+            {(() => {
+              const p = getGoalProgress(contributeTarget.goal.id)
+              return (
+                <div
+                  className="px-3 py-2 rounded-xl text-xs mb-4"
+                  style={{ background: 'var(--bg-input)' }}
+                >
+                  <div className="flex justify-between mb-1">
+                    <span style={{ color: 'var(--text-muted)' }}>Guardado</span>
+                    <span><Money value={`${formatCurrency(p.contributed)} / ${formatCurrency(contributeTarget.goal.targetAmount)}`} /></span>
                   </div>
-                )
-              })()}
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--text-muted)' }}>Sugestão mensal</span>
+                    <span style={{ color: '#10b981' }}><Money value={formatCurrency(Math.round(p.effectiveWeekly * 4 * 100) / 100)} /></span>
+                  </div>
+                </div>
+              )
+            })()}
 
-              <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>
-                Valor contribuído em {formatMonth(contributeTarget.month)}
-              </label>
-              <input
-                ref={contributeInputRef}
-                type="number"
-                placeholder="R$ 0"
-                value={contributeAmount}
-                onChange={e => setContributeAmount(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && confirmContribute()}
-                className="w-full px-3 py-2.5 rounded-xl text-sm mb-4"
-                style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)' }}
-              />
+            <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>
+              Valor contribuído em {formatMonth(contributeTarget.month)}
+            </label>
+            <input
+              ref={contributeInputRef}
+              type="number"
+              placeholder="R$ 0"
+              value={contributeAmount}
+              onChange={e => setContributeAmount(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && confirmContribute()}
+              className="w-full px-3 py-2.5 rounded-xl text-sm mb-4"
+              style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-dm-mono)' }}
+            />
 
-              <div className="flex gap-2">
-                <button
-                  onClick={confirmContribute}
-                  disabled={!(parseFloat(contributeAmount) > 0)}
-                  className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-40"
-                  style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
-                >
-                  {contributeTarget.existingId ? 'Atualizar' : 'Confirmar'}
-                </button>
-                <button
-                  onClick={() => setContributeTarget(null)}
-                  className="px-4 py-2.5 rounded-xl text-sm"
-                  style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+            <div className="flex gap-2">
+              <button
+                onClick={confirmContribute}
+                disabled={!(parseFloat(contributeAmount) > 0)}
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-40"
+                style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
+              >
+                {contributeTarget.existingId ? 'Atualizar' : 'Confirmar'}
+              </button>
+              <button
+                onClick={() => setContributeTarget(null)}
+                className="px-4 py-2.5 rounded-xl text-sm"
+                style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </>
         )}
-      </AnimatePresence>
+      </CenteredModal>
 
-      {/* ── Delete confirm modal ── */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.5)' }}
-            onClick={e => { if (e.target === e.currentTarget) setDeleteConfirm(null) }}
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="w-full max-w-xs p-5 rounded-2xl"
-              style={{ background: 'var(--bg-modal)' }}
-            >
-              <p className="font-semibold text-sm mb-1">Excluir meta?</p>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                Todas as contribuições serão removidas.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { deleteFinancialGoal(deleteConfirm); setDeleteConfirm(null) }}
-                  className="flex-1 py-2 rounded-xl text-white text-sm font-medium"
-                  style={{ background: '#ef4444' }}
-                >
-                  Excluir
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 py-2 rounded-xl text-sm"
-                  style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Excluir meta?"
+        message="Todas as contribuições serão removidas."
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => { if (deleteConfirm) { deleteFinancialGoal(deleteConfirm); setDeleteConfirm(null) } }}
+      />
 
     </div>
   )

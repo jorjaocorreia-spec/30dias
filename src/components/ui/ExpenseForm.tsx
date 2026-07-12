@@ -5,18 +5,19 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Plus, Check, Users, Trash2 } from 'lucide-react'
+import { X, Plus, Check, Users, Trash2, CreditCard, Zap, Landmark, Banknote } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { Expense, ExpenseParticipant, PaymentMethod } from '@/types'
 import { formatCurrency, getTodayKey, toLocalDateKey, addMonthsToDate, isInstallment } from '@/lib/weekHelpers'
+import { Money } from './Money'
 import { CategoryIcon } from './CategoryIcon'
 import { nanoid } from 'nanoid'
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
-  { value: 'credit_card', label: 'Cartão de Crédito', icon: '💳' },
-  { value: 'pix', label: 'Pix', icon: '⚡' },
-  { value: 'ted', label: 'TED', icon: '🏦' },
-  { value: 'cash', label: 'Dinheiro', icon: '💵' },
+const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: typeof CreditCard }[] = [
+  { value: 'credit_card', label: 'Cartão de Crédito', icon: CreditCard },
+  { value: 'pix', label: 'Pix', icon: Zap },
+  { value: 'ted', label: 'TED', icon: Landmark },
+  { value: 'cash', label: 'Dinheiro', icon: Banknote },
 ]
 
 const QUICK_COLORS = ['#10b981', '#06b6d4', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#f97316', '#64748b']
@@ -282,7 +283,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
         <input
           type="number" step="0.01" placeholder="0,00"
           {...register('amount', { valueAsNumber: true })}
-          className={`${fieldClass} text-3xl font-bold`} style={fieldStyle}
+          className={`${fieldClass} text-3xl font-bold`} style={{ ...fieldStyle, fontFamily: 'var(--font-dm-mono)' }}
         />
         {isFixed && (
           <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -296,6 +297,8 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       {!isEdit && (
         <button
           type="button"
+          role="switch"
+          aria-checked={isFixed}
           onClick={() => setIsFixed((v) => !v)}
           className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all"
           style={{
@@ -333,6 +336,8 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
         <div>
           <button
             type="button"
+            role="switch"
+            aria-checked={isInstallmentMode}
             onClick={() => setIsInstallmentMode((v) => !v)}
             className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all"
             style={{
@@ -346,7 +351,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
               </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {isInstallmentMode && watchedAmount > 0
-                  ? `${installmentTotal}x de ${formatCurrency(installmentAmount)}`
+                  ? <Money value={`${installmentTotal}x de ${formatCurrency(installmentAmount)}`} />
                   : 'Distribuir automaticamente nos próximos meses'}
               </p>
             </div>
@@ -392,7 +397,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                         </span>
                         {watchedAmount > 0 && (
                           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                            de {formatCurrency(installmentAmount)} cada
+                            de <Money value={formatCurrency(installmentAmount)} /> cada
                           </p>
                         )}
                       </div>
@@ -454,6 +459,8 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
         <div>
           <button
             type="button"
+            role="switch"
+            aria-checked={isShared}
             onClick={() => { setIsShared((v) => !v); if (isShared) { setParticipants([]); setUserShares(1) } }}
             className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all"
             style={{
@@ -501,7 +508,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                   {/* Summary row */}
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                      Total: {watchedAmount > 0 ? formatCurrency(watchedAmount) : '—'}
+                      Total: {watchedAmount > 0 ? <Money value={formatCurrency(watchedAmount)} /> : '—'}
                     </p>
                     <button
                       type="button"
@@ -560,7 +567,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                         type="button"
                         onClick={() => removeParticipant(p.id)}
                         className="w-8 h-8 flex items-center justify-center rounded-xl flex-shrink-0"
-                        style={{ background: '#ef444420', color: '#ef4444' }}
+                        style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -631,13 +638,13 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                         </div>
                       </div>
                       <p className="text-sm font-bold" style={{ color: '#06b6d4' }}>
-                        {formatCurrency(myShare)}
+                        <Money value={formatCurrency(myShare)} />
                       </p>
                     </div>
                   )}
 
                   {totalShared > (watchedAmount || 0) && (
-                    <p className="text-xs" style={{ color: '#ef4444' }}>
+                    <p className="text-xs" style={{ color: 'var(--red)' }}>
                       A soma das partes supera o valor total.
                     </p>
                   )}
@@ -824,7 +831,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
       <div>
         <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Meio de pagamento</label>
         <div className="grid grid-cols-2 gap-2">
-          {PAYMENT_METHODS.map(({ value, label, icon }) => (
+          {PAYMENT_METHODS.map(({ value, label, icon: Icon }) => (
             <button key={value} type="button"
               onClick={() => {
                 setValue('paymentMethod', value)
@@ -836,7 +843,7 @@ export function ExpenseForm({ initialData, onSuccess }: Props) {
                 background: selectedPaymentMethod === value ? 'var(--accent-light)' : 'var(--bg-input)',
                 color: selectedPaymentMethod === value ? 'var(--accent)' : 'var(--text-muted)',
               }}>
-              <span style={{ fontSize: 16 }}>{icon}</span>
+              <Icon size={16} />
               {label}
             </button>
           ))}

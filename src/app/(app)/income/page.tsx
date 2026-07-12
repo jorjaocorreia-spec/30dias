@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, ChevronLeft, ChevronRight, Pencil, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { Money } from '@/components/ui/Money'
 import { formatCurrency } from '@/lib/weekHelpers'
 import { IncomeSource, IncomeEntry, PaymentMethod } from '@/types'
 
@@ -368,7 +369,7 @@ export default function IncomePage() {
           <p className="font-semibold text-sm capitalize">{formatMonth(selectedMonth)}</p>
           {monthTotal > 0 && (
             <p className="text-xs mt-0.5 font-bold" style={{ color: 'var(--accent)' }}>
-              {formatCurrency(monthTotal)}
+              <Money value={formatCurrency(monthTotal)} />
             </p>
           )}
         </div>
@@ -479,7 +480,7 @@ export default function IncomePage() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <p className="font-bold text-sm" style={{ color: 'var(--accent)' }}>
-                      {formatCurrency(entry.amount)}
+                      <Money value={formatCurrency(entry.amount)} />
                     </p>
                     <div className="flex gap-1">
                       <button
@@ -492,7 +493,7 @@ export default function IncomePage() {
                       <button
                         onClick={() => deleteIncomeEntry(entry.id)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center"
-                        style={{ background: '#ef444420', color: '#ef4444' }}
+                        style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                       >
                         <Trash2 size={12} />
                       </button>
@@ -599,7 +600,7 @@ export default function IncomePage() {
                                   </span>
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs font-medium" style={{ color: 'var(--accent)' }}>
-                                      {formatCurrency(e.amount)}
+                                      <Money value={formatCurrency(e.amount)} />
                                     </span>
                                     <button
                                       onClick={() => openEditEntry(e)}
@@ -611,7 +612,7 @@ export default function IncomePage() {
                                     <button
                                       onClick={() => deleteIncomeEntry(e.id)}
                                       className="text-xs px-2 py-0.5 rounded-lg"
-                                      style={{ background: '#ef444420', color: '#ef4444' }}
+                                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                                     >
                                       Excluir
                                     </button>
@@ -640,7 +641,7 @@ export default function IncomePage() {
                       <button
                         onClick={() => { deleteIncomeSource(source.id); setDeleteConfirm(null) }}
                         className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                        style={{ background: '#ef444420', color: '#ef4444' }}
+                        style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                       >
                         Excluir
                       </button>
@@ -676,7 +677,7 @@ export default function IncomePage() {
                         <button
                           onClick={() => setDeleteConfirm(source.id)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                          style={{ background: '#ef444420', color: '#ef4444' }}
+                          style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                         >
                           <Trash2 size={12} /> Excluir
                         </button>
@@ -1075,6 +1076,9 @@ export default function IncomePage() {
                     </p>
                   </div>
                   <button type="button"
+                    role="switch"
+                    aria-checked={sourceForm.isActive}
+                    aria-label={sourceForm.isActive ? 'Pausar fonte de receita' : 'Ativar fonte de receita'}
                     onClick={() => setSourceForm({ ...sourceForm, isActive: !sourceForm.isActive })}
                     style={{
                       width: 44, height: 24, borderRadius: 12, flexShrink: 0,

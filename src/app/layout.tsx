@@ -3,6 +3,7 @@ import { Syne, DM_Mono, Nunito } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/layout/ThemeProvider'
 import { AuthProvider } from '@/components/layout/AuthProvider'
+import { MotionConfigProvider } from '@/components/layout/MotionConfigProvider'
 
 const syne = Syne({
   subsets: ['latin'],
@@ -51,11 +52,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body>
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        <MotionConfigProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ThemeProvider>
+        </MotionConfigProvider>
       </body>
     </html>
   )

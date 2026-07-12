@@ -544,7 +544,7 @@ export default function FixedExpensesPage() {
                       )}
                       {fe.dueDateDay && (
                         <span className="text-xs px-1.5 py-0.5 rounded-lg font-medium"
-                          style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
+                          style={{ background: 'var(--violet-light)', color: 'var(--violet)' }}>
                           Vence dia {fe.dueDateDay}
                         </span>
                       )}
@@ -596,7 +596,7 @@ export default function FixedExpensesPage() {
                                 <button
                                   onClick={() => deleteFixedExpenseMonth(fem.id)}
                                   className="text-xs px-2 py-0.5 rounded-lg"
-                                  style={{ background: '#ef444420', color: '#ef4444' }}
+                                  style={{ background: 'var(--red-light)', color: 'var(--red)' }}
                                 >
                                   Excluir
                                 </button>
@@ -637,13 +637,16 @@ export default function FixedExpensesPage() {
                     </button>
                     <button onClick={() => { deleteFixedExpense(fe.id); setDeleteConfirm(null) }}
                       className="px-3 py-1.5 rounded-xl text-xs font-medium"
-                      style={{ background: '#ef444420', color: '#ef4444' }}>
+                      style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
                       Excluir
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between px-3.5 pb-3.5 pt-1">
                     <button onClick={() => toggleActive(fe)}
+                      role="switch"
+                      aria-checked={fe.isActive}
+                      aria-label={fe.isActive ? `Pausar ${fe.description}` : `Ativar ${fe.description}`}
                       className="flex items-center gap-2 text-xs font-medium"
                       style={{ color: fe.isActive ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
                     >
@@ -668,7 +671,7 @@ export default function FixedExpensesPage() {
                       </button>
                       <button onClick={() => setDeleteConfirm(fe.id)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
-                        style={{ background: '#ef444420', color: '#ef4444' }}>
+                        style={{ background: 'var(--red-light)', color: 'var(--red)' }}>
                         <Trash2 size={12} /> Excluir
                       </button>
                     </div>
@@ -786,6 +789,8 @@ export default function FixedExpensesPage() {
                   {preferences.whatsappNumber ? (
                     <button
                       type="button"
+                      role="switch"
+                      aria-checked={templateForm.reminderEnabled}
                       aria-label={templateForm.reminderEnabled ? 'Desativar lembrete WhatsApp' : 'Ativar lembrete WhatsApp'}
                       onClick={() => setTemplateForm({ ...templateForm, reminderEnabled: !templateForm.reminderEnabled })}
                       style={{
@@ -979,6 +984,8 @@ export default function FixedExpensesPage() {
                     </p>
                   </div>
                   <button type="button"
+                    role="switch"
+                    aria-checked={templateForm.isActive}
                     aria-label={templateForm.isActive ? 'Pausar despesa fixa' : 'Ativar despesa fixa'}
                     onClick={() => setTemplateForm({ ...templateForm, isActive: !templateForm.isActive })}
                     style={{

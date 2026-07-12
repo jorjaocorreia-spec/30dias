@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-11T00:00:00.000Z",
+  "title": "Design System: 30dias — \"The Quiet Ledger\"",
+  "extensions": {
+    "colorMeta": {
+      "bg": { "role": "neutral", "displayName": "Void", "canonical": "#0F0F14", "tonalRamp": ["#0F0F14", "#17171E", "#202028", "#2C2C36", "#3A3A47", "#525263", "#7A7A8C", "#A8A8B8"] },
+      "bg-card": { "role": "neutral", "displayName": "Glass Card", "canonical": "rgba(255,255,255,0.04)" },
+      "bg-raised": { "role": "neutral", "displayName": "Raised Glass", "canonical": "rgba(255,255,255,0.07)" },
+      "bg-modal": { "role": "neutral", "displayName": "Modal Solid", "canonical": "#1A1A26" },
+      "text": { "role": "neutral", "displayName": "Ghost White", "canonical": "#F0EDF8", "tonalRamp": ["#0F0F14", "#3A3742", "#6A6674", "#9994A2", "#C4BFCB", "#DAD5E1", "#EDEAF4", "#F0EDF8"] },
+      "text-muted": { "role": "neutral", "displayName": "Muted Ghost", "canonical": "rgba(240,237,248,0.5)" },
+      "text-dim": { "role": "neutral", "displayName": "Dim Ghost", "canonical": "rgba(240,237,248,0.22)" },
+      "accent": { "role": "primary", "displayName": "Emerald", "canonical": "#10b981", "tonalRamp": ["#04140F", "#063321", "#0A5234", "#0E7248", "#10b981", "#3ECB9C", "#7ADCBC", "#C3EFDE"] },
+      "violet": { "role": "secondary", "displayName": "Violet", "canonical": "#8b5cf6", "tonalRamp": ["#160B33", "#2B1866", "#412599", "#5733CC", "#8b5cf6", "#A987F8", "#C7B0FA", "#E3D8FC"] },
+      "amber": { "role": "tertiary", "displayName": "Amber", "canonical": "#f59e0b", "tonalRamp": ["#2E1D02", "#5C3A03", "#8A5705", "#B87407", "#f59e0b", "#F7B547", "#FACB80", "#FCE2BA"] },
+      "cyan": { "role": "tertiary", "displayName": "Cyan", "canonical": "#06b6d4", "tonalRamp": ["#012429", "#023A42", "#03505C", "#048A9E", "#06b6d4", "#3EC9E0", "#7ADCEC", "#C3EFF8"] },
+      "red": { "role": "error", "displayName": "Rose Red", "canonical": "#f43f5e", "tonalRamp": ["#330A11", "#661421", "#991E32", "#CC2843", "#f43f5e", "#F76D82", "#FA9CAB", "#FCCAD3"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Syne)", "purpose": "Títulos de seção, brand na navbar, cabeçalhos de página." },
+      "mono": { "displayName": "Mono (DM Mono)", "purpose": "Todo valor monetário e percentual, sem exceção." },
+      "body": { "displayName": "Body (Nunito)", "purpose": "Texto de UI padrão, navegação, formulários." }
+    },
+    "shadows": [
+      { "name": "glass-shadow", "value": "0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)", "purpose": "Sombra padrão de cards e superfícies de vidro em repouso." },
+      { "name": "glass-shadow-hover", "value": "0 16px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1)", "purpose": "Resposta a hover/foco em superfícies de vidro." }
+    ],
+    "motion": [
+      { "name": "mesh-orb", "value": "12s-15s ease-in-out infinite", "purpose": "Respiração lenta dos orbes de mesh background." },
+      { "name": "sidebar-collapse", "value": "width 0.25s ease", "purpose": "Colapso/expansão da sidebar desktop." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "CTA full-width de formulários (ex.: 'Adicionar despesa', 'Salvar alterações').",
+      "html": "<button class=\"ds-btn-primary\">Adicionar despesa</button>",
+      "css": ".ds-btn-primary { width: 100%; padding: 16px 24px; border-radius: 16px; border: none; color: #ffffff; font-weight: 600; background: linear-gradient(135deg, #10b981, #06b6d4); cursor: pointer; transition: opacity 0.2s; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Ação secundária inline, ex. 'adicionar rápido' em formulários.",
+      "html": "<button class=\"ds-btn-ghost\">+ Adicionar</button>",
+      "css": ".ds-btn-ghost { background: rgba(16,185,129,0.15); color: #10b981; border: none; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; transition: background 0.2s; } .ds-btn-ghost:hover { background: rgba(16,185,129,0.25); } .ds-btn-ghost:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }"
+    },
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Card de conteúdo padrão (KPIs, listas, formulários) sobre o mesh background.",
+      "html": "<div class=\"ds-card\"><span class=\"ds-card-label\">Disponível</span><span class=\"ds-card-value\">R$ 1.240,00</span></div>",
+      "css": ".ds-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06); transition: box-shadow 0.2s, border-color 0.2s; } .ds-card:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 16px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1); } .ds-card-label { display: block; font-family: 'Nunito', system-ui, sans-serif; font-size: 13px; color: rgba(240,237,248,0.5); margin-bottom: 4px; } .ds-card-value { display: block; font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; color: #F0EDF8; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de texto/número padrão de formulários (ex.: valor da despesa).",
+      "html": "<input class=\"ds-input\" placeholder=\"0,00\" />",
+      "css": ".ds-input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 12px; color: #F0EDF8; font-family: 'Nunito', system-ui, sans-serif; font-size: 15px; transition: border-color 0.2s; } .ds-input::placeholder { color: rgba(240,237,248,0.5); } .ds-input:focus { outline: none; border-color: rgba(255,255,255,0.15); }"
+    },
+    {
+      "name": "Toggle Switch",
+      "kind": "custom",
+      "refersTo": "input",
+      "description": "Switch on/off (ex.: 'ativo', 'lembrete habilitado').",
+      "html": "<button class=\"ds-toggle ds-toggle-on\" role=\"switch\" aria-checked=\"true\"><span class=\"ds-toggle-thumb\"></span></button>",
+      "css": ".ds-toggle { width: 44px; height: 24px; border-radius: 12px; border: none; padding: 3px; cursor: pointer; background: rgba(255,255,255,0.08); transition: background 0.2s; display: inline-flex; align-items: center; } .ds-toggle-on { background: #10b981; justify-content: flex-end; } .ds-toggle-thumb { width: 18px; height: 18px; border-radius: 50%; background: #ffffff; transition: transform 0.2s; } .ds-toggle:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }"
+    },
+    {
+      "name": "Pending Badge",
+      "kind": "chip",
+      "refersTo": "button-ghost",
+      "description": "Badge de estado pendente (fixas, faturas, metas), sempre âmbar.",
+      "html": "<span class=\"ds-badge-pending\">Pendente</span>",
+      "css": ".ds-badge-pending { display: inline-flex; align-items: center; background: rgba(245,158,11,0.15); color: #f59e0b; border-radius: 8px; padding: 4px 10px; font-family: 'Nunito', system-ui, sans-serif; font-size: 12px; font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Ledger",
+    "overview": "30dias vive num fundo quase preto, iluminado por dois orbes difusos de mesh — emerald e violeta — que respiram lentamente atrás de cards de vidro quase transparentes. É um livro-caixa que não grita: os números fazem o trabalho, o resto do sistema visual existe para não atrapalhar. A confiança vem da precisão — contraste correto, tipografia monoespaçada nos valores, hierarquia clara — não de efeitos chamativos. O sistema rejeita explicitamente o visual de 'SaaS de planilha corporativo frio' e o tom 'gamificado infantilizado'. Há um único tema — dark-only, sem alternância.",
+    "keyCharacteristics": [
+      "Dark-only absoluto: fundo #0F0F14, nunca claro.",
+      "Glassmorphism comedido: cards em rgba(255,255,255,0.04), blur pesado (20px) só nas barras de navegação fixas.",
+      "Mesh background com orbes emerald + violeta (+ cyan/âmbar extras no shell autenticado), sempre atrás do conteúdo.",
+      "Três papéis tipográficos nunca confundidos: Syne para títulos, DM Mono para valores monetários, Nunito para o resto.",
+      "Cor com função, não decoração: emerald=dinheiro/sucesso, violeta=dado secundário, âmbar=atenção/pendência, cyan=acento de saldo, vermelho=erro/limite."
+    ],
+    "rules": [
+      { "name": "The Function-Not-Decoration Rule", "body": "Cada cor de acento tem exatamente um significado. Nunca reutilizar uma cor de acento para um significado diferente do seu papel estabelecido.", "section": "colors" },
+      { "name": "The Modal-Is-Solid Rule", "body": "Só modais e bottom sheets usam --bg-modal sólido; todo o resto do sistema é semi-transparente.", "section": "colors" },
+      { "name": "The Money-Is-Mono Rule", "body": "Todo valor monetário e percentual usa var(--font-dm-mono), sem exceção.", "section": "typography" },
+      { "name": "The Blur-Is-Structural Rule", "body": "backdrop-filter: blur(20px) é reservado às barras de navegação fixas; cards de conteúdo usam no máximo blur(12px), e só quando decorativo.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do manter o fundo em #0F0F14 sempre — não há tema claro e não deve haver.",
+      "Do usar var(--font-dm-mono) em todo valor monetário/percentual, sem exceção.",
+      "Do reservar o gradiente emerald→cyan/violeta para um único elemento de destaque por tela.",
+      "Do usar --bg-modal sólido em todo modal e bottom sheet.",
+      "Do usar seções âmbar para tornar visível o que está pendente."
+    ],
+    "donts": [
+      "Don't introduzir um toggle de tema claro ou qualquer lógica de tema além do dark-only atual.",
+      "Don't usar border-left/border-right colorido como faixa decorativa em cards ou list items.",
+      "Don't aplicar backdrop-filter: blur() a cards de conteúdo por padrão.",
+      "Don't deixar o visual aproximar-se de um 'SaaS de planilha corporativo frio'.",
+      "Don't infantilizar a interface com excesso de emojis, cores berrantes ou tom lúdico.",
+      "Don't misturar os dois regimes de cálculo (competência vs. caixa) numa mesma exibição visual sem rótulo explícito."
+    ]
+  }
+}

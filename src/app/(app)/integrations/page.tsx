@@ -111,7 +111,7 @@ export default function IntegrationsPage() {
               style={{
                 padding: '10px 14px',
                 background: 'var(--bg-input)',
-                border: `1px solid ${error ? '#ef4444' : 'var(--border)'}`,
+                border: `1px solid ${error ? 'var(--red)' : 'var(--border)'}`,
                 color: 'var(--text)',
                 outline: 'none',
               }}
@@ -132,7 +132,7 @@ export default function IntegrationsPage() {
               {saved ? <><Check size={14} /> Salvo!</> : 'Salvar'}
             </button>
           </div>
-          {error && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{error}</p>}
+          {error && <p className="text-xs mt-2" style={{ color: 'var(--red)' }}>{error}</p>}
         </div>
 
         {/* Registrar despesas */}
