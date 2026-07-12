@@ -164,8 +164,3 @@ export interface MonthlyBudget {
   categoryBudgets: Record<string, number>
 }
 
-export interface UserAchievement {
-  id: string
-  achievementId: string
-  unlockedAt: string  // YYYY-MM-DD
-}

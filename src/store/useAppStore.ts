@@ -3,11 +3,10 @@
 import { create } from 'zustand'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { Category, CreditCard, CreditCardInvoice, Establishment, Expense, ExpenseParticipant, FinancialGoal, FixedExpense, FixedExpenseMonth, GoalContribution, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry, MonthlyBudget, UserAchievement } from '@/types'
+import { Category, CreditCard, CreditCardInvoice, Establishment, Expense, ExpenseParticipant, FinancialGoal, FixedExpense, FixedExpenseMonth, GoalContribution, UserPreferences, IncomeCategory, IncomeSource, IncomeEntry, MonthlyBudget } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/data/categories'
 import { DEFAULT_INCOME_CATEGORIES } from '@/data/incomeCategories'
 import { getWeekKey, getCurrentWeekKey, getMondaysBetween, getTodayKey, toLocalDateKey, getEffectiveAmount, getWeeksUntilDeadline, getInvoiceMonth, getEffectiveMonth } from '@/lib/weekHelpers'
-import { Achievement, AchievementContext, evaluateAchievements } from '@/lib/achievements'
 import { fromDB } from '@/lib/dbMapping'
 import { nanoid } from 'nanoid'
 
@@ -57,8 +56,6 @@ interface AppState {
   goalContributions: GoalContribution[]
   preferences: UserPreferences
   monthlyBudgets: MonthlyBudget[]
-  userAchievements: UserAchievement[]
-  celebrationQueue: Achievement[]
 
   // Auth
   initAuth: () => Promise<void>
@@ -155,10 +152,6 @@ interface AppState {
   setAvailableMode: (mode: NonNullable<UserPreferences['availableMode']>) => void
   getBudgetForMonth: (month: string) => { monthlyBudget: number; categoryBudgets: Record<string, number> }
   saveBudgetForMonth: (month: string, data: { monthlyBudget?: number; categoryBudgets?: Record<string, number> }) => Promise<void>
-
-  // Achievements
-  checkAchievements: () => void
-  dismissCelebration: () => void
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -180,8 +173,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
   goalContributions: [],
   preferences: DEFAULT_PREFERENCES,
   monthlyBudgets: [],
-  userAchievements: [],
-  celebrationQueue: [],
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   initAuth: async () => {
@@ -216,8 +207,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
           financialGoals: [],
           goalContributions: [],
           preferences: DEFAULT_PREFERENCES,
-          userAchievements: [],
-          celebrationQueue: [],
         })
       }
     })
@@ -249,7 +238,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (!user) return
     set({ isLoading: true })
 
-    const [catRes, estRes, expRes, feRes, femRes, ccRes, ccInvRes, icatRes, isrcRes, ieRes, prefRes, goalsRes, contribRes, mbRes, achRes] =
+    const [catRes, estRes, expRes, feRes, femRes, ccRes, ccInvRes, icatRes, isrcRes, ieRes, prefRes, goalsRes, contribRes, mbRes] =
       await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('establishments').select('*'),
@@ -265,7 +254,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
         supabase.from('financial_goals').select('*'),
         supabase.from('goal_contributions').select('*'),
         supabase.from('monthly_budgets').select('*'),
-        supabase.from('user_achievements').select('*'),
       ])
 
     let categories = catRes.data?.map(r => fromDB<Category>(r)) ?? []
@@ -332,13 +320,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
       goalContributions: contribRes.data?.map(r => fromDB<GoalContribution>(r)) ?? [],
       preferences,
       monthlyBudgets: mbRes.data?.map(r => fromDB<MonthlyBudget>(r)) ?? [],
-      userAchievements: achRes.data?.map(r => fromDB<UserAchievement>(r)) ?? [],
       isLoading: false,
     })
 
     get().syncFixedExpenses()
     get().syncCreditCardInvoices()
-    get().checkAchievements()
   },
 
   // ── Expenses ────────────────────────────────────────────────────────────────
@@ -347,7 +333,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ expenses: [...state.expenses, expense] }))
     const { user } = get()
     if (user) supabase.from('expenses').insert(toDB(expense, user.id)).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
     get().syncCreditCardInvoices()
   },
 
@@ -359,7 +344,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
       const rows = expenses.map(e => toDB(e, user.id))
       supabase.from('expenses').insert(rows).then(({ error }) => { if (error) console.error(error) })
     }
-    get().checkAchievements()
     get().syncCreditCardInvoices()
   },
 
@@ -400,7 +384,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ categories: [...state.categories, category] }))
     const { user } = get()
     if (user) supabase.from('categories').insert(toDB(category, user.id)).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
   },
 
   updateCategory: (id, data) => {
@@ -430,7 +413,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ establishments: [...state.establishments, establishment] }))
     const { user } = get()
     if (user) supabase.from('establishments').insert(toDB(establishment, user.id)).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
   },
 
   updateEstablishment: (id, data) => {
@@ -482,7 +464,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const { user } = get()
     if (user) supabase.from('fixed_expense_months').insert(toDB(fem, user.id)).then(({ error }) => { if (error) console.error(error) })
     get().syncFixedExpenses()
-    get().checkAchievements()
   },
 
   updateFixedExpenseMonth: async (id, amount, date?) => {
@@ -503,7 +484,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
       results.forEach(({ error }) => { if (error) console.error(error) })
     }
     get().syncFixedExpenses()
-    get().checkAchievements()
   },
 
   deleteFixedExpenseMonth: (id) => {
@@ -698,7 +678,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ incomeEntries: [...state.incomeEntries, entry] }))
     const { user } = get()
     if (user) supabase.from('income_entries').insert(toDB(entry, user.id)).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
   },
 
   updateIncomeEntry: (id, data) => {
@@ -719,14 +698,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ financialGoals: [...state.financialGoals, goal] }))
     const { user } = get()
     if (user) supabase.from('financial_goals').insert(toDB(goal, user.id)).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
   },
 
   updateFinancialGoal: (id, data) => {
     set(state => ({ financialGoals: state.financialGoals.map(g => g.id === id ? { ...g, ...data } : g) }))
     const { user } = get()
     if (user) supabase.from('financial_goals').update(dbUpdate(data)).eq('id', id).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
   },
 
   deleteFinancialGoal: (id) => {
@@ -749,7 +726,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ goalContributions: [...state.goalContributions, contribution] }))
     const { user } = get()
     if (user) supabase.from('goal_contributions').insert(toDB(contribution, user.id)).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
   },
 
   updateGoalContribution: (id, amount) => {
@@ -986,7 +962,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set(state => ({ preferences: { ...state.preferences, budgetMode } }))
     const { user } = get()
     if (user) supabase.from('user_preferences').update({ budget_mode: budgetMode }).eq('user_id', user.id).then(({ error }) => { if (error) console.error(error) })
-    get().checkAchievements()
   },
 
   setAvailableMode: (availableMode) => {
@@ -1016,56 +991,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
       const { error } = await supabase.from('user_preferences').update({ whatsapp_number: number }).eq('user_id', user.id)
       if (error) console.error(error)
     }
-    get().checkAchievements()
   },
 
-  // ── Achievements ─────────────────────────────────────────────────────────
-  checkAchievements: () => {
-    const { user } = get()
-    if (!user) return
-    const {
-      expenses, incomeEntries, financialGoals, goalContributions,
-      fixedExpenses, fixedExpenseMonths, categories, establishments,
-      monthlyBudgets, preferences, userAchievements,
-    } = get()
-
-    const ctx: AchievementContext = {
-      expenses, incomeEntries, financialGoals, goalContributions,
-      fixedExpenses, fixedExpenseMonths, categories,
-      establishmentsCount: establishments.length,
-      monthlyBudgets,
-      defaultMonthlyBudget: preferences.monthlyBudget,
-      budgetMode: preferences.budgetMode,
-      hasWhatsappNumber: !!preferences.whatsappNumber,
-      today: getTodayKey(),
-    }
-
-    const unlockedIds = new Set(userAchievements.map(a => a.achievementId))
-    const newlyUnlocked = evaluateAchievements(ctx, unlockedIds)
-      .filter(r => r.result.unlocked)
-      .map(r => r.achievement)
-
-    if (newlyUnlocked.length === 0) return
-
-    const newRecords: UserAchievement[] = newlyUnlocked.map(a => ({
-      id: nanoid(),
-      achievementId: a.id,
-      unlockedAt: getTodayKey(),
-    }))
-
-    set(state => ({
-      userAchievements: [...state.userAchievements, ...newRecords],
-      celebrationQueue: [...state.celebrationQueue, ...newlyUnlocked],
-    }))
-
-    supabase.from('user_achievements').insert(
-      newRecords.map(r => toDB(r, user.id))
-    ).then(({ error }) => { if (error) console.error(error) })
-  },
-
-  dismissCelebration: () => {
-    set(state => ({ celebrationQueue: state.celebrationQueue.slice(1) }))
-  },
 }))
 
 export { getCurrentWeekKey }

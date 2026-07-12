@@ -13,7 +13,7 @@ interface CenteredModalProps {
   maxHeight?: string
 }
 
-/** Shared centered-modal shell (backdrop z-40 + pointer-events-split content z-50), extracted from AchievementCelebrationModal's implementation. */
+/** Shared centered-modal shell (backdrop z-40 + pointer-events-split content z-50). */
 export function CenteredModal({ open, onClose, children, maxWidth = 400, mobileBottomSheet = false, maxHeight }: CenteredModalProps) {
   return (
     <AnimatePresence>

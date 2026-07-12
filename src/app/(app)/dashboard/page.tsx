@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, ChevronLeft, ChevronRight, ChevronDown, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users, Trophy, CreditCard as CreditCardIcon } from 'lucide-react'
+import { PlusCircle, ChevronLeft, ChevronRight, ChevronDown, TrendingDown, TrendingUp, Wallet, Target, ArrowUpDown, AlertTriangle, XCircle, X, Check, Users, CreditCard as CreditCardIcon } from 'lucide-react'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, Tooltip, ResponsiveContainer,
@@ -15,7 +15,6 @@ import {
   getWeekKey, getWeekStart, getMondaysBetween, getEffectiveMonth,
 } from '@/lib/weekHelpers'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
-import { ACHIEVEMENTS } from '@/lib/achievements'
 
 export default function DashboardPage() {
   const {
@@ -23,7 +22,7 @@ export default function DashboardPage() {
     getGoalProgress, getMonthlyBalance, getFixedMonthlyContribution,
     getFixedMonthlyCategoryContribution, getGoalWeeklyTotal,
     getSharedPendingTotal, markParticipantAsPaid, getBudgetForMonth,
-    setAvailableMode, userAchievements, creditCards, getPendingInvoicesTotal, getCashBalance,
+    setAvailableMode, creditCards, getPendingInvoicesTotal, getCashBalance,
   } = useAppStore()
   const router = useRouter()
 
@@ -112,13 +111,6 @@ export default function DashboardPage() {
   const pendingInvoices = getPendingInvoicesTotal(monthKey)
   const cashBalance = getCashBalance(monthKey)
 
-  const latestAchievement = useMemo(() => {
-    if (userAchievements.length === 0) return null
-    const sorted = [...userAchievements].sort((a, b) => b.unlockedAt.localeCompare(a.unlockedAt))
-    const latest = sorted[0]
-    const achievement = ACHIEVEMENTS.find(a => a.id === latest.achievementId)
-    return achievement ?? null
-  }, [userAchievements])
 
   const activeGoals = useMemo(
     () => financialGoals.filter(g => g.isActive && !g.completedAt),
@@ -337,7 +329,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* "Atenção" tile — groups the conditional KPIs (A receber, Faturas, Metas, Conquistas) so the primary grid never resizes */}
+      {/* "Atenção" tile — groups the conditional KPIs (A receber, Faturas, Metas) so the primary grid never resizes */}
       {(() => {
         const attentionItems = [
           ...(sharedPending > 0 ? [{
@@ -363,14 +355,6 @@ export default function DashboardPage() {
             sub: `${activeGoals.length} ativa${activeGoals.length > 1 ? 's' : ''}`,
             color: 'var(--accent)',
             onClick: () => router.push('/goals'),
-          }] : []),
-          ...(userAchievements.length > 0 ? [{
-            icon: Trophy,
-            label: 'Conquistas',
-            value: `${userAchievements.length}/${ACHIEVEMENTS.length}`,
-            sub: latestAchievement ? latestAchievement.title : 'desbloqueadas',
-            color: 'var(--amber)',
-            onClick: () => router.push('/achievements'),
           }] : []),
         ]
 
