@@ -136,7 +136,7 @@ interface AppState {
 
   // Helpers
   getMonthlyBalance: (month: string) => { income: number; expenses: number; balance: number }
-  getCashBalance: (month: string) => { income: number; expenses: number; balance: number }
+  getCashBalance: (month: string) => { income: number; expenses: number; balance: number; pendingCardPurchases: number }
   getFixedWeeklyContribution: (month?: string) => number
   getFixedCategoryContribution: (month?: string) => Record<string, number>
   getFixedMonthlyContribution: (month?: string) => number
@@ -827,7 +827,18 @@ export const useAppStore = create<AppState>()((set, get) => ({
       }, 0)
 
     const cashExpenses = nonCardExpenses + paidInvoicesExpenses
-    return { income, expenses: cashExpenses, balance: income - cashExpenses }
+    const pendingCardPurchases = expenses
+      .filter(e => e.paymentMethod === 'credit_card' && e.date.startsWith(month))
+      .reduce((sum, e) => {
+        const card = creditCards.find(c => c.id === e.creditCardId)
+        if (!card) return sum
+        const invMonth = getInvoiceMonth(e.date, card)
+        const inv = creditCardInvoices.find(i => i.creditCardId === card.id && i.month === invMonth)
+        if (inv?.paid) return sum
+        return sum + getEffectiveAmount(e)
+      }, 0)
+
+    return { income, expenses: cashExpenses, balance: income - cashExpenses, pendingCardPurchases }
   },
 
   getFixedWeeklyContribution: (month) => {

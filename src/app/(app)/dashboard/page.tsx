@@ -458,6 +458,14 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+        {cashBalance.pendingCardPurchases > 0 && (
+          <div className="flex items-center gap-1.5 mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+            <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>↳ Compras no cartão este mês, a pagar</span>
+            <span style={{ color: '#f59e0b', fontFamily: 'var(--font-dm-mono)', fontSize: 11, fontWeight: 600 }}>
+              {formatCurrency(cashBalance.pendingCardPurchases)}
+            </span>
+          </div>
+        )}
       </motion.div>
 
       {/* Budget bar */}
